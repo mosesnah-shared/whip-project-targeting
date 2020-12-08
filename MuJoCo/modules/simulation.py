@@ -298,6 +298,8 @@ class Simulation( ):
                 if self.args[ 'saveData' ]:
                     # Saving all the necessary datas for the simulation
                     my_print(  inputVal = input,
+                                   ZFT  = self.controller.phi,
+                                   dZFT = self.controller.dphi, 
                                    file = file )
 
 

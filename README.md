@@ -24,18 +24,21 @@ The [**MuJoCo**](MuJoCo/) simulator consists of the xml model file and the pytho
 
 ```
 Usage:
-  python3 run.py --modelName="2D_model.xml" --simType=1 --runTime=30
-  python3 run.py --modelName="2D_model.xml" --simType=2
-  python3 run.py --modelName="3D_model.xml" --simType=1 --saveData
-  python3 run.py --modelName="3D_model.xml" --simType=2 --saveData --recordVideo --vidRate=0.5
-  python3 run.py --modelName="3D_model.xml" --simType=2 --saveData --videoOFF
+  python3 run.py --help
+  python3 run.py --version
+  python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
+  python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
+  python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
+  python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
+  python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
 
 Options:
-  --ZFTType      1: Joint space trajectory tracking task   2: Cartesian space trajectory tracking task
   --saveData     Saving the essential simulations data as .txt file
   --videoOFF     Turning off the video of the mujoco-py simulation
   --recordVideo  Recording the simulation
-  --vidRate      Setting the speed of the video that you are saving, e.g., --vidRate=0.5 means the video is half the speed of original
+  --modelName    Setting the xml model file name which will be used for the simulation.
+  --runTime      The total time of the simulation
+  --startTime    The start time of the movement, or controller
 
 ```
 
