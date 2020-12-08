@@ -216,9 +216,7 @@ class ImpedanceController( Controller ):
         return phi, dphi
 
     def input_calc( self, start_time, current_time ):
-        """
 
-        """
 
         q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
         dq = self.mjData.qvel[ 0 : self.n_act ]

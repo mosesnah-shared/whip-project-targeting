@@ -94,6 +94,8 @@ Examples, try:
     python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
     python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
     python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
+    python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
+    python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
 
 """
 
@@ -190,31 +192,29 @@ def main( ):
     if   "2D" in args[ 'modelName' ]:
 
         controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [-1.54171, 1.80351, 1.5708 , 0.29089, 0.77037] )
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011 ] )
 
         # [BACKUP]
-        # 1_2D_model_w_N10.xml:  mov_parameters = [ -1.312, 1.670, 1.565, 0.000, 0.667 ] ), min_val = 0.3362
-        # 1_2D_model_w_N15.xml:  mov_parameters = [ -1.447, 0.368, 1.562, 0.121, 0.833 ] ), min_val =
-        # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.496, 0.505, 1.570, 0.506, 0.803 ] ), min_val =
-        # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.367, 0.015, 1.571, 0.054, 0.810 ] ), min_val =
-
+        # 1_2D_model_w_N10.xml:  mov_parameters = [ -1.40668, 0.14868, 1.46737, 0.12282, 0.81866 ] ), min_val = 0.02928
+        # 1_2D_model_w_N15.xml:  mov_parameters = [ -1.39303, 0.35122, 1.56649, 0.01508, 0.79451 ] ), min_val = 0.05939
+        # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.56748, 0.09553, 1.57128, 0.05834, 0.80366 ] ), min_val = 0.08106
+        # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] ), min_val = 0.02032
 
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [ -1.36136, 1.04720, -0.297352, 1.111193, 1.727876 -1.0343, -0.7542, 0.157080, 0.95   ] )
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.36135, 1.0472,-0.29735, 1.111193, 1.727876,-1.034269,-0.754155, 0.157080, 0.95   ])
 
-
-        # [BACKUP]
-        # 1_3D_model_w_N25_T1.xml:  mov_parameters = [ -1.55442, 0.00000, -0.349066, 1.378810, 1.727876,  0.000,   0.000, 0.351005, 0.95  ] ), min_val = 0.05553
-        # 1_3D_model_w_N25_T2.xml:  mov_parameters = [ -1.36136, 1.04720, -0.297352, 1.111193, 1.727876 -1.0343, -0.7542, 0.157080, 0.95 ] ), min_val =
-        # 1_3D_model_w_N25_T3.xml:  mov_parameters = [  ] ), min_val =
 
         # [BACKUP] [Moses Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
         #                                              K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
         #                                              B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
+        # AND THE RESULTS
+        # Target 1 [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] idx 592, output 0.05086
+        # Target 2 [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
+        # Target 3 [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
 
     obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
 
