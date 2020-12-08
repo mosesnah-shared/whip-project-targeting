@@ -1,0 +1,130 @@
+<!-- =========================================================================== #
+# Project:        [UROP] Whip Project
+# Title:          XML Template Model File for MuJoCo Simulation, 2DOF upper-limb model
+# Author:         Moses C. Nah
+# Creation Date:  Wednesday, May 20th, 2020
+# ============================================================================= #
+
+
+# ============================================================================= #
+#  (0-) [Table of Contents]
+# -(0A) [DESCRIPTION]
+# -(0B) [REVISION LOG]
+# -(0C) [REFERENCES]
+# -(1A) [MAIN CODE]
+# ============================================================================= #
+
+
+# ============================================================================= #
+# (0A) [DESCRIPTION]
+
+  - XML Model file for MuJoCo Simulation. The corresponding python file is "myController.py" under "controller" directory.
+
+    XML Model file consists of a two degrees-of-freedom (DOF) upper limb model and a N-node short-whip model.
+
+    Summarizing, the combined model simulated a sequential open-chain planar mechanism with 12 DOF (2 for the upper-limb model, 10 for the short-whip model).
+
+    The geometrical and inertial parameters for each limb segment were obtained from a computational model by Hatze.
+    [REF]: Hatze, H. (1980). A mathematical model for the computational determination of parameter values of anthropomorphic segments. Journal of Biomechanics, 13(10):833–843.
+
+    No tapering of the mass or viscoelastic properties of the whip was included for this model.
+
+# ============================================================================= #
+
+
+# ============================================================================= #
+# (0B) REVISION LOG
+
+#  [Number]       [Date]        [Editor]         [Description]
+#  00           05.09.2020    Moses C.Nah      Documentation Creation
+#  01           XX.XX.XXXX
+# ============================================================================= #
+
+
+# ============================================================================= #
+# (0C) REFERENCES
+#
+# [REF #1] XML MODEL FILE REFERENCE: http://www.mujoco.org/book/XMLreference.html
+# [REF #2]
+#
+# ============================================================================= #
+
+# ============================================================================= #
+# (1A) MAIN CODE  -->
+
+<mujoco model="NNodeWhipModel">
+
+  <!-- Setting 'inertiafromgeom' as 'auto' forces the MuJoCo compiler to infer the inertial attributes based on defined geom + mass value, and will only use the inertia values if it is specifically defined.
+       By setting 'inertiafromgeom' as 'auto', the xml compiler will use the explicitly defined inertial parameters for the upperArm and foreArm body,
+       and will infer the inertial parameters from geometry for the whip model -->
+  <compiler inertiafromgeom = "auto" angle = "radian"/>
+
+   <!-- (semi-) implicit Euler method was used for the integrator with time step of 0.1ms -->
+	<option timestep='0.0001' iterations='50' integrator='Euler' collision='all'/>
+
+  <asset>
+    <!-- Texture of the surrounding sky box
+         setting everything as white-ish color for better visualization -->
+     <texture type="skybox"
+              builtin="flat"
+              rgb1="1 1 1"
+              rgb2="1 1 1"
+              width="100"
+              height="100"/>
+
+     <!-- Joint and Limb Color -->
+     <material name = "JointColor"     rgba = "1.0 1.0 0.0 1.0"/>
+     <material name = "LimbColor"      rgba = "0.7 0.7 0.7 1.0"/>
+     <material name = "pointMassColor" rgba = "1.0 1.0 1.0 1.0"/>
+     <material name = "RefMassColor"   rgba = "0.2 0.9 0.1 1.0"/>
+
+  </asset>
+
+  <!-- <size njmax="8000" nconmax="4000"/> -->
+
+  <!-- =============== MAIN BODY STARTS ============= -->
+  <worldbody>
+
+    <!-- =============== CAMERA DEF STARTS ============= -->
+    <body name='camera' pos='0 0 0'>
+				<camera name='myCamera' pos='0.7975 -3.19 -0.4785' euler='1.5707 0 0'/>
+  	</body>
+    <!-- =============== CAMERA DEF   ENDS ============= -->
+
+
+    <!-- ===============  MODEL STARTS  =============== -->
+
+    <!-- =============  UPPER ARM START =============== -->
+		<body name='upperArm' pos='0 0 0' euler='0 0 0'>
+      <joint name='shoulderJoint' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0' />
+			<inertial pos='0 0 -0.129' mass='1.595' diaginertia='0.011917 0.011937 0.001325'/>
+			<geom name='shoulderGeom' type='sphere' pos='0 0 0' material='JointColor' size='0.0294' mass='0'/>
+			<geom type='cylinder' fromto='0 0 0 0 0 -0.294'     material='LimbColor'  size='0.0147' mass='0'/>
+      <site name='upperArmCOM' pos='0 0 -0.129' />      <!-- This site is attached to the Center of Mass of the upper Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
+    	<!-- =============  UPPER ARM  END  =============== -->
+
+      <!-- ============ FORE ARM START =============== -->
+			<body name='foreArm' pos='0 0 -0.294' euler='0 0 0'>
+        <joint name='elbowJoint' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0'/>
+				<inertial pos='0 0 -0.112' mass='0.869' diaginertia='0.004765 0.004855 0.000472'/>
+				<geom name='elbowGeom'       type='sphere' pos='0 0 0'      material='JointColor' size='0.0294' mass='0'/>
+				<geom type='cylinder' fromto='0 0 0 0 0 -0.291'             material='LimbColor'  size='0.0147' mass='0'/>
+        <site name='foreArmCOM' pos='0 0 -0.112' />      <!-- This site is attached to the Center of Mass of the fore Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
+				<geom name='geom_EE' type='sphere' pos='0 0 -0.291' material='JointColor' size='0.0294' mass='0'/>
+				<!-- Do not change 'geom_EE' as name, since the whip will be appended to the body containig geom_EE -->
+
+      </body>
+
+  </body>
+
+	  <geom name='target' type='sphere' pos='1.595 0.0 0.0' material='LimbColor' mass='0' size='0.03'/>
+
+  </worldbody>
+
+  <!-- Independently controlled torque actuators were mounted co-axially with the shoulder and elbow joints. -->
+  <actuator>
+		  <motor joint='shoulderJoint' name='shoulderJointTorqueMotor' forcelimited='false'/>
+		  <motor joint='elbowJoint'    name='elbowJointTorqueMotor'    forcelimited='false'/>
+  </actuator>
+
+</mujoco>
