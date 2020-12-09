@@ -8,7 +8,6 @@ import math  as myMath
 
 # [3rd party modules]
 import cv2
-import argparse
 import numpy                 as np
 import xml.etree.ElementTree as ET
 

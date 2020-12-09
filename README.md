@@ -27,22 +27,23 @@ We kindly ask to cite our paper if you find this library useful:
 
 ```
 
-
-**Literatures**
+**How to setup virtual environment**
 ---
-pdf files of the papers are saved in [**Readings**](Readings/) folder.
-1. [2020 BIOROB - Dynamic Primitives Facilitate Manipulating a Whip](https://ieeexplore.ieee.org/document/9224399)
-2. [MIT Master's Thesis - Dynamic Primitives Facilitate Manipulating a Whip](https://dspace.mit.edu/handle/1721.1/127121)
+It is beneficial to setup the virtual environment before running the simulation.
+Create `virtualenv` by typing the following line:
+```
+  python3 -m venv .
+```
+After the environment is generated, activate the virtual environment
+```
+  cd MuJoCo && source ./bin/activate
+```
+Download all the required packages for the mujoco-py simulation.
+```
+  python3 -m pip install -r requirements.txt
+```
+And... it's ready to go!
 
-**Presented Talks**
----
-1. [2020 Neuromatch 3.0](https://www.youtube.com/watch?v=tE3y9LwvQKQ)
-2. [2020 BIOROB](https://www.youtube.com/watch?v=PPzxmgUo0nY)
-3. [2020 IROS Workshop - Impedance Learning](https://www.youtube.com/watch?v=OhSgroSByB4)
-
-**Code Description**
----
-The [**MuJoCo**](MuJoCo/) simulator consists of the xml model file and the python controller file. That’s simply it. If you have a xml model file and a corresponding controller file, it is ready to run a single-complete simulation. The xml model files are all saved in [**model**](MuJoCo/models) folder, and the python controller objects are all saved in [**controllers.py**](MuJoCo/modules/) python script.
 
 **How to use mujoco-py simulation**
 ---
@@ -69,6 +70,23 @@ Options:
   --startTime    The start time of the movement, or controller
   --vidRate      Speed of the video to be saved, if vidRate=0.5, then video is 2 times slower
 ```
+
+
+**Literatures**
+---
+pdf files of the papers are saved in [**Readings**](Readings/) folder.
+1. [2020 BIOROB - Dynamic Primitives Facilitate Manipulating a Whip](https://ieeexplore.ieee.org/document/9224399)
+2. [MIT Master's Thesis - Dynamic Primitives Facilitate Manipulating a Whip](https://dspace.mit.edu/handle/1721.1/127121)
+
+**Presented Talks**
+---
+1. [2020 Neuromatch 3.0](https://www.youtube.com/watch?v=tE3y9LwvQKQ)
+2. [2020 BIOROB](https://www.youtube.com/watch?v=PPzxmgUo0nY)
+3. [2020 IROS Workshop - Impedance Learning](https://www.youtube.com/watch?v=OhSgroSByB4)
+
+**Code Description**
+---
+The [**MuJoCo**](MuJoCo/) simulator consists of the xml model file and the python controller file. That’s simply it. If you have a xml model file and a corresponding controller file, it is ready to run a single-complete simulation. The xml model files are all saved in [**model**](MuJoCo/models) folder, and the python controller objects are all saved in [**controllers.py**](MuJoCo/modules/) python script.
 
 **References**
 ---

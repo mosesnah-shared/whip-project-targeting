@@ -14,7 +14,6 @@ import re
 import pprint
 import numpy as np
 import time, datetime
-import pickle
 
 import nlopt
 
@@ -250,8 +249,7 @@ class Simulation( ):
                     self.mjViewer.render( )                                     # Render the simulation
 
                 if not self.args[ 'runOptimization' ]:
-                    my_print( currentTime = self.current_time   ,
-                                minVal    = self.min_val        )
+                    my_print( currentTime = self.current_time  )
 
                 if self.args[ 'verbose' ]:
                     my_print( camParameters = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
@@ -298,10 +296,13 @@ class Simulation( ):
                 if self.args[ 'saveData' ]:
                     # Saving all the necessary datas for the simulation
                     my_print(  inputVal = input,
+                                minVal  = self.min_val,
                                    ZFT  = self.controller.phi,
-                                   dZFT = self.controller.dphi, 
+                                   dZFT = self.controller.dphi,
                                    file = file )
 
+                else:
+                    my_print(    minVal = self.min_val )
 
             self.sim_step += 1
 
