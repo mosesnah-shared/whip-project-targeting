@@ -3,6 +3,31 @@
 Human dexterity far exceeds that of modern robots, despite a much slower neuromuscular system. Understanding how this is accomplished may lead to improved robot control. The slow neuromuscular system of humans implies that prediction based on
 some form of internal model plays a prominent role. However, the nature of the model itself remains unclear. To address this problem, we focused on one of the most complex and exotic tools humans can manipulate—a whip. We tested (in simulation) whether a distant target could be reached with a whip using a (small) number of dynamic primitives, whose parameters could be learned through optimization. This approach was able to manage the complexity of an (extremely) high degree-of-freedom system and discovered the optimal parameters of the upper-limb movement that achieved the task. A detailed model of the whip dynamics was not needed for this approach, which thereby significantly relieved the computational burden of task representation and performance optimization. These results support our hypothesis that composing control using dynamic motor primitives may be a strategy which humans use to enable their remarkable dexterity. A similar approach may contribute to improved robot control.
 
+**Citing our work**
+---
+We kindly ask to cite our paper if you find this library useful:
+```
+@inproceedings{nah2020dynamic,
+  title={Dynamic primitives facilitate manipulating a whip},
+  author={Nah, Moses C and Krotov, Aleksei and Russo, Marta and Sternad, Dagmar and Hogan, Neville},
+  booktitle={2020 8th IEEE RAS/EMBS International Conference for Biomedical Robotics and Biomechatronics (BioRob)},
+  pages={685--691},
+  year={2020},
+  url={https://github.com/mosesnah-shared/whip-project-targeting},
+  organization={IEEE}
+}
+
+@mastersthesis{moses2020master,
+  title={Dynamic Primitives Facilitate Manipulating a Whip},
+  author={Nah, Moses C.},
+  year={2020},
+  url={https://github.com/mosesnah-shared/whip-project-targeting},  
+  school={Massachusetts Institute of Technology}
+}
+
+```
+
+
 **Literatures**
 ---
 pdf files of the papers are saved in [**Readings**](Readings/) folder.
@@ -28,7 +53,9 @@ Usage:
   python3 run.py --version
   python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
   python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
+  python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=0.1 --runTime=6 --saveData  
   python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
+  python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF --saveData
   python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
   python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
 
