@@ -65,16 +65,16 @@ Options:
     --modelName=NAME           Setting the xml model file name which will be used for the simulation.
                                The starting number of the xml model file indicates the type of simulation, hence the --modelName
                                already contains the simulation typep information.
-                                    List of models.
-                                        1: 1_2D_model_w_N10.xml    - Short  whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                        2: 1_2D_model_w_N15.xml    - Medium whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                        3: 1_2D_model_w_N20.xml    - Long   whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                        4: 1_2D_model_w_N25.xml    - Experimentally-fitted whip model  [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                        5: 1_3D_model_w_N25_T1.xml - 3D w target 1                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                        6: 1_3D_model_w_N25_T2.xml - 3D w target 2                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                        7: 1_3D_model_w_N25_T3.xml - 3D w target 3                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                        -: 1_2D_model              - The template 2D 2-DOF upper-limb model
-                                        -: 1_3D_model              - The template 3D 4-DOF upper-limb model
+                               List of models.
+                                 - 1_2D_model_w_N10.xml    : Short  whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
+                                 - 1_2D_model_w_N15.xml    : Medium whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
+                                 - 1_2D_model_w_N20.xml    : Long   whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
+                                 - 1_2D_model_w_N25.xml    : Experimentally-fitted whip model  [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
+                                 - 1_3D_model_w_N25_T1.xml : 3D w target 1                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
+                                 - 1_3D_model_w_N25_T2.xml : 3D w target 2                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
+                                 - 1_3D_model_w_N25_T3.xml : 3D w target 3                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
+                                 - 1_2D_model              : The template 2D 2-DOF upper-limb model
+                                 - 1_3D_model              : The template 3D 4-DOF upper-limb model
                                [default: 1_2D_model_w_N10.xml]
     --videoOFF                 Turning off the video
                                This is useful for cases when you want to make the computation of the simulation faster
@@ -89,13 +89,16 @@ Options:
                                default is None
 
 Examples, try:
-    python3 run.py --help
-    python3 run.py --version
-    python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
-    python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
-    python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
-    python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
-    python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
+      python3 run.py --help
+      python3 run.py --version
+      python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
+      python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
+      python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=0.1 --runTime=6 --saveData
+      python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
+      python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF --saveData
+      python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
+      python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
+      python3 run.py --modelName="1_3D_model_w_N25_T2.xml" --startTime=0.1 --runTime=3 --recordVideo --vidRate=0.5
 
 """
 
