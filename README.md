@@ -58,6 +58,7 @@ Usage:
   python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF --saveData
   python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
   python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
+  python3 run.py --modelName="1_3D_model_w_N25_T2.xml" --startTime=0.1 --runTime=3 --recordVideo --vidRate=0.5
 
 Options:
   --saveData     Saving the essential simulations data as .txt file
@@ -66,7 +67,7 @@ Options:
   --modelName    Setting the xml model file name which will be used for the simulation.
   --runTime      The total time of the simulation
   --startTime    The start time of the movement, or controller
-
+  --vidRate      Speed of the video to be saved, if vidRate=0.5, then video is 2 times slower
 ```
 
 **References**
