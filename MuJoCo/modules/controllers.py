@@ -5,7 +5,8 @@ import numpy as np
 import time
 import pickle
 
-from modules.utils        import my_print
+from   modules.utils        import my_print
+from   modules.basis_funcs  import min_jerk_traj
 import matplotlib.pyplot as plt
 
 try:
@@ -93,7 +94,6 @@ class ImpedanceController( Controller ):
         self.ZFT_func_pos   = None
         self.ZFT_func_vel   = None
 
-
         # Mass information of the limbs
         if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
             bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
@@ -153,7 +153,6 @@ class ImpedanceController( Controller ):
         self.ctrl_par_names = [ "mov_parameters", "K", "B" ]                    # Useful for self.set_ctrl_par method
         self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
 
-
     def gravity_compensation( self ):
 
         if self.is_grav_comps:
@@ -195,7 +194,7 @@ class ImpedanceController( Controller ):
         # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
         # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
         # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
-        self.ZFT_func_pos = pi + ( pf - pi ) * ( 10 * np.power( self.t_sym ,3 ) / ( D ** 3 ) - 15 * np.power( self.t_sym , 4 ) / ( D ** 4 ) +  6 * np.power( self.t_sym , 5 ) / ( D ** 5 ) )
+        self.ZFT_func_pos = min_jerk_traj( self.t_sym, pi, pf, D )
         self.ZFT_func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.ZFT_func_pos ]
 
         # Lambdify the functions
