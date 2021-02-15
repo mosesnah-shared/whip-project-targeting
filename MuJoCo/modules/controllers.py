@@ -161,9 +161,9 @@ class ImpedanceController( Controller ):
 
                 # Torque for Gravity compensation is simply tau = J^TF
                 # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                tau_g = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].transpose(), - self.mUA * self.g  )  \
-                      + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].transpose(), - self.mFA * self.g  )  \
-                      + np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].transpose(), - self.Mw  * self.g  )
+                tau_g = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.mUA * self.g  )  \
+                      + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.mFA * self.g  )  \
+                      + np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
 
             elif self.n_limbs == 3:
                 raise NotImplementedError( )
