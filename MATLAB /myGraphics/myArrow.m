@@ -1,4 +1,4 @@
-classdef myArrow < handle
+classdef myArrow < myGraphics 
 % % =============================================================== %
 %   [DESCRIPTION]
 %
@@ -18,9 +18,7 @@ classdef myArrow < handle
 % % =============================================================== %
     
     properties ( SetAccess = private )
-        % [1] Interal Function to check the size
-        isSizeSame = @( x,y,z ) ( ( length( x ) == length( y ) ) && ...
-                                    length( x ) == length( z ) );          
+ 
 
     end
 
