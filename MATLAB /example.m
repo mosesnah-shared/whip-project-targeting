@@ -1,7 +1,7 @@
-% [Project]        [2.165] Robotics (Prof. JJE Slotine)
-% [Title]          Applying adaptive control to the robot 
+% [Project]        [M3X] Whip Project
+% [Title]          Sample script for animations
 % [Author]         Moses C. Nah
-% [Creation Date]  Sunday, October 18th, 2020
+% [Creation Date]  Monday, April 12th, 2021
 %
 % [Emails]         Moses C. Nah   : mosesnah@mit.edu
 %% (--) INITIALIZATION
@@ -29,7 +29,6 @@ robot = my4DOFRobot( );
 
 robot.initialize( );
 [M, C, G] = robot.deriveManipulatorEquation( );
-
 
 %% -- (1B) PYTHON Conversion process
 %       Skip this section if you are not interested in PYTHON implementation

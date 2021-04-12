@@ -387,7 +387,14 @@ classdef my2DOFRobot < handle
             obj.G_mat = G;
         end        
         
-        
+        function J = getEndEffectorJacobian( obj )
+            % This method is for calculating the end-effector jacobian matrix
+            frwd = obj.forwardKinematics( 2, [0; 0; -obj.L( 2 )] );        % Get the end effector Mapping
+            
+            J = obj.myJacobian( frwd, obj.q  );
+            
+        end
+       
         function [tau, Y, a] = findManipulatorRegressor( obj )
             % This method is for calculating the  Y matrix and a vector, which will substitute
             % Mq'' + Cq' + G = Ya
