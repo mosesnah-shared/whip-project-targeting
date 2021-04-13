@@ -67,7 +67,12 @@ classdef myLine < myGraphics
 
             else   
                
+%                if length( obj.XData ) == 1
+%                    h = plot3(  obj.XData( 1 ), obj.YData( 1 ), obj.ZData( 1 ), 'parent', hplot );                
+%                else
                h = plot3(  obj.XData( :, 1 ), obj.YData( :, 1 ), obj.ZData( :, 1 ), 'parent', hplot );                
+%                end
+               
                 
             end            
             

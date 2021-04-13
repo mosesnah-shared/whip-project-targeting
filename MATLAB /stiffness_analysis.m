@@ -44,7 +44,7 @@ Cq = Kq^-1;
 Cx = J * Cq * J.';
 
 sym_array = [ robot.L ];
-val_array = { 1.595, 0.869 };  % Actual Length of robot
+val_array = { 0.294, 0.291 };  % Actual Length of robot
 pEL = robot.forwardKinematics( 2, [ 0; 0;             0 ] );               % Position of the elbow
 pEE = robot.forwardKinematics( 2, [ 0; 0; -robot.L( 2 ) ] );               % Position of the end-effector      
 
@@ -73,4 +73,58 @@ pEL_func = matlabFunction( str2sym( tmp3 ) );
 pEE_func = matlabFunction( str2sym( tmp4 ) );
 
 
+
+
 %% -- (1C) Graph of Cartesian Stiffness ellipses
+
+clear gObjs
+
+gObjs(  1 ) = myMarker( 'XData', 0, 'YData', 0 , 'ZData', 0, ... 
+                         'name', "SH" , 'SizeData',  250   , ...
+                    'LineWidth',   3                       , ...
+              'MarkerEdgeColor',  c.green                 , ...
+              'MarkerFaceColor',  c.white                  , ...
+              'MarkerFaceAlpha', 0.8                       );              % Defining the markers for the plot
+
+
+pEL_pos = pEL_func( -0.8, 0            );
+pEE_pos = pEE_func( -0.8, 0, 0.3, 1.0  );
+
+gObjs(  2 ) = myMarker( 'XData', pEL_pos( 1 ), 'YData', pEL_pos( 2 ) , 'ZData', pEL_pos( 3 ), ... 
+                         'name', "EL" , 'SizeData',  250   , ...
+                    'LineWidth',   3                       , ...
+              'MarkerEdgeColor',  c.green                 , ...
+              'MarkerFaceColor',  c.white                  , ...
+              'MarkerFaceAlpha', 0.8                       );              % Defining the markers for the plot
+
+
+gObjs(  3 ) = myMarker( 'XData', pEE_pos( 1 ), 'YData',  pEE_pos( 2 ) , 'ZData',  pEE_pos( 3 ), ... 
+                         'name', "EE" , 'SizeData',  250   , ...
+                    'LineWidth',   3                       , ...
+              'MarkerEdgeColor',  c.green                 , ...
+              'MarkerFaceColor',  c.white                  , ...
+              'MarkerFaceAlpha', 0.8                       );              % Defining the markers for the plot
+
+
+ani = myAnimation( 0.1, gObjs );                         % Input (1) Time step of sim. 
+
+ani.connectMarkers( 1, [ "SH", "EL", "EE" ], 'Color', c.grey, 'LineStyle',  '-' );            
+
+Cx = Cx_func( 0.3, 0, 0.3, 0.5 );
+Fx = Cx^-1;
+
+
+[meshX, meshY, meshZ, eigvals, eigvecs] = genEllipsoidMesh( Fx, pEE_pos, 20 );
+
+
+gObjs( 5 ) = myEllipsoid( 'XData', meshX, 'YData',  meshY , 'ZData',  meshZ  );  
+ani.addGraphicObject( 1, gObjs( 5 ) );
+
+tmpLim = 0.7;
+set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
+                     'YLim',   [ -tmpLim , tmpLim ] , ...    
+                     'ZLim',   [ -tmpLim , tmpLim ] , ...
+                     'view',   [41.8506   15.1025 ]     )         
+
+% ani.run( 0.1, 0.1, true, ['output', num2str( idx ) ])
+
