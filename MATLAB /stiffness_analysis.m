@@ -87,8 +87,8 @@ gObjs(  1 ) = myMarker( 'XData', 0, 'YData', 0 , 'ZData', 0, ...
               'MarkerFaceAlpha', 0.8                       );              % Defining the markers for the plot
 
 
-pEL_pos = pEL_func( -0.8, 0            );
-pEE_pos = pEE_func( -0.8, 0, 0.3, 1.0  );
+pEL_pos = pEL_func( -1.4, 0          );
+pEE_pos = pEE_func( -1.4, 0, 0, 1.5  );
 
 gObjs(  2 ) = myMarker( 'XData', pEL_pos( 1 ), 'YData', pEL_pos( 2 ) , 'ZData', pEL_pos( 3 ), ... 
                          'name', "EL" , 'SizeData',  250   , ...
@@ -110,7 +110,7 @@ ani = myAnimation( 0.1, gObjs );                         % Input (1) Time step o
 
 ani.connectMarkers( 1, [ "SH", "EL", "EE" ], 'Color', c.grey, 'LineStyle',  '-' );            
 
-Cx = Cx_func( 0.3, 0, 0.3, 0.5 );
+Cx = Cx_func( -1.4, 0, 0, 1.5 );
 Fx = Cx^-1;
 
 
