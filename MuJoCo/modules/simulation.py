@@ -92,7 +92,7 @@ class Simulation( ):
             self.fps         = 60                                               # Frames per second for the mujoco render
             self.dt          = self.mjModel.opt.timestep                        # Time step of the simulation [sec]
             self.sim_step    = 0                                                # Number of steps of the simulation, in integer [-]
-            self.update_rate = round( 1 / self.dt / self.fps )                  # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
+            self.update_rate = round( 1 / self.dt / 200 )                  # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
             self.g           = self.mjModel.opt.gravity                         # Calling the gravity vector of the simulation environment
 
             # Saving additional model parameters for multiple purposes
@@ -223,8 +223,8 @@ class Simulation( ):
             vid = MyVideo( fps = self.fps * float( self.args[ 'vidRate' ] ),
                        vid_dir = self.args[ 'saveDir' ] )                       # If args doesn't have saveDir attribute, save vid_dir as None
 
-        if self.args[ 'saveData' ]:
-            file = open( self.args[ 'saveDir' ] + "data_log.txt", "w+" )
+        if self.args[ 'saveData' ] or self.args[ 'runOptimization' ]:
+            file = open( self.args[ 'saveDir' ] + "data_log.txt", "a+" )
 
 
 
@@ -259,10 +259,23 @@ class Simulation( ):
                     vid.write( self.mjViewer )
 
                 if self.args[ 'saveData' ]:
-                    my_print( currentTime       = self.current_time,
-                              jointAngleActual  = self.mjData.qpos[ : ],
-                              geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                              file              = file )
+                    my_print(  currentTime       = self.current_time, file              = file   )
+                    # tmp = self.opt.get_numevals( ) + 1
+                    # if tmp >=   1 and tmp <=  20:
+                    #     my_print(  currentTime       = self.current_time, file              = file   )
+                    # elif tmp >= 101 and tmp <= 120:
+                    #     my_print(  currentTime       = self.current_time, file              = file  )
+                    # elif tmp >= 201 and tmp <= 220:
+                    #     my_print(  currentTime       = self.current_time, file              = file  )
+                    # elif tmp >= 301 and tmp <= 320:
+                    #     my_print(  currentTime       = self.current_time, file              = file   )
+                    # elif tmp >= 401 and tmp <= 420:
+                    #     my_print(  currentTime       = self.current_time, file              = file   )
+                    # elif tmp >= 501 and tmp <= 520:
+                    #     my_print(  currentTime       = self.current_time, file              = file   )
+                    # elif tmp >= 581 and tmp <= 600:
+                    #     my_print(  currentTime       = self.current_time, file              = file  )
+                    # my_print( currentTime       = self.current_time, file              = file )
 
 
             # [input controller]
@@ -295,14 +308,43 @@ class Simulation( ):
 
                 if self.args[ 'saveData' ]:
                     # Saving all the necessary datas for the simulation
-                    my_print(  inputVal = input,
-                                minVal  = self.min_val,
-                                   ZFT  = self.controller.phi,
-                                   dZFT = self.controller.dphi,
-                                   file = file )
+                    # my_print(  inputVal = input,
+                    #             minVal  = self.min_val,
+                    #                ZFT  = self.controller.phi,
+                    #                dZFT = self.controller.dphi,
+                    #                file = file )
 
-                else:
-                    my_print(    minVal = self.min_val )
+                # elif self.args[ 'runOptimization' ]:
+
+                    my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                                 jointPositions  = self.mjData.qpos[ : ],
+                                          dist   = self.obj_func( self.mjModel, self.mjData ),file = file  )
+                    # tmp = self.opt.get_numevals( ) + 1
+                    # if tmp >=   1 and tmp <=  20:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 101 and tmp <= 120:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 201 and tmp <= 220:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 301 and tmp <= 320:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 401 and tmp <= 420:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 501 and tmp <= 520:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    # elif tmp >= 581 and tmp <= 600:
+                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
+                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+
+
+                # else:
+                    # my_print(    minVal = self.min_val )
 
             self.sim_step += 1
 

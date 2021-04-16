@@ -206,7 +206,9 @@ def main( ):
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [-1.36135, 1.0472,-0.29735, 1.111193, 1.727876,-1.034269,-0.754155, 0.157080, 0.95   ])
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.02005, 0.     ,-0.19393, 0.36652, 1.72788,-0.11636,-0.11636, 0.15708, 0.95  ],
+                                                     K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
+                                                     B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
 
         # [BACKUP] [Moses Nah]
@@ -242,7 +244,7 @@ def main( ):
             ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
         # Note that this is for "Minimizing the objective function"
-        mySim.run_nlopt_optimization( idx = 1, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 600 )
+        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 150 )
 
     if args[ 'saveDir' ] is not None:
         mySim.save_simulation_data( args[ 'saveDir' ]  )
