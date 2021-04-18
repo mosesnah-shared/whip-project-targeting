@@ -92,7 +92,7 @@ class Simulation( ):
             self.fps         = 60                                               # Frames per second for the mujoco render
             self.dt          = self.mjModel.opt.timestep                        # Time step of the simulation [sec]
             self.sim_step    = 0                                                # Number of steps of the simulation, in integer [-]
-            self.update_rate = round( 1 / self.dt / 200 )                  # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
+            self.update_rate = round( 1 / self.dt / self.fps )                  # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
             self.g           = self.mjModel.opt.gravity                         # Calling the gravity vector of the simulation environment
 
             # Saving additional model parameters for multiple purposes
@@ -317,8 +317,17 @@ class Simulation( ):
                 # elif self.args[ 'runOptimization' ]:
 
                     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                                 jointPositions  = self.mjData.qpos[ : ],
-                                          dist   = self.obj_func( self.mjModel, self.mjData ),file = file  )
+                               geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
+                               jointAngleActual  = self.mjData.qpos[ : ],
+                                 jointVelActual  = self.mjData.qvel[ : ],
+                                           pZFT  = self.controller.phi,
+                                           vZFT  = self.controller.dphi,
+                                       jacobian  = self.mjData.get_geom_jacp(  "geom_EE"  ),
+                                       inputVal  = input,
+                                      outputVal  = self.obj_func( self.mjModel, self.mjData ),file = file  )
+
+                    my_print(    minVal = self.min_val )                  
+
                     # tmp = self.opt.get_numevals( ) + 1
                     # if tmp >=   1 and tmp <=  20:
                     #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],

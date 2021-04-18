@@ -35,6 +35,8 @@ classdef myArrow < myGraphics
         VData
         WData
 
+        
+        
         % Graphic attributes
         % Whole list of the graphic attributes, useful when we set the attributes and its values.
         gAttrList  = [ "LineWidth", "Color", "MaxheadSize", ...
@@ -54,6 +56,7 @@ classdef myArrow < myGraphics
 
         function obj = myArrow( varargin )
             
+            obj.type = "arrow";
             obj.setAttr( varargin{ : } )                                   % The initialize function is defined under "myGraphics.m" file.
   
         end

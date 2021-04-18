@@ -22,7 +22,7 @@ classdef myGraphics < handle & matlab.mixin.Heterogeneous
     properties ( SetAccess = public )
       
        name  = "g" + num2str( randi ( 2^20 ) );                           % Randomizing the name of this marker
-
+       type
     end
     
     methods

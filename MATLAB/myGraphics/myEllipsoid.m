@@ -28,12 +28,13 @@ classdef myEllipsoid < myGraphics
         YData
         ZData
         
+
+        
         % x,y,z center position data of the marker
                 
         % Graphic attributes
         % Whole list of the graphic attributes, useful when we set the attributes and its values.
-        gAttrList  = [ "FaceAlpha", "FaceColor", "LineStyle", "EdgeColor", ...
-                       "XData", "YData", "ZData" ]; 
+        gAttrList  = [ "FaceAlpha", "FaceColor", "LineStyle", "EdgeColor" ]; 
                    
         % "CData", ...
         % List of the graphic attributes that is updated for each time step.
@@ -45,6 +46,7 @@ classdef myEllipsoid < myGraphics
         EdgeColor = [0, 0, 0];
         LineStyle = '-';
         
+
         
     end
     
@@ -52,8 +54,9 @@ classdef myEllipsoid < myGraphics
 
         function obj = myEllipsoid( varargin )
             
+            obj.type = "ellipsoid";
             obj.setAttr( varargin{ : } )                                   % The initialize function is defined under "myGraphics.m" file.
-  
+            
         end
         
 
@@ -62,8 +65,7 @@ classdef myEllipsoid < myGraphics
             % This is only for 3D case!!! Hence no if-else statement.
   
             h = surf(  obj.XData( :, :, 1 ), obj.YData( :, :, 1 ), obj.ZData( :, :, 1 ), 'parent', hplot );                
-                
-            
+                            
             % Setting the detailed graphical colors 
             for attr = obj.gAttrList 
                 set( h, attr, obj.( attr ) );
