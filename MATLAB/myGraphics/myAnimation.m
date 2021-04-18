@@ -271,7 +271,14 @@ classdef myAnimation < handle
                 for j = 1 : length( obj.hGraphicObjs{ i } )                % Iterating along each graphs.
                     
                     for attr = obj.graphicObjs{ i }( j ).gAttrUpdateList   % Getting the list of values that should be updated
-                        set( obj.hGraphicObjs{ i }( j ), attr, obj.graphicObjs{ i }( j ).( attr )( :, idx ) );
+                            
+                        if obj.graphicObjs{ i }( j ).type == "ellipsoid"
+                            set( obj.hGraphicObjs{ i }( j ), attr, obj.graphicObjs{ i }( j ).( attr )( :, :, idx ) );   % Since ellipse is a 3D object. 
+                            
+                        else
+                            set( obj.hGraphicObjs{ i }( j ), attr, obj.graphicObjs{ i }( j ).( attr )( :, idx ) );
+                        end
+                            
                     end
                     
                 end

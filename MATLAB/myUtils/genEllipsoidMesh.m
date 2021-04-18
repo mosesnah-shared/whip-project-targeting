@@ -1,4 +1,4 @@
-function [ meshX, meshY, meshZ, eigvals, eigvecs] = genEllipsoidMesh( arrs, centers, M )
+function [ meshX, meshY, meshZ, eigvals, eigvecs] = genEllipsoidMesh( arrs, centers, M, type )
 % Generate the ellipsoid mesh array, a "level-curve method", x^T (arrs) x <= 1
 %   input:  [1] arrs    ( 3-by-3-by-N ) 3D matrices, which contains the Kx matrix. The matrix should be symmetric
 %           [2] centers ( 3-by-N )      2D matrices, which contains the center's position of the matrices 
@@ -14,6 +14,7 @@ function [ meshX, meshY, meshZ, eigvals, eigvecs] = genEllipsoidMesh( arrs, cent
     meshX   = zeros( M+1, M+1, N );
     meshY   = zeros( M+1, M+1, N );
     meshZ   = zeros( M+1, M+1, N );
+ 
     
     for i = 1 : N     % For 1-N; the length of the 3D matrices. 
         
@@ -24,16 +25,31 @@ function [ meshX, meshY, meshZ, eigvals, eigvecs] = genEllipsoidMesh( arrs, cent
         eigvals( :, :, i ) = D;
         eigvecs( :, :, i ) = V;                                            % Normalized eigenvectors. 
         
+        if type == 1
         
-        % Since the matrices are symmetric, D will be real. and 
-        % x^T A x = x^T V D V^T x = y^T D y, where y = V^T x. 
-        % Hence, it is literally finding y' = sqrt( D ) y <= 1
-        
-        % Getting the length of the major axes. 
-        a = 1 / sqrt( D( 1,1 ) );                              
-        b = 1 / sqrt( D( 2,2 ) );
-        c = 1 / sqrt( D( 3,3 ) );
-        
+            % Since the matrices are symmetric, D will be real. and 
+            % x^T A x = x^T V D V^T x = y^T D y, where y = V^T x. 
+            % Hence, it is literally finding y' = sqrt( D ) y <= 1
+
+            % Getting the length of the major axes. 
+            a = 1 / sqrt( D( 1,1 ) ) * 2;                              
+            b = 1 / sqrt( D( 2,2 ) ) * 2;
+            c = 1 / sqrt( D( 3,3 ) ) * 2;
+
+        elseif type == 2
+                
+            % Getting the length of the major axes. 
+            
+            % Find the maximum value;
+            
+            tmp = max( [ sqrt( D( 1,1 ) ), sqrt( D( 2,2 ) ), sqrt( D( 3,3 ) ) ]);
+            
+            a = sqrt( D( 1,1 ) ) / tmp * 0.05;                              
+            b = sqrt( D( 2,2 ) ) / tmp * 0.05;
+            c = sqrt( D( 3,3 ) ) / tmp * 0.05;                
+                
+        end
+            
         
         [ X, Y, Z ] = ellipsoid( 0, 0, 0, a, b, c, M );                    % a,b,c are the leng
     

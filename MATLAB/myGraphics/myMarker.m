@@ -26,7 +26,7 @@ classdef myMarker < myGraphics
         XData
         YData
         ZData
-                
+        
         % Graphic attributes
         % Whole list of the graphic attributes, useful when we set the attributes and its values.
         gAttrList  = [ "LineWidth", "SizeData", "Marker", "MarkerFaceColor", ...
@@ -54,6 +54,7 @@ classdef myMarker < myGraphics
             % [Inputs Arguments]
             %       varargin: The varargin should always get the value in 'key', 'val' pairs./
             %        example: 'name', '123', 'XData', [1,3], 'YData', [3,2]
+            obj.type = "marker";
             
             obj.setAttr( varargin{ : } )                                   % The initialize function is defined under "myGraphics.m" file.
             
