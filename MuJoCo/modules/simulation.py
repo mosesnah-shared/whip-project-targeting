@@ -260,30 +260,15 @@ class Simulation( ):
 
                 if self.args[ 'saveData' ]:
                     my_print(  currentTime       = self.current_time, file              = file   )
-                    # tmp = self.opt.get_numevals( ) + 1
-                    # if tmp >=   1 and tmp <=  20:
-                    #     my_print(  currentTime       = self.current_time, file              = file   )
-                    # elif tmp >= 101 and tmp <= 120:
-                    #     my_print(  currentTime       = self.current_time, file              = file  )
-                    # elif tmp >= 201 and tmp <= 220:
-                    #     my_print(  currentTime       = self.current_time, file              = file  )
-                    # elif tmp >= 301 and tmp <= 320:
-                    #     my_print(  currentTime       = self.current_time, file              = file   )
-                    # elif tmp >= 401 and tmp <= 420:
-                    #     my_print(  currentTime       = self.current_time, file              = file   )
-                    # elif tmp >= 501 and tmp <= 520:
-                    #     my_print(  currentTime       = self.current_time, file              = file   )
-                    # elif tmp >= 581 and tmp <= 600:
-                    #     my_print(  currentTime       = self.current_time, file              = file  )
-                    # my_print( currentTime       = self.current_time, file              = file )
-
-
+                    
             # [input controller]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
             # input:     The actual input value which is inputted to input_ref
             input_ref, input_idx, input = self.controller.input_calc( self.start_time, self.current_time )
-            input_ref[ input_idx ] = input
+
+            if input_ref is not None:
+                input_ref[ input_idx ] = input
 
 
             self.mjSim.step( )                                                  # Single step update
@@ -324,32 +309,10 @@ class Simulation( ):
                                            vZFT  = self.controller.dphi,
                                        jacobian  = self.mjData.get_geom_jacp(  "geom_EE"  ),
                                        inputVal  = input,
+                                       forceVec  = np.dot( self.mjData.get_body_xmat( "node1" ), self.mjData.sensordata ) ,
                                       outputVal  = self.obj_func( self.mjModel, self.mjData ),file = file  )
 
-                    my_print(    minVal = self.min_val )                  
-
-                    # tmp = self.opt.get_numevals( ) + 1
-                    # if tmp >=   1 and tmp <=  20:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 101 and tmp <= 120:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 201 and tmp <= 220:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 301 and tmp <= 320:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 401 and tmp <= 420:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 501 and tmp <= 520:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
-                    # elif tmp >= 581 and tmp <= 600:
-                    #     my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                    #                  jointPositions  = self.mjData.qpos[ : ], file = file  )
+                    my_print(    minVal = self.min_val )
 
 
                 # else:
@@ -373,8 +336,12 @@ class Simulation( ):
         ctrl_name = self.controller.__class__.__name__.lower()                  # Getting the name of the controller. The controller names are indicated in "input_ctrls.py"
 
         nJ = self.controller.n_act                                              # Getting the number of active joints
-        self.mjData.qpos[ 0 : nJ ] = self.controller.mov_parameters[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
-        self.mjSim.forward()                                                    # Update Needed for setting the posture of the upper limb by "forward" method.
+
+        if nJ != 0:
+            self.mjData.qpos[ 0 : nJ ] = self.controller.mov_parameters[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
+            self.mjSim.forward()                                                    # Update Needed for setting the posture of the upper limb by "forward" method.
+
+
 
         # The whip should face downward, complying to gravity at rest.
         # Hence, manually setting the whip to do so.

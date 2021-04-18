@@ -80,6 +80,7 @@ clear gObjs
 
 % Types of q pos values that you'll test. 
 
+qMat = [ 11 * pi/12, 5 * pi/6, pi/3, 0.8];
 % qMat = [  pi/2,  pi/2, pi/2, 0.05;
 %           pi/2,  pi/4, pi/2, 0.05;
 %           pi/2,     0, pi/2, 0.05;
@@ -156,7 +157,8 @@ xlabel( "x [m]" ); ylabel( "y [m]" ); zlabel( "z [m]" )
 %% -- (2A) Real time animation of the optimal movement
 
 idx  = 3;
-data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+% data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+data = myTxtParse( "./myData/data_log_T3_half.txt" );
 
 
 clear gObjs
@@ -297,7 +299,8 @@ ani.run( 0.33, 2.3, true, ['output', num2str( idx ) ])
 idx  = 2;
 D = [0.950, 0.579, 0.950];
 
-data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+% data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+data = myTxtParse( "./myData/data_log_T3_half.txt" );
 
 
 qMat = data.jointAngleActual( 1:4, : )';
@@ -361,3 +364,33 @@ hold on
 set( gca, 'xlim', [0.10, data.currentTime( tmpIdx ) ], 'LineWidth', 1.4 )
 h = fill([0, 0, 0.1+D(idx), 0.1+D(idx) ],[0 1 1 0],'k')
 set(h,'facealpha',.1 , 'edgealpha',0 )
+
+%% -- (4A) Force calculation.
+
+
+idx  = 1;
+data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+N    = length( data.currentTime );
+
+qMat = data.jointAngleActual( 1:4, : )';
+
+
+for i = 1: N
+   J_vals( :, :, i ) = J_func( qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
+
+    
+end
+
+% Double check the data from actual simuulation
+% tmp = reshape( data.jacobian, [54,3,180] );
+% 
+% 
+% for i = 1 : N
+%    J_vals2( :, :, i ) =  tmp( 1:4, :, i )';
+%     
+% end
+
+% tau = J^T F.
+% We need the force value!!!! 
+% But isn't F just Kx( x - x0 )?
+

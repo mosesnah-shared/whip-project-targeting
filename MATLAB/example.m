@@ -108,6 +108,7 @@ pEE_func = matlabFunction( str2sym( tmp2 ) );
 idx  = 3;
 data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
 
+% data = myTxtParse( "./myData/data_log_T3_half.txt" );
 
 %% -- (2C) Run the animation
 % Since ode45 varies the step size, changing it to equivalent step size

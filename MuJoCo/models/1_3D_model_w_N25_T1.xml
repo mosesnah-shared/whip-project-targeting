@@ -21,8 +21,6 @@
          <joint name="shoulderFlexExt" ref="0" type="hinge" stiffness="0" pos = "0 0 0" axis = "0 -1 0" />
          <joint name='shoulderAddAbd' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis='-1 0 0' />
          <joint name='shoulderMedLat' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis=' 0 0 1' />
-         <!-- <joint name='shoulderAddAbd' ref='0'  type='hinge' stiffness='0' pos='0 0 0.005' axis='-1 0 0' /> -->
-   			 <!-- <joint name='shoulderMedLat' ref='0'  type='hinge' stiffness='0' pos='0 0.01 0' axis=' 0 0 1' /> -->
          <site name="upperArmCOM" pos="0 0 -0.129" />
          <geom type="cylinder" fromto="0 0 0 0 0 -0.294" material="LimbColor" mass="0" size="0.0147" />
          <body name="foreArm" pos="0 0 -0.294" euler="0 0 0">
@@ -33,6 +31,7 @@
             <site name="foreArmCOM" pos="0 0 -0.112" />
             <geom name="geom_EE" type="sphere" pos="0 0 -0.291" material="JointColor" size="0.0294" mass="0" />
             <body name="node1" euler="0 0 0" pos="0 0 -0.291">
+    					<site name='forForceSensorSite' pos='0 0 0' />   <!-- Attaching force sensor -->              
               <joint name="node1JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <joint name="node1JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
@@ -189,6 +188,13 @@
       <!-- <geom name='target' type='sphere' pos='1.69352 1.69352 0.0' material='LimbColor' mass='0' size='0.03'/> -->
       <geom name="target" type="sphere" pos="2.395 0 0" material="LimbColor" mass="0" size="0.03" />
    </worldbody>
+
+   <!-- BACKUP-->
+    <sensor>
+  			<force name = 'wristForceSensorSite' site = 'forForceSensorSite' />
+  	</sensor>
+
+
    <actuator>
       <motor joint="shoulderFlexExt" name="shoulderFlexExtTorqueMotor" forcelimited="false" />
       <motor joint="shoulderAddAbd" name="shoulderAddAbdTorqueMotor" forcelimited="false" />
