@@ -221,6 +221,9 @@ def main( ):
         # Target 2 [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
         # Target 3 [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
 
+        # If distance is halved!
+        # Target 3 [
+
     obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
 
     mySim.attach_controller( controller_object )
@@ -244,7 +247,7 @@ def main( ):
             ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
         # Note that this is for "Minimizing the objective function"
-        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 150 )
+        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 600 )
 
     if args[ 'saveDir' ] is not None:
         mySim.save_simulation_data( args[ 'saveDir' ]  )
