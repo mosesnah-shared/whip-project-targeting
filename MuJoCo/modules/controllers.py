@@ -70,6 +70,24 @@ class Controller( ):
         raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
 
 
+class NullController( Controller ):
+    """
+        Description:
+        ----------
+            Controller which is simply empty, useful when practicing/debugging with MuJoCo
+
+    """
+    def __init__( self, mjModel, mjData ):
+        super().__init__( mjModel, mjData )
+        self.n_act = 0
+
+    def set_ZFT( self ):
+        return 0
+
+    def input_calc( self, start_time, current_time ):
+        return None, None, 0
+
+
 class ImpedanceController( Controller ):
     """
         Description:

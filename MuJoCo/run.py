@@ -138,7 +138,7 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 
 # [Local modules]
 from modules.simulation   import Simulation
-from modules.controllers  import ImpedanceController
+from modules.controllers  import ImpedanceController, NullController
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.obj_funcs    import dist_from_tip2target
@@ -210,7 +210,7 @@ def main( ):
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
-
+        obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
         # [BACKUP] [Moses Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
@@ -222,9 +222,11 @@ def main( ):
         # Target 3 [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
 
         # If distance is halved!
-        # Target 3 [
+        # Target 3 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
+    else:   # If simply dummy, example model for quick debugging
+        controller_object = NullController( mySim.mjModel, mySim.mjData )
+        obj_func = None
 
-    obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
 
     mySim.attach_controller( controller_object )
     mySim.attach_obj_function( obj_func  )
