@@ -184,7 +184,8 @@
             <!-- === [ N, L, M, k, b, rho ] = [25,1.800000,0.300000,0.242000,0.092000,1.000000] -->
          </body>
       </body>
-      <geom name="target" type="sphere" pos="1.1976 1.1976 1.6936" material="LimbColor" mass="0" size="0.03" />
+      <!-- <geom name="target" type="sphere" pos="1.1976 1.1976 1.6936" material="LimbColor" mass="0" size="0.03" /> -->
+      <geom name="target" type="sphere" pos="0.5988 0.5988 0.8468" material="LimbColor" mass="0" size="0.03" /> 
       <!-- <geom name='target' type='sphere' pos='1.69352 1.69352 0.0' material='LimbColor' mass='0' size='0.03'/> -->
       <!-- <geom name="target" type="sphere" pos="2.395 0 0" material="LimbColor" mass="0" size="0.03" /> -->
    </worldbody>

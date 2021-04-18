@@ -80,10 +80,10 @@ clear gObjs
 
 % Types of q pos values that you'll test. 
 
-qMat = [  pi/2,  pi/2, pi/2, 0.05;
-          pi/2,  pi/4, pi/2, 0.05;
-          pi/2,     0, pi/2, 0.05;
-          pi/2, -pi/4, pi/2, 0.05;]
+% qMat = [  pi/2,  pi/2, pi/2, 0.05;
+%           pi/2,  pi/4, pi/2, 0.05;
+%           pi/2,     0, pi/2, 0.05;
+%           pi/2, -pi/4, pi/2, 0.05;]
 
 nR = size( qMat, 1 );     
 
