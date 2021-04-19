@@ -88,6 +88,71 @@ class NullController( Controller ):
         return None, None, 0
 
 
+class CartesianImpedanceController( Controller ):
+    """
+        Description:
+        ----------
+            Controller for xyz coordinate.
+
+    """
+    def __init__( self, mjModel, mjData ):
+
+        super().__init__( mjModel, mjData )
+
+        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
+        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
+        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
+        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
+
+        # Controller uses first-order Cartesian impedance controller. Hence the position/velocity of the ZFT(Zero-torque trajectory) must be defined
+        # It is a 3D vector (or array, if we consider time.)
+        self.ZFT_func_pos   = None
+        self.ZFT_func_vel   = None
+
+
+        self.n_mov_pars     = 2 * 3 + 1                                         # Starting point, ending point and the duration between the two.
+        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
+        self.n_ctrl_pars    = [ self.n_mov_pars, 3 ** 2, 3 ** 2 ]               # The number of ctrl parameters. This definition would be useful for the optimization process.
+                                                                                # K and B has 3^2 elements, hence 9
+
+
+        self.ctrl_par_names = [ "Kx", "Bx" ]                                    # Useful for self.set_ctrl_par method
+        self.t_sym = sp.symbols( 't' )                                          # time symbol for defining the trajectory
+
+
+
+    def set_ZFT( self ):
+        """
+            Description:
+            ----------
+                Setting the ZFT(Zero-torque trajectory) of the Cartesian Impedance Controller.
+                This method is only called once "before" running the simulation, and "after" the self.mov_parameters are well-defined
+
+        """
+
+
+        # Defining the equations for the ZFT, this function must be done before the actual simulation
+        if self.mov_parameters is None:
+            raise ValueError( "Movement parameters are not defined")
+
+        pi = np.array( self.mov_parameters[          0 : self.n_act     ] )     # Initial Posture
+        pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )     # Final   Posture
+        D  = self.mov_parameters[ -1 ]                                          # Duration it took from start to end
+
+        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
+        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
+        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
+        self.ZFT_func_pos = min_jerk_traj( self.t_sym, pi, pf, D )
+        self.ZFT_func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.ZFT_func_pos ]
+
+        # Lambdify the functions
+        # [TIP] This is necessary for computation Speed!
+        self.ZFT_func_pos = lambdify( self.t_sym, self.ZFT_func_pos )
+        self.ZFT_func_vel = lambdify( self.t_sym, self.ZFT_func_vel )
+
+
+
 class ImpedanceController( Controller ):
     """
         Description:
