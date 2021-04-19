@@ -206,7 +206,7 @@ def main( ):
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ],
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.36136, 0.     ,-1.0472 , 0.47124, 0.7854 ,-1.0472 , 0.     , 0.47124, 0.58333],
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 

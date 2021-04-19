@@ -48,22 +48,25 @@ p = inputParser( );                                                        % Cas
 % [TIP] We can add a function handle for a simple input-type check
 ckc = @(x) ( isnumeric(x) && ( x > 0 ) );
 
-addParameter( p,   'fontSize', 10, ckc );
-addParameter( p,  'lineWidth', 5 , ckc );
-addParameter( p, 'markerSize', 20, ckc );                             
+addParameter( p,      'fontSize',  10, ckc );
+addParameter( p,     'lineWidth',  5 , ckc );
+addParameter( p,    'markerSize',  20, ckc );   
+addParameter( p, 'axesLineWidth', 1.8, ckc );
 
 parse( p, varargin{ : } )
 
 r = p.Results;
 
-fs = r.fontSize;   
-lw = r.lineWidth;
-ms = r.markerSize;
+fs  = r.fontSize;   
+lw  = r.lineWidth;
+ms  = r.markerSize;
+alw = r.axesLineWidth;
 
 set( 0, 'defaultTextfontSize'               ,     1.6*fs        );
 set( 0, 'defaultTextInterpreter'            ,     'latex'       );
 set( 0, 'defaultLegendInterpreter'          ,     'latex'       );
-set( 0, 'defaultLineLinewidth'              ,        lw         );
+set( 0, 'defaultLineLinewidth'              ,       lw          );
+set( 0, 'defaultAxesLinewidth'              ,        alw        );
 set( 0, 'defaultLineMarkerSize'             ,        ms         );
 set( 0, 'defaultAxesTickLabelInterpreter'   ,     'latex'       );  
 set( 0, 'defaultAxesfontSize'               ,        fs         );
