@@ -67,10 +67,10 @@ clear gObjs;
 % qMat = [ 11 * pi/12, 5 * pi/6, pi/3, 0.8];
 
 
-qMat = [  -pi/3, 0, 0, 0.7;
-              0, 0, 0, 0.7;
-         1*pi/3, 0, 0, 0.8;             
-         2*pi/3, 0, 0, 0.6];
+qMat = [  1.72788, 0.     , 0.     , 0.33161;
+          1.72788,-1.03427,-1.39626, 0.19199;
+          1.72788,+1.03427,-1.39626, 0.19199;
+         2.67035,-0.69813,-1.39626, 0.05236 ];
 
 % [2021.04.19] [MOSES NAH] Backup!! 
 % qMat = [  pi/2,  pi/2, pi/2, 0.05;
@@ -151,11 +151,11 @@ clear gObjs
 
 % idx of the data that we are plotting, 1~3 correspond to target number.
 idx  = 1; 
-data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+% data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
 
 % [2021.04.19] [MOSES NAH] Backup!! 
 % This is for special case when target is closer.
-% data = myTxtParse( "./myData/data_log_T3_half.txt" );
+data = myTxtParse( "./myData/data_log_T1_bad.txt" );
 
 % The duration of ZFT of the optimal upper limb movement. 
 D = [0.950, 0.579, 0.950];
@@ -245,19 +245,21 @@ nEEvel = normc( EEvel );
 for i = 1 : size( eigvals, 3 )  
    
     tmp    = diag( eigvals( :, :, i ) );
-    tmpIdx = find( tmp == max( tmp ) );         % For maximum value.
-%     tmpIdx = find( tmp == min( tmp ) );         % For minimum value
+%     tmpIdx = find( tmp == max( tmp ) );         % For maximum value.
+    tmpIdx = find( tmp == min( tmp ) );         % For minimum value
     
     myEigVecs( :, i ) = eigvecs( :, tmpIdx, i );
     
     dotVal( i ) = dot( nEEvel( :, i ), myEigVecs( :, i ) );
+    
+    dotVal2( i ) = dot( EEvel( :, i ), myEigVecs(:,i ) );
 end
 
 gObjs( end + 1 ) = myEllipsoid( 'XData', meshX, 'YData',  meshY , 'ZData',  meshZ );  
 
-scale = 4;
-gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData', data.geomXYZPositions( 11, : ), 'ZData',  data.geomXYZPositions( 12, : ), ...
-                            'UData', data.forceVec( 1, : )/scale,    'VData', data.forceVec( 2, : )/scale,    'WData', data.forceVec( 3, : )/scale, 'LineWidth', 10, 'Color', c.pink );
+% scale = 4;
+% gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData', data.geomXYZPositions( 11, : ), 'ZData',  data.geomXYZPositions( 12, : ), ...
+%                             'UData', data.forceVec( 1, : )/scale,    'VData', data.forceVec( 2, : )/scale,    'WData', data.forceVec( 3, : )/scale, 'LineWidth', 10, 'Color', c.pink );
                         
 ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
                                                                            %       (2) Graphic Objects (Heterogeneouus) Array
@@ -270,13 +272,21 @@ tmpC = [ c.pink; c.green; c.blue; c.yellow ];
 
 % Add the 2nd figure plot
 ani.adjustFigures( 2 );                     
-for i = 1 : 4
-    plot( ani.hAxes{ 2 }, data.currentTime, data.pZFT( i, : ), 'color', tmpC( i, : ) , 'linestyle', '--','linewidth', 5 );
-    tmp = myMarker( 'XData', data.currentTime , 'YData', data.jointAngleActual( i, : ) , 'ZData', zeros( 1, length( data.currentTime ) ), ...
-                 'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  tmpC( i, : )  ); 
-    ani.addTrackingPlots( 2, tmp );
-    
-end
+% for i = 1 : 4
+%     plot( ani.hAxes{ 2 }, data.currentTime, data.pZFT( i, : ), 'color', tmpC( i, : ) , 'linestyle', '--','linewidth', 5 );
+%     tmp = myMarker( 'XData', data.currentTime , 'YData', data.jointAngleActual( i, : ) , 'ZData', zeros( 1, length( data.currentTime ) ), ...
+%                  'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  tmpC( i, : )  ); 
+%     ani.addTrackingPlots( 2, tmp );
+%     
+% end
+
+% [BACKUP] When we want to plot the time vs dot value .
+% plot( ani.hAxes{ 2 }, data.currentTime, dotVal, 'color', c.blue, 'linestyle', '--','linewidth', 5 );
+tmp = myMarker( 'XData', data.currentTime , 'YData', abs( dotVal  ), 'ZData', zeros( 1, length( data.currentTime ) ), ...
+                 'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  c.blue  ); 
+
+ani.addTrackingPlots( 2, tmp );
+
 tmpLim = 2.5;
 set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
                      'YLim',   [ -tmpLim , tmpLim ] , ...    
@@ -289,9 +299,9 @@ set( ani.hAxes{ 3 },  'view',   [41.8506   15.1025 ]     )
 
 tmp1 = 40;
 xlabel( ani.hAxes{ 1 },      'X [m]', 'Fontsize', tmp1 ); ylabel( ani.hAxes{ 1 }, 'Y [m]', 'Fontsize', tmp1); zlabel( ani.hAxes{ 1 }, 'Z [m]', 'Fontsize', tmp1);
-xlabel( ani.hAxes{ 2 }, 'Time [sec]', 'Fontsize', 30 ); ylabel( ani.hAxes{ 2 }, '$q, q_0$ [rad]', 'Fontsize', tmp1);
+xlabel( ani.hAxes{ 2 }, 'Time [sec]', 'Fontsize', 30 ); 
 
-ani.run( 0.33, 2.9, false, ['output', num2str( idx ) ])
+ani.run( 0.33, 2.9, true, ['output', num2str( idx ) ])
 
 %% ==================================================================
 %% (3-) Static Plots
