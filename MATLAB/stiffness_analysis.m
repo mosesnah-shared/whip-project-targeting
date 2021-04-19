@@ -38,40 +38,19 @@ Kq = [17.4,  6.85, -7.75, 8.40;
        6.85, 33.0,  3.70, 0.00;
       -7.75, 3.70, 27.70, 0.00;
        8.40, 0.00, 0.00, 23.2];
+   
 Cq = Kq^-1; 
-
-
 Cx = J * Cq * J.';
 
-sym_array = [ robot.L ];
-val_array = { 0.294, 0.291 };  % Actual Length of robot
+L1 = 0.294; L2 = 0.291; 
+
 pEL = robot.forwardKinematics( 2, [ 0; 0;             0 ] );               % Position of the elbow
 pEE = robot.forwardKinematics( 2, [ 0; 0; -robot.L( 2 ) ] );               % Position of the end-effector      
 
-
-% Substituting the symbol's values to values
-J   = subs(   J, sym_array, val_array );                                   % Jacobian of the end-effector
-Cx  = subs(  Cx, sym_array, val_array );                                   % End-effector Cartesian Compliance Matrix
-pEL = subs( pEL, sym_array, val_array );                                   % Position of the elbow
-pEE = subs( pEE, sym_array, val_array );                                   % Position of the end-effector      
-
-% Making the symbolic expression to a matlabFunction. This increases the speed tremendously.
-tmp1 = arrayfun( @char,   J, 'uniform', 0 );
-tmp2 = arrayfun( @char,  Cx, 'uniform', 0 );
-tmp3 = arrayfun( @char, pEL, 'uniform', 0 );
-tmp4 = arrayfun( @char, pEE, 'uniform', 0 );
-
-tmp1 = replace( tmp1, ["q1(t)", "q2(t)", "q3(t)", "q4(t)"], ["q1", "q2", "q3", "q4" ] );
-tmp2 = replace( tmp2, ["q1(t)", "q2(t)", "q3(t)", "q4(t)"], ["q1", "q2", "q3", "q4" ] );
-tmp3 = replace( tmp3, ["q1(t)", "q2(t)", "q3(t)", "q4(t)"], ["q1", "q2", "q3", "q4" ] );
-tmp4 = replace( tmp4, ["q1(t)", "q2(t)", "q3(t)", "q4(t)"], ["q1", "q2", "q3", "q4" ] );
-
-J_func   = matlabFunction( str2sym( tmp1 ) );
-Cx_func  = matlabFunction( str2sym( tmp2 ) );
-pEL_func = matlabFunction( str2sym( tmp3 ) );
-pEE_func = matlabFunction( str2sym( tmp4 ) );
-
-
+J_func   = myFunctionize(    J, [ "q1(t)", "q2(t)", "q3(t)", "q4(t)" ], [ "q1", "q2", "q3", "q4" ] );
+Cx_func  = myFunctionize(   Cx, [ "q1(t)", "q2(t)", "q3(t)", "q4(t)" ], [ "q1", "q2", "q3", "q4" ] );
+pEL_func = myFunctionize(  pEL, [ "q1(t)", "q2(t)", "q3(t)", "q4(t)" ], [ "q1", "q2", "q3", "q4" ] );
+pEE_func = myFunctionize(  pEE, [ "q1(t)", "q2(t)", "q3(t)", "q4(t)" ], [ "q1", "q2", "q3", "q4" ] );
 
 
 %% -- (1C) Graph of Cartesian Stiffness ellipses
@@ -157,8 +136,8 @@ xlabel( "x [m]" ); ylabel( "y [m]" ); zlabel( "z [m]" )
 %% -- (2A) Real time animation of the optimal movement
 
 idx  = 3;
-% data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
-data = myTxtParse( "./myData/data_log_T3_half.txt" );
+data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+% data = myTxtParse( "./myData/data_log_T3_half.txt" );
 
 
 clear gObjs
@@ -180,7 +159,6 @@ gObjs(  1 ) = myMarker( 'XData', data.geomXYZPositions( 1, :  ) , ...
               'MarkerFaceColor',  tmpC( idx, : ) , ...
               'MarkerFaceAlpha', 0.8            );                         % Defining the markers for the plot
 
-          
 
 stringList = [      "SH", "EL", "EE",     genNodes( N ) ];                                
 sizeList   = [           400,      400,      400, 75 * ones( 1, N ) ];                            
@@ -188,7 +166,7 @@ colorList  = [ repmat( tmpC( idx, : ), 3, 1 ); repmat( [0.5, 0.5, 0.5], N , 1 ) 
            
 
 % For the whole model
-for i = 1 : length( stringList )
+for i = 1 : 3
     
     
     
@@ -202,7 +180,25 @@ for i = 1 : length( stringList )
 
 end
 
-          
+
+
+XCOM = 1 / N * sum( data.geomXYZPositions( 13:3:end, : ) );
+YCOM = 1 / N * sum( data.geomXYZPositions( 14:3:end, : ) );
+ZCOM = 1 / N * sum( data.geomXYZPositions( 15:3:end, : ) );
+
+dXCOM = 1 / N * sum( data.geomXYZVelocities( 13:3:end, : ) );
+dYCOM = 1 / N * sum( data.geomXYZVelocities( 14:3:end, : ) );
+dZCOM = 1 / N * sum( data.geomXYZVelocities( 15:3:end, : ) );
+
+
+gObjs(  1 ) = myMarker( 'XData', XCOM, 'YData', YCOM, 'ZData', ZCOM, ... 
+                         'name', "COM" , ...
+                     'SizeData',  250            , ...
+                    'LineWidth',   3             , ...
+              'MarkerEdgeColor',  tmpC( idx, : ) , ...
+              'MarkerFaceColor',  tmpC( idx, : ) , ...
+              'MarkerFaceAlpha', 0.8            );                         % Defining the markers for the plot
+
           
 % For the ZFT Postures
 % Forward Kinematics, the ZFT Positions
@@ -250,12 +246,17 @@ end
 
 gObjs( end + 1 ) = myEllipsoid( 'XData', meshX, 'YData',  meshY , 'ZData',  meshZ );  
 
+scale = 4;
+gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData',  data.geomXYZPositions( 11, : ), 'ZData',  data.geomXYZPositions( 12, : ), ...
+                            'UData', data.forceVec( 1, : )/scale, 'VData', data.forceVec( 2, : )/scale, 'WData', data.forceVec( 3, : )/scale, 'LineWidth', 10, 'Color', c.pink );
+
 
 ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
                                                                            %       (2) Graphic Objects (Heterogeneouus) Array
 
 ani.connectMarkers( 1, [     "SH",     "EL",     "EE" ], 'Color', c.grey, 'LineStyle',  '-' );      
 ani.connectMarkers( 1, [ "SH_ZFT", "EL_ZFT", "EE_ZFT" ], 'Color', c.grey, 'LineStyle', '--' );      
+ani.connectMarkers( 1, [ "EE", "COM" ], 'Color', c.grey, 'LineStyle', '--' );      
 
 tmpC = [ c.pink; c.green; c.blue; c.yellow ];
 
@@ -290,7 +291,7 @@ xlabel( ani.hAxes{ 3 },      'X [m]', 'Fontsize', tmp1 ); ylabel( ani.hAxes{ 3 }
 xlabel( ani.hAxes{ 2 }, 'Time [sec]', 'Fontsize', 30 ); ylabel( ani.hAxes{ 2 }, '$q, q_0$ [rad]', 'Fontsize', tmp1);
 set( ani.hAxes{ 2 }, 'LineWidth', 1.4, 'XLim', [0, 3] )
 
-ani.run( 0.33, 2.3, true, ['output', num2str( idx ) ])
+ani.run( 0.33, 2.9, false, ['output', num2str( idx ) ])
 
 %% -- (3A) Analysis of velocity vector vs. eigenvectors
 
@@ -365,7 +366,7 @@ set( gca, 'xlim', [0.10, data.currentTime( tmpIdx ) ], 'LineWidth', 1.4 )
 h = fill([0, 0, 0.1+D(idx), 0.1+D(idx) ],[0 1 1 0],'k')
 set(h,'facealpha',.1 , 'edgealpha',0 )
 
-%% -- (4A) Force calculation.
+%% -- (4A) Force vs displacement calculation.
 
 
 idx  = 1;
@@ -381,16 +382,39 @@ for i = 1: N
     
 end
 
-% Double check the data from actual simuulation
-% tmp = reshape( data.jacobian, [54,3,180] );
-% 
-% 
-% for i = 1 : N
-%    J_vals2( :, :, i ) =  tmp( 1:4, :, i )';
-%     
-% end
+%% -- (4B) Force vs. Displacement
 
-% tau = J^T F.
-% We need the force value!!!! 
-% But isn't F just Kx( x - x0 )?
+N = length( data.currentTime );
 
+clear gObjs
+
+
+pEE_ZFT  = reshape( pEE_func( data.pZFT(1,:)', data.pZFT(2,:)', data.pZFT(3,:)', data.pZFT(4,:)'), [], 3 )';
+pEE      = data.geomXYZPositions( 10:12 , : );
+
+dx0       = [zeros(3,1), diff( pEE, 1, 2)];
+% dx0 = pEE_ZFT - pEE;
+
+dx0  = normc( dx0 );
+fVec = normc( data.forceVec );
+
+scale = 4;
+
+gObjs( 1 ) = myArrow( 'XData', zeros( 1, N ), 'YData',  zeros( 1, N ), 'ZData',  zeros( 1, N ), ...
+                      'UData', fVec( 1, : ), 'VData', fVec( 2, : ), 'WData', fVec( 3, : ), 'LineWidth', 10, 'Color', c.pink );
+                  
+gObjs( 2 ) = myArrow( 'XData', zeros( 1, N ), 'YData',  zeros( 1, N ), 'ZData',  zeros( 1, N ), ...
+                      'UData', dx0( 1, : ), 'VData', dx0( 2, : ), 'WData', dx0(3, : ), 'LineWidth', 10, 'Color', c.blue );                  
+
+              
+ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
+
+dot = sum( fVec.* dx0 );
+
+tmpLim = 1;
+set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
+                     'YLim',   [ -tmpLim , tmpLim ] , ...    
+                     'ZLim',   [ -tmpLim , tmpLim ] , ...
+                     'view',   [41.8506   15.1025 ]     )          
+                 
+ani.run( 0.33, 3.0, false, '1')                 
