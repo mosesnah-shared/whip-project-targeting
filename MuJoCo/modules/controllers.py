@@ -277,7 +277,7 @@ class CartesianImpedanceController( Controller ):
     def get_K_and_B( self ):
 
         Kx = 1 * np.eye( self.n_act )
-        Bx = 0.05 * Kx
+        Bx = 1 * Kx
 
         return Kx, Bx
 
@@ -319,7 +319,8 @@ class CartesianImpedanceController( Controller ):
         else:
             self.x0, self.dx0 = self.get_ZFT( 0  )                              # Before start time, the posture should be remained at ZFT's initial posture
 
-        tau = JEE.T.dot( Bx.dot( self.dx0 - dx ) + Kx.dot( self.x0 - x ) ) + JEE.T.dot( Mx ).dot( A )
+
+        tau = JEE.T.dot( Bx.dot( self.dx0 - dx ) + Kx.dot( self.x0 - x ) ) +  JEE.dot( Mx.dot( dJ.dot( dq ) )  ) + C.dot( dq ) + G
 
         return self.mjData.ctrl, self.idx_act, tau
 

@@ -60,7 +60,7 @@
   <compiler inertiafromgeom = "auto" angle = "radian"/>
 
    <!-- (semi-) implicit Euler method was used for the integrator with time step of 0.1ms -->
-	<option timestep='0.0001' iterations='50' integrator='Euler' collision='all' gravity="0 0 0"/>
+	<option timestep='0.0001' iterations='50' integrator='Euler' collision='all' gravity="0 0 -9.81"/>
 
   <asset>
     <!-- Texture of the surrounding sky box
