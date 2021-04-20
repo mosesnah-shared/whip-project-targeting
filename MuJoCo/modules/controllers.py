@@ -2,6 +2,7 @@
 
 # [3rd party modules]
 import numpy as np
+import sys
 import time
 import pickle
 
@@ -319,8 +320,28 @@ class CartesianImpedanceController( Controller ):
         else:
             self.x0, self.dx0 = self.get_ZFT( 0  )                              # Before start time, the posture should be remained at ZFT's initial posture
 
+        # print( np.amax( Mx ) )
+        # [Moses C. Nah]
+        # Usually, if the condition number of the Jacobian is high (i.e., the jacobian matrix is being singuler
+        # Then the dJ term explodes since Mx contains a jacobian inverse
+        # Hence, we need to check the jacobian matrix to make sure the simulation doesn't blow up.
+        # The quick way to fix this is to modify JEE so that it avoids singularity
 
-        tau = JEE.T.dot( Bx.dot( self.dx0 - dx ) + Kx.dot( self.x0 - x ) ) +  JEE.dot( Mx.dot( dJ.dot( dq ) )  ) + C.dot( dq ) + G
+        # [TODO] Just neglecting the dJ term.
+        # if  np.linalg.cond( JEE ) > 30: # threshold value is 50 for this case.
+        #     # In case you want to inverse the matrix
+        #     # [BACKUP] [MOSES C NAH]
+        #     Mx = np.linalg.pinv( JEE.dot(  np.linalg.inv( Mq ) ).dot( JEE.T  ) )        # [REF] https://stackoverflow.com/questions/49357417/why-is-numpy-linalg-pinv-preferred-over-numpy-linalg-inv-for-creating-invers
+        #                                                                                 # [REF] https://en.wikipedia.org/wiki/Moore%E2%80%93Penrose_inverse
+        #     A = np.zeros( self.n_act )
+        #
+        # else:
+        #     A = JEE.dot( Mx.dot( dJ.dot( dq ) )  )
+        #
+        # # If still A value is so high, then just set as zero
+        # print( A )
+
+        tau = JEE.T.dot( Bx.dot( self.dx0 - dx ) + Kx.dot( self.x0 - x ) ) + C.dot( dq ) + G #A
 
         return self.mjData.ctrl, self.idx_act, tau
 
