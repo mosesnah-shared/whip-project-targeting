@@ -260,7 +260,7 @@ class Simulation( ):
 
                 if self.args[ 'saveData' ]:
                     my_print(  currentTime       = self.current_time, file              = file   )
-                    
+
             # [input controller]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
@@ -337,10 +337,10 @@ class Simulation( ):
 
         nJ = self.controller.n_act                                              # Getting the number of active joints
 
-        if nJ != 0:
+
+        if nJ != 0 and "2D" not in self.model_name:
             self.mjData.qpos[ 0 : nJ ] = self.controller.mov_parameters[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
             self.mjSim.forward()                                                    # Update Needed for setting the posture of the upper limb by "forward" method.
-
 
 
         # The whip should face downward, complying to gravity at rest.

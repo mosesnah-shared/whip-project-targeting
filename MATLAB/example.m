@@ -22,44 +22,37 @@ c  = myColor();
 %% -- (1A) Set the 2DOF Robot
 
 % To use the 2DOF robot, use the following line
-% robot = my2DOFRobot( );     
+robot = my2DOFRobot( );     
 
 % To use the 4DOF robot, use the following line
-robot = my4DOFRobot( );     
+% robot = my4DOFRobot( );     
 
 robot.initialize( );
 [M, C, G] = robot.deriveManipulatorEquation( );
+J         = robot.getEndEffectorJacobian(  );
+
+% [Moses Nah] [Backup] To calculate the time differentiation of the jacobian matrix
+dJ = diff( J, sym( 't' ) );
+dJ = subs( dJ, diff( robot.q, robot.t ), robot.dq );             % Simple substitution
+
 
 %% -- (1B) PYTHON Conversion process
 %       Skip this section if you are not interested in PYTHON implementation
 %       In case you are using python, we need to copy-and-paste the Y matrix..
 %       This section does the job for you.
 
-tmpY = arrayfun( @char, Y, 'uniform', 0 );
-
-% oldS: MATLAB Style print,   
-oldS = [ string( [ robot.q, robot.dq, robot.dqr, robot.ddqr, robot.M, robot.L, robot.Lc ] ), "sin", "cos", "^2"  ];
-
-% newS: python Style print
-str1 = [ "q"; "dq"; "dqr"; "ddqr" ];                                       
-str2 = "[" + string( ( 0 : robot.nDOF - 1 ) ) + "]";                       % Generating the string array, from 1 ~ nDOF                                                                       
-str3 = [ "M"; "L"; "Lc" ];                                       
-str4 = "[" + string( ( 0 : 1 ) ) + "]";                                    % Generating the string array, from 1 ~ nDOF                                                                       
-
-newS = [ reshape(  append( str1, str2 )', 1, [] ), ...
-         reshape(  append( str3, str4 )', 1, [] ), "np.sin", "np.cos", "**2" ];  % Making the mixture of strings for convertion
-
-for i = 1 : length( oldS )
-    tmpY = strrep( tmpY, oldS{ i }, newS{ i } );                           % Replacing 
+if     robot.nDOF == 4
+    oldS = [ string( [ robot.q, robot.dq, robot.L ] ), "sin", "cos", "^2"  ];                            % oldS: MATLAB Style print,   
+    newS = [ "q[0]", "q[1]", "q[2]", "q[3]", "dq[0]","dq[1]","dq[2]","dq[3]", "L1", "L2", "np.sin", "np.cos", "**2" ];   % newS: python Style print                                     
+     
+elseif robot.nDOF == 2
+    oldS = [ string( [ robot.q, robot.dq, robot.L ] ), "sin", "cos", "^2"  ];                            % oldS: MATLAB Style print,   
+    newS = [ "q[0]", "q[1]", "dq[0]","dq[1]", "L1", "L2", "np.sin", "np.cos", "**2" ];   % newS: python Style print                                         
+    
 end
+    
+myPythonConversion( C, "C", oldS, newS )     
 
-[nr, nc] = size( Y );
-
-for i = 1 : nr
-    for j = 1 : nc 
-        fprintf( 'self.Y[%d, %d] = %s\n', i-1, j-1, tmpY{ i, j }  )
-    end
-end
 
 %% ==================================================================
 %% (2-) Running the simulation in MATLAB
