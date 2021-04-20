@@ -138,7 +138,7 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 
 # [Local modules]
 from modules.simulation   import Simulation
-from modules.controllers  import ImpedanceController, NullController
+from modules.controllers  import ImpedanceController, NullController, CartesianImpedanceController
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.obj_funcs    import dist_from_tip2target
@@ -194,8 +194,12 @@ def main( ):
 
     if   "2D" in args[ 'modelName' ]:
 
-        controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [-1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011 ] )
+        # [BACKUP]
+        # controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
+        # controller_object.set_ctrl_par(  mov_parameters =  [-1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011 ] )
+
+        controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData )
+        controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 ,0 , -0.585, 1] )
 
         # [BACKUP]
         # 1_2D_model_w_N10.xml:  mov_parameters = [ -1.40668, 0.14868, 1.46737, 0.12282, 0.81866 ] ), min_val = 0.02928
@@ -203,10 +207,13 @@ def main( ):
         # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.56748, 0.09553, 1.57128, 0.05834, 0.80366 ] ), min_val = 0.08106
         # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] ), min_val = 0.02032
 
+        obj_func = None
+
+
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = ImpedanceController( mySim.mjModel, mySim.mjData )
-        controller_object.set_ctrl_par(  mov_parameters =  [-0.94248, 0.     , 0.     , 1.41372, 0.7854 , 0.     , 0.     , 1.41372, 0.95   ],
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.23724,-1.00841, 0.50421, 0.47124, 1.71624, 0.16807,-1.20234, 0.95993, 0.94547],
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
@@ -233,6 +240,12 @@ def main( ):
 
 
     if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
+
+        mySim.mjData.qpos[ 0 ] = 0.1
+        mySim.mjData.qpos[ 1 ] = 0.4
+        mySim.mjSim.forward( )
+
+
         val = mySim.run( )                # Getting the minimum distance between tip and target
 
 

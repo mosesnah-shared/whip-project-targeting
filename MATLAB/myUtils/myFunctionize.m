@@ -1,6 +1,6 @@
 function sym_out = myFunctionize( mySym, sym_from, sym_to )
 % Generate the ellipsoid mesh array, a "level-curve method", x^T (arrs) x <= 1
-%   input:  [1] sym      (sym)    The symbolic expression that we are going to change
+%   input:  [1] mySym    (sym)    The symbolic expression that we are going to change
 %           [2] sym_from (string) From, the expressions that will be changed.
 %           [3] sym_to   (string) To,   how the expressions are changed. 
 %
