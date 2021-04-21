@@ -199,7 +199,7 @@ def main( ):
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011 ] )
 
         # controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData, args )
-        controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.5, 0, 1] )
+        controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.6, 0, 1.5] )
 
         # [BACKUP]
         # 1_2D_model_w_N10.xml:  mov_parameters = [ -1.40668, 0.14868, 1.46737, 0.12282, 0.81866 ] ), min_val = 0.02928
@@ -241,8 +241,8 @@ def main( ):
 
     if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
 
-        mySim.mjData.qpos[ 0 ] = 0.1
-        mySim.mjData.qpos[ 1 ] = 0.4
+        mySim.mjData.qpos[ 0 ] = 0.01
+        mySim.mjData.qpos[ 1 ] = 0.01
         mySim.mjSim.forward( )
 
 

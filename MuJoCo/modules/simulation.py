@@ -305,15 +305,20 @@ class Simulation( ):
                                geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
                                jointAngleActual  = self.mjData.qpos[ : ],
                                  jointVelActual  = self.mjData.qvel[ : ],
-                                           pZFT  = self.controller.phi,
-                                           vZFT  = self.controller.dphi,
+                                 jointAccActual  = self.mjData.qacc[ : ],
+                                             x0  = self.controller.x0,
+                                            dx0  = self.controller.dx0,
+                                              M  = self.controller.Mmat,
                                        jacobian  = self.mjData.get_geom_jacp(  "geom_EE"  ),
-                                       inputVal  = input,
                                        forceVec  = np.dot( self.mjData.get_body_xmat( "node1" ), self.mjData.sensordata ) ,
-                                      outputVal  = self.obj_func( self.mjModel, self.mjData ),file = file  )
+                                       inputVal  = input,file = file  )
+
+
+
+                    # outputVal  = self.obj_func( self.mjModel, self.mjData )
+                    #
 
                     my_print(    minVal = self.min_val )
-
 
                 # else:
                     # my_print(    minVal = self.min_val )

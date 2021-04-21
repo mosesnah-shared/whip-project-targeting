@@ -359,6 +359,7 @@ class CartesianImpedanceController( ImpedanceController ):
         x0  = np.array( self.ZFT_func_pos( t ) )
         dx0 = np.array( self.ZFT_func_vel( t ) )
 
+
         return x0, dx0
 
     def input_calc( self, start_time, current_time ):
@@ -378,6 +379,9 @@ class CartesianImpedanceController( ImpedanceController ):
 
         Mx   = np.linalg.inv( JEE.dot(  np.linalg.inv( Mq ) ).dot( JEE.T  ) )
 
+        self.Mmat   = np.linalg.inv( JEE.dot(  np.linalg.inv( Mq ) ).dot( JEE.T  ) )
+        self.dJ     = dJ
+
         q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
         dq = self.mjData.qvel[ 0 : self.n_act ]
 
@@ -392,7 +396,7 @@ class CartesianImpedanceController( ImpedanceController ):
 
         A = dJ.dot( dq ) - JEE.dot( np.linalg.inv( Mq ) ).dot( C ).dot( dq ) - JEE.dot( np.linalg.inv( Mq )  ).dot( G )     # The nonlinear terms
 
-        Kx = 1 * np.eye( self.n_act )
+        Kx = 5 * np.eye( self.n_act )
         Bx = 1 * Kx
 
 
@@ -400,6 +404,7 @@ class CartesianImpedanceController( ImpedanceController ):
             self.x0, self.dx0 = self.get_ZFT( current_time - start_time  )      # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
         else:
             self.x0, self.dx0 = self.get_ZFT( 0  )                              # Before start time, the posture should be remained at ZFT's initial posture
+
 
         # print( np.amax( Mx ) )
         # [Moses C. Nah]
@@ -527,11 +532,11 @@ class JointImpedanceController( ImpedanceController ):
         D = self.mov_parameters[ -1 ]                                           # Last element is duration
         t = D if time >= D else time                                            # Rectifying the time value if time is larger than D
                                                                                 # This means that the ZFT of the controller remains at final posture.
-        phi  = np.array( self.ZFT_func_pos( t ) )
-        dphi = np.array( self.ZFT_func_vel( t ) )
+        x0  = np.array( self.ZFT_func_pos( t ) )
+        dx0 = np.array( self.ZFT_func_vel( t ) )
 
 
-        return phi, dphi
+        return x0, dx0
 
 
 
@@ -542,11 +547,11 @@ class JointImpedanceController( ImpedanceController ):
         dq = self.mjData.qvel[ 0 : self.n_act ]
 
         if   current_time >= start_time:                                        # If time greater than startTime
-            self.phi, self.dphi = self.get_ZFT( current_time - start_time  )    # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
+            self.x0, self.dx0 = self.get_ZFT( current_time - start_time  )    # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
         else:
-            self.phi, self.dphi = q, dq                                         # Before start time, the posture should be remained at ZFT's initial posture
+            self.x0, self.dx0 = q, dq                                         # Before start time, the posture should be remained at ZFT's initial posture
 
-        tau_imp = np.dot( self.K, self.phi - q ) + np.dot( self.B, self.dphi - dq ) # Calculating the torque due to impedance
+        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq ) # Calculating the torque due to impedance
         tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
 
         return self.mjData.ctrl, self.idx_act, tau_imp  + tau_g
