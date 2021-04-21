@@ -39,12 +39,13 @@ class Controller( ):
     """
 
 
-    def __init__( self, mjModel, mjData ):
+    def __init__( self, mjModel, mjData, mjArgs ):
         """
 
         """
         self.mjModel        = mjModel
         self.mjData         = mjData
+        self.mjArgs         = mjArgs
         self.ctrl_par_names = None
 
 
@@ -78,8 +79,8 @@ class NullController( Controller ):
             Controller which is simply empty, useful when practicing/debugging with MuJoCo
 
     """
-    def __init__( self, mjModel, mjData ):
-        super().__init__( mjModel, mjData )
+    def __init__( self, mjModel, mjData, mjArgs ):
+        super().__init__( mjModel, mjData, mjArgs )
         self.n_act = 0
 
     def set_ZFT( self ):
@@ -89,82 +90,111 @@ class NullController( Controller ):
         return None, None, 0
 
 
-class CartesianImpedanceController( Controller ):
+# [TODO] [Moses C. Nah] [04.20.2021]
+# We can simply use inheritance for the impedance controller
+
+class ImpedanceController( Controller ):
+    """
+        Description:
+        ----------
+            Class for an Impedance Controller
+            Inheritance of parent class "Contronller"
+
+    """
+    def __init__( self, mjModel, mjData, mjArgs ):
+
+        super().__init__( mjModel, mjData, mjArgs )
+
+        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
+        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
+        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
+        self.type           = None
+        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
+
+        # Impedance Controller uses pos, vel and acc of the ZFT (Zero-force trajectory), ZTT (Zero-torque trajectory)
+        self.ZFT_func_pos   = None
+        self.ZFT_func_vel   = None
+        self.ZFT_func_acc   = None
+
+        if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
+            bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
+
+            # Mass and Inertia Information of the limbs.
+            self.M  = [ self.mjModel.body_mass[ idx ]     for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
+            self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
+
+            # The length of the limb and length from proximal joint to center of mass
+            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ) ]
+            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ) ]
+
+            # The mass of the whip is the total mass
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
+        # The impedance parameter of the controller
+        self.Kmat = None
+        self.Bmat = None
+        self.Mmat = None
+
+        self.n_mov_pars     = None                                              # The number of parameters of the movement
+        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
+        self.n_ctrl_pars    = None                                              # The number of ctrl parameters. This definition would be useful for the optimization process.
+        self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
+        self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
+
+
+    def input_calc( self, start_time, current_time ):
+        """
+            Calculating the torque input
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+    def set_ZFT( self ):
+        """
+            Calculating the torque input
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+    def get_ZFT( self):
+        """
+            Calculating the torque input
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+
+class CartesianImpedanceController( ImpedanceController ):
     """
         Description:
         ----------
             Controller for xyz coordinate.
 
     """
-    def __init__( self, mjModel, mjData ):
+    def __init__( self, mjModel, mjData, mjArgs ):
 
-        super().__init__( mjModel, mjData )
+        super().__init__( mjModel, mjData, mjArgs )
 
-        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
-        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
-        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
-
-        # Controller uses first-order Cartesian impedance controller. Hence the position/velocity of the ZFT(Zero-torque trajectory) must be defined
-        # It is a 3D vector (or array, if we consider time.)
-        self.ZFT_func_pos   = None
-        self.ZFT_func_vel   = None
-
-
-        self.n_mov_pars     = 2 * 2 + 1                                         # Starting point, ending point and the duration between the two.
-        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
-        self.n_ctrl_pars    = [ self.n_mov_pars, 2 ** 2, 2 ** 2 ]               # The number of ctrl parameters. This definition would be useful for the optimization process.
+        if   self.n_act == 2:     # If 2D Model
+            self.n_mov_pars     = 5                                             # Starting point (2), ending point (2) and the duration (1) between the two.
+            self.mov_parameters = None                                          # The actual values of the movement parameters, initializing it with random values
+            self.n_ctrl_pars    = [ self.n_mov_pars, 2 ** 2, 2 ** 2 ]           # The number of ctrl parameters. This definition would be useful for the optimization process.
                                                                                 # K and B has 2^2 elements, hence 4
 
+        elif self.n_act == 4:
+            self.n_mov_pars     = 7                                             # Starting point (2), ending point (2) and the duration (1) between the two.
+            self.mov_parameters = None                                          # The actual values of the movement parameters, initializing it with random values
+            self.n_ctrl_pars    = [ self.n_mov_pars, 3 ** 2, 3 ** 2 ]           # The number of ctrl parameters. This definition would be useful for the optimization process.
+                                                                                # K and B has 2^2 elements, hence 4
 
-        self.ctrl_par_names = [ "mov_parameters", "Kx", "Bx" ]                                    # Useful for self.set_ctrl_par method
-        self.t_sym = sp.symbols( 't' )                                          # time symbol for defining the trajectory
+        self.ctrl_par_names = [ "mov_parameters", "K", "B" ]                    # Useful for self.set_ctrl_par method
 
-
-
-    def set_ZFT( self ):
-        """
-            Description:
-            ----------
-                Setting the ZFT(Zero-torque trajectory) of the Cartesian Impedance Controller.
-                This method is only called once "before" running the simulation, and "after" the self.mov_parameters are well-defined
-
-        """
-
-        # Defining the equations for the ZFT, this function must be done before the actual simulation
-        if self.mov_parameters is None:
-            raise ValueError( "Movement parameters are not defined")
-
-        xi = np.array( self.mov_parameters[  0 : 2 ] )                          # Initial Cartesian Posture  of the end-effector
-        xf = np.array( self.mov_parameters[  2 : 4 ] )                          # Final Cartesian Position of the end-effector
-        D  = self.mov_parameters[ -1 ]                                          # Duration it took from start to end
-
-        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
-        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
-        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
-        self.ZFT_func_pos = min_jerk_traj( self.t_sym, xi,xf, D )
-        self.ZFT_func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.ZFT_func_pos ]
-
-        # Lambdify the functions
-        # [TIP] This is necessary for computation Speed!
-        self.ZFT_func_pos = lambdify( self.t_sym, self.ZFT_func_pos )
-        self.ZFT_func_vel = lambdify( self.t_sym, self.ZFT_func_vel )
-
-    def get_ZFT( self, time ):
-
-        D = self.mov_parameters[ -1 ]                                           # Last element is duration
-        t = D if time >= D else time                                            # Rectifying the time value if time is larger than D
-                                                                                # This means that the ZFT of the controller remains at final posture.
-        x0  = np.array( self.ZFT_func_pos( t ) )
-        dx0 = np.array( self.ZFT_func_vel( t ) )
-
-        return x0, dx0
 
     def get_dJ( self ):
-        # Get the time derivative of the Jacobian matrix.
+        # Get the time derivative of the Jacobian matrix. dJ/dt
 
-        L1, L2 = 0.294, 0.291
+        L1, L2 = self.L
         q      = self.mjData.qpos[ 0 : self.n_act ]
         dq     = self.mjData.qvel[ 0 : self.n_act ]
 
@@ -193,17 +223,45 @@ class CartesianImpedanceController( Controller ):
             dJ[2, 1] = L1*np.cos(q[0])*np.cos(q[1])*dq[1] - L1*np.sin(q[0])*np.sin(q[1])*dq[0] + L2*np.cos(q[0])*np.cos(q[1])*np.cos(q[3])*dq[1] - L2*np.cos(q[3])*np.sin(q[0])*np.sin(q[1])*dq[0] - L2*np.cos(q[0])*np.sin(q[1])*np.sin(q[3])*dq[3] - L2*np.cos(q[0])*np.cos(q[1])*np.cos(q[2])*np.sin(q[3])*dq[2] - L2*np.cos(q[0])*np.cos(q[1])*np.cos(q[3])*np.sin(q[2])*dq[3] + L2*np.cos(q[1])*np.sin(q[0])*np.sin(q[2])*np.sin(q[3])*dq[0] + L2*np.cos(q[0])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[1]
             dJ[2, 2] = - L2*np.sin(q[3])*(np.cos(q[0])*np.sin(q[2])*dq[0] + np.cos(q[2])*np.sin(q[0])*dq[2] + np.cos(q[0])*np.cos(q[1])*np.cos(q[2])*dq[1] - np.cos(q[2])*np.sin(q[0])*np.sin(q[1])*dq[0] - np.cos(q[0])*np.sin(q[1])*np.sin(q[2])*dq[2]) - L2*np.cos(q[3])*dq[3]*(np.sin(q[0])*np.sin(q[2]) + np.cos(q[0])*np.cos(q[2])*np.sin(q[1]))
             dJ[2, 3] = -L2*(np.cos(q[1])*np.sin(q[0])*np.sin(q[3])*dq[0] - np.cos(q[0])*np.cos(q[1])*np.cos(q[3])*dq[3] - np.cos(q[0])*np.cos(q[2])*np.cos(q[3])*dq[0] + np.cos(q[0])*np.sin(q[1])*np.sin(q[3])*dq[1] + np.cos(q[3])*np.sin(q[0])*np.sin(q[2])*dq[2] + np.cos(q[2])*np.sin(q[0])*np.sin(q[3])*dq[3] + np.cos(q[0])*np.cos(q[1])*np.cos(q[3])*np.sin(q[2])*dq[1] + np.cos(q[0])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*dq[2] - np.cos(q[3])*np.sin(q[0])*np.sin(q[1])*np.sin(q[2])*dq[0] - np.cos(q[0])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[3])
+
         return dJ
+
+
+    def get_C( self ):
+
+        # Just to simplfy or shrinken the length of code for this.
+        q        = self.mjData.qpos[ 0 : self.n_act ]
+        dq       = self.mjData.qvel[ 0 : self.n_act ]
+        M1,   M2 = self.M
+        Lc1, Lc2 = self.Lc
+        L1,   L2 = self.L
+        I1xx, I1yy, I1zz = self.I[ 0 ]
+        I2xx, I2yy, I2zz = self.I[ 1 ]
+
+        if   self.n_act == 2:
+
+            C = np.zeros( (2, 2) )
+
+            C[0, 0] = -L1*Lc2*M2*np.sin(q[1])*dq[1]
+            C[0, 1] = -L1*Lc2*M2*np.sin(q[1])*(dq[0] + dq[1])
+            C[1, 0] = L1*Lc2*M2*np.sin(q[1])*dq[0]
+            C[1, 1] = 0
+
+        elif self.n_act == 4:
+            NotImplementedError( )
+
+        return C
+
 
     def get_M( self ):
 
-        M1,   M2 = 1.595, 0.869
-        Lc1, Lc2 = 0.129, 0.112
-        L1,   L2 = 0.294, 0.291
-        I1xx, I1yy, I1zz = 0.011917, 0.011937, 0.001325
-        I2xx, I2yy, I2zz = 0.004765, 0.004855, 0.000472
-
-        q = self.mjData.qpos[ 0 : self.n_act ]
+        # Just to simplfy or shrinken the length of code for this.
+        q        = self.mjData.qpos[ 0 : self.n_act ]
+        M1,   M2 = self.M
+        Lc1, Lc2 = self.Lc
+        L1,   L2 = self.L
+        I1xx, I1yy, I1zz = self.I[ 0 ]
+        I2xx, I2yy, I2zz = self.I[ 1 ]
 
         if   self.n_act == 2:
 
@@ -241,46 +299,67 @@ class CartesianImpedanceController( Controller ):
 
         return M
 
-    def get_C( self ):
-        q      = self.mjData.qpos[ 0 : self.n_act ]
-        dq     = self.mjData.qvel[ 0 : self.n_act ]
-
-        M1,   M2 = 1.595, 0.869
-        Lc1, Lc2 = 0.129, 0.112
-        L1,   L2 = 0.294, 0.291
-        I1xx, I1yy, I1zz = 0.011917, 0.011937, 0.001325
-        I2xx, I2yy, I2zz = 0.004765, 0.004855, 0.000472
-
-        if   self.n_act == 2:
-
-            C = np.zeros( (2, 2) )
-
-            C[0, 0] = -L1*Lc2*M2*np.sin(q[1])*dq[1]
-            C[0, 1] = -L1*Lc2*M2*np.sin(q[1])*(dq[0] + dq[1])
-            C[1, 0] = L1*Lc2*M2*np.sin(q[1])*dq[0]
-            C[1, 1] = 0
-
-        elif self.n_act == 4:
-            NotImplementedError( )
-
-        return C
 
     def get_G( self ):
-        q      = self.mjData.qpos[ 0 : self.n_act ]
-        dq     = self.mjData.qvel[ 0 : self.n_act ]
-        M1,   M2 = 1.595, 0.869
 
-        G     = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - M1 * self.g  )  \
-              + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - M2 * self.g  )
+        if   self.n_limbs == 2:
+
+            # Torque for Gravity compensation is simply tau = J^TF
+            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+            G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+              + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+
+            if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
+                G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
 
         return G
 
-    def get_K_and_B( self ):
 
-        Kx = 1 * np.eye( self.n_act )
-        Bx = 1 * Kx
+    def set_ZFT( self, mov_parameters = None ):
+        """
+            Description:
+            ----------
+                Setting the ZFT(Zero-torque trajectory) of the Cartesian Impedance Controller.
+                This method is only called once "before" running the simulation, and "after" the self.mov_parameters are well-defined
+                This is for
 
-        return Kx, Bx
+        """
+
+        if mov_parameters is not None:
+            self.mov_parameters = mov_parameters
+
+        # Defining the equations for the ZFT, this function must be done before the actual simulation
+        if self.mov_parameters is None:
+            raise ValueError( "Movement parameters are not defined")
+
+        xi = np.array( self.mov_parameters[           0 :     self.n_act ] )    # Initial Cartesian Posture  of the end-effector
+        xf = np.array( self.mov_parameters[  self.n_act : 2 * self.n_act ] )    # Final Cartesian Position of the end-effector
+        D  = self.mov_parameters[ -1 ]                                          # Duration it took from start to end
+
+        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
+        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
+        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
+        self.ZFT_func_pos = min_jerk_traj( self.t_sym, xi,xf, D )
+        self.ZFT_func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.ZFT_func_pos ]
+
+        # Lambdify the functions
+        # [TIP] This is necessary for computation Speed!
+        self.ZFT_func_pos = lambdify( self.t_sym, self.ZFT_func_pos )
+        self.ZFT_func_vel = lambdify( self.t_sym, self.ZFT_func_vel )
+
+    def get_ZFT( self, time ):
+
+        D = self.mov_parameters[ -1 ]                                           # Last element is duration
+        t = D if time >= D else time                                            # Rectifying the time value if time is larger than D
+                                                                                # This means that the ZFT of the controller remains at final posture.
+        x0  = np.array( self.ZFT_func_pos( t ) )
+        dx0 = np.array( self.ZFT_func_vel( t ) )
+
+        return x0, dx0
 
     def input_calc( self, start_time, current_time ):
 
@@ -313,7 +392,9 @@ class CartesianImpedanceController( Controller ):
 
         A = dJ.dot( dq ) - JEE.dot( np.linalg.inv( Mq ) ).dot( C ).dot( dq ) - JEE.dot( np.linalg.inv( Mq )  ).dot( G )     # The nonlinear terms
 
-        Kx, Bx = self.get_K_and_B( )
+        Kx = 1 * np.eye( self.n_act )
+        Bx = 1 * Kx
+
 
         if   current_time >= start_time:                                        # If time greater than startTime
             self.x0, self.dx0 = self.get_ZFT( current_time - start_time  )      # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
@@ -346,55 +427,19 @@ class CartesianImpedanceController( Controller ):
         return self.mjData.ctrl, self.idx_act, tau
 
 
-class ImpedanceController( Controller ):
+class JointImpedanceController( ImpedanceController ):
+
     """
         Description:
         ----------
-            Class for an Impedance Controller
+            Class for a Joint Impedance Controller
             First order impedance controller with gravity compenation
 
     """
 
-    def __init__( self, mjModel, mjData, is_grav_comps = True ):
+    def __init__( self, mjModel, mjData, mjArgs, is_grav_comps = True ):
 
-        super().__init__( mjModel, mjData )
-
-        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
-        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
-        self.is_grav_comps  = is_grav_comps                                     # Boolean for gravity compensation. [True-1-ON] [False-0-OFF]
-        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
-
-        # Controller uses first-order impedance controller. Hence the position/velocity of the ZFT(Zero-torque trajectory) must be defined
-        self.ZFT_func_pos   = None
-        self.ZFT_func_vel   = None
-
-        # Mass information of the limbs
-        if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
-            bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
-            self.mUA, self.mFA  = [ self.mjModel.body_mass[ idx ]               # The mass for each "bodyName" are saved in MVec, the name of the bodies are defined in the "xml" model file.
-                                    for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]   # mUA: Mass of the upperArm Limb
-                                                                                                            # mUA: Mass of the foreArm Limb
-
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - self.mUA - self.mFA  #  Mw: Mass of the total whip model. This is used for gravity compensation.
-                                                                                #  Mw is zero when there is no whip
-
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
-
-        # The actuators
-        if not all( 'torque' in tmp.lower() for tmp in mjModel.actuator_names ):
-            raise ValueError( "For Impedance Controller, the model actuator doesn't contain 'torque' actuators. \
-                               Please check whether the model and controller object corresponds with each other correctly")
-
-
-        # [IMPEDANCE PARAMETERS FOR THE 2DOF/4DOF UPPER-LIMB MODEL]
-        # The Stiffness matrix K and Damping matrix B will be used for the following impedance torque controller:
-        # torque = K ( phi - theta ) + B ( dphi - dtheta)
-        # [REF #1] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 2.3]   Mechanical Impedances.
-        # [REF #2] [Moses C. Nah] [MIT Master's Thesis]: "Ibid",                                              [Section 7.2.1] Impedance Controller
-        # [REF #3] [Moses C. Nah] [MIT Master's Thesis]: "Ibid",                                              [Section 8.2.1] Impedance Controller
+        super().__init__( mjModel, mjData, mjArgs )
 
         if   self.n_act == 2:   # 2DOF Robot
 
@@ -413,9 +458,6 @@ class ImpedanceController( Controller ):
             self.B = c * self.K
 
 
-        else:
-            raise ValueError( "Number of Actuators seem wrong, Please Check .xml Model File.")
-
         # [2DOF Robot] 5 movement parameters in total - Intial posture (2), Final posture (2) and duration (1)
         # [4DOF RObot] 9 movement parameters in total - Intial posture (4), Final posture (4) and duration (1)
         # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.3.] Implementation
@@ -427,9 +469,8 @@ class ImpedanceController( Controller ):
 
 
         self.ctrl_par_names = [ "mov_parameters", "K", "B" ]                    # Useful for self.set_ctrl_par method
-        self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
 
-    def gravity_compensation( self ):
+    def get_G( self ):
 
         if self.is_grav_comps:
 
@@ -437,16 +478,19 @@ class ImpedanceController( Controller ):
 
                 # Torque for Gravity compensation is simply tau = J^TF
                 # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                tau_g = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.mUA * self.g  )  \
-                      + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.mFA * self.g  )  \
-                      + np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+                G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+                  + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+
+                if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
+                    G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
 
             elif self.n_limbs == 3:
                 raise NotImplementedError( )
-        else:
-            tau_g = np.zeros( self.n_act )
 
-        return tau_g
+        else:
+            G = np.zeros( self.n_act )
+
+        return G
 
 
     def set_ZFT( self ):
@@ -457,7 +501,6 @@ class ImpedanceController( Controller ):
                 This method is only called once "before" running the simulation, and "after" the self.mov_parameters are well-defined
 
         """
-
 
         # Defining the equations for the ZFT, this function must be done before the actual simulation
         if self.mov_parameters is None:
@@ -479,7 +522,7 @@ class ImpedanceController( Controller ):
         self.ZFT_func_vel = lambdify( self.t_sym, self.ZFT_func_vel )
 
 
-    def get_ZFT( self, time ):
+    def get_ZFT( self, time ): # ZFT and ZTT will be the same for this code.
 
         D = self.mov_parameters[ -1 ]                                           # Last element is duration
         t = D if time >= D else time                                            # Rectifying the time value if time is larger than D
@@ -489,6 +532,8 @@ class ImpedanceController( Controller ):
 
 
         return phi, dphi
+
+
 
     def input_calc( self, start_time, current_time ):
 
@@ -502,7 +547,7 @@ class ImpedanceController( Controller ):
             self.phi, self.dphi = q, dq                                         # Before start time, the posture should be remained at ZFT's initial posture
 
         tau_imp = np.dot( self.K, self.phi - q ) + np.dot( self.B, self.dphi - dq ) # Calculating the torque due to impedance
-        tau_g   = self.gravity_compensation( )                                      # Calculating the torque due to gravity compensation
+        tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
 
         return self.mjData.ctrl, self.idx_act, tau_imp  + tau_g
 
