@@ -155,7 +155,7 @@ idx  = 1;
 
 % [2021.04.19] [MOSES NAH] Backup!! 
 % This is for special case when target is closer.
-data = myTxtParse( "./myData/data_log_T1_bad.txt" );
+data = myTxtParse( "./myData/data_log_T1.txt" );
 
 % The duration of ZFT of the optimal upper limb movement. 
 D = [0.950, 0.579, 0.950];
@@ -257,9 +257,9 @@ end
 
 gObjs( end + 1 ) = myEllipsoid( 'XData', meshX, 'YData',  meshY , 'ZData',  meshZ );  
 
-% scale = 4;
-% gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData', data.geomXYZPositions( 11, : ), 'ZData',  data.geomXYZPositions( 12, : ), ...
-%                             'UData', data.forceVec( 1, : )/scale,    'VData', data.forceVec( 2, : )/scale,    'WData', data.forceVec( 3, : )/scale, 'LineWidth', 10, 'Color', c.pink );
+scale = 4;
+gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData', data.geomXYZPositions( 11, : ), 'ZData',  data.geomXYZPositions( 12, : ), ...
+                            'UData', data.forceVec( 1, : )/scale,    'VData', data.forceVec( 2, : )/scale,    'WData', data.forceVec( 3, : )/scale, 'LineWidth', 10, 'Color', c.blue );
                         
 ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
                                                                            %       (2) Graphic Objects (Heterogeneouus) Array
@@ -271,7 +271,7 @@ ani.connectMarkers( 1, [ "SH_ZFT", "EL_ZFT", "EE_ZFT" ], 'Color', c.grey, 'LineS
 tmpC = [ c.pink; c.green; c.blue; c.yellow ];
 
 % Add the 2nd figure plot
-ani.adjustFigures( 2 );                     
+% ani.adjustFigures( 2 );                     
 % for i = 1 : 4
 %     plot( ani.hAxes{ 2 }, data.currentTime, data.pZFT( i, : ), 'color', tmpC( i, : ) , 'linestyle', '--','linewidth', 5 );
 %     tmp = myMarker( 'XData', data.currentTime , 'YData', data.jointAngleActual( i, : ) , 'ZData', zeros( 1, length( data.currentTime ) ), ...
@@ -282,10 +282,10 @@ ani.adjustFigures( 2 );
 
 % [BACKUP] When we want to plot the time vs dot value .
 % plot( ani.hAxes{ 2 }, data.currentTime, dotVal, 'color', c.blue, 'linestyle', '--','linewidth', 5 );
-tmp = myMarker( 'XData', data.currentTime , 'YData', abs( dotVal  ), 'ZData', zeros( 1, length( data.currentTime ) ), ...
-                 'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  c.blue  ); 
-
-ani.addTrackingPlots( 2, tmp );
+% tmp = myMarker( 'XData', data.currentTime , 'YData', abs( dotVal  ), 'ZData', zeros( 1, length( data.currentTime ) ), ...
+%                  'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  c.blue  ); 
+% 
+% ani.addTrackingPlots( 2, tmp );
 
 tmpLim = 2.5;
 set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
@@ -299,7 +299,7 @@ set( ani.hAxes{ 3 },  'view',   [41.8506   15.1025 ]     )
 
 tmp1 = 40;
 xlabel( ani.hAxes{ 1 },      'X [m]', 'Fontsize', tmp1 ); ylabel( ani.hAxes{ 1 }, 'Y [m]', 'Fontsize', tmp1); zlabel( ani.hAxes{ 1 }, 'Z [m]', 'Fontsize', tmp1);
-xlabel( ani.hAxes{ 2 }, 'Time [sec]', 'Fontsize', 30 ); 
+% xlabel( ani.hAxes{ 2 }, 'Time [sec]', 'Fontsize', 30 ); 
 
 ani.run( 0.33, 2.9, true, ['output', num2str( idx ) ])
 
@@ -310,7 +310,7 @@ ani.run( 0.33, 2.9, true, ['output', num2str( idx ) ])
 idx  = 3;
 data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
 
-ttmp = 50;
+ttmp = 60;
 
 EEpos = data.geomXYZPositions(  10:12, 1:ttmp );
 EEvel = data.geomXYZVelocities( 10:12, 1:ttmp ); 
@@ -320,35 +320,39 @@ hold on
 scatter3( EEpos( 1,: ), EEpos( 2,: ), EEpos( 3,: ), 400, 'o', 'markeredgecolor', c.pink, 'markerfacecolor', c.white, 'markerfacealpha', 0.8, 'linewidth', 6 );
 
 % Adding force vector.
-scale = 0.01;
-quiver3(  data.geomXYZPositions( 10,: ), data.geomXYZPositions( 11, : ), data.geomXYZPositions( 12,: ),...
-          data.forceVec( 1, :) * scale, data.forceVec( 2, :) * scale, data.forceVec( 3, :) * scale, ...
-          'linewidth', 5, 'color', c.blue, 'AutoScale', 'off'  )
+scale = 0.02;
+quiver3(  data.geomXYZPositions( 10,1:ttmp  ), data.geomXYZPositions( 11, 1:ttmp  ), data.geomXYZPositions( 12,1:ttmp  ),...
+          data.forceVec( 1, 1:ttmp ) * scale, data.forceVec( 2, 1:ttmp  ) * scale, data.forceVec( 3, 1:ttmp ) * scale, ...
+          'linewidth', 5, 'color', c.orange, 'AutoScale', 'off'  )
 
 axis equal
 
 qMat = data.jointAngleActual( 1:4, 1:ttmp )';
-for i = 1: ttmp
-   J_vals( :, :, i ) = J_func( L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
-   ZFTvel( :, i ) = J_vals( :, :, i ) * data.jointVelActual( 1:4, i );
-   
-   Cx = Cx_func(  L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
-   Kx = Cx^-1;       
-   
-   tmp1( :, i ) = Kx * ( pEE_ZFT( :, i ) - EEpos( :, i ) );
-end
+
+% for i = 1: ttmp
+%    J_vals( :, :, i ) = J_func( L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
+%    ZFTvel( :, i ) = J_vals( :, :, i ) * data.jointVelActual( 1:4, i );
+%    
+%    Cx = Cx_func(  L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
+%    Kx = Cx^-1;       
+%    
+%    tmp1( :, i ) = Kx * ( pEE_ZFT( :, i ) - EEpos( :, i ) );
+% end
 
 % What is the force due to Kx x
 
 % tmp2 = 0.05 * Kx * ( ZFTvel - EEvel );
 
 % tmp = tmp1 + tmp2;
-tmp = tmp1;
+% tmp = tmp1;
 
 % scale = 0.0000001;
-quiver3(  EEpos( 1,: ), EEpos( 2, : ), EEpos( 3,: ),...
-          tmp( 1, :) * scale, tmp( 2, :) * scale, tmp( 3, :) * scale, ...
-          'linewidth', 5, 'color', c.green, 'AutoScale', 'on'  )
+% quiver3(  EEpos( 1,1:ttmp ), EEpos( 2, 1:ttmp ), EEpos( 3,1:ttmp ),...
+%           tmp( 1,1:ttmp) * scale, tmp( 2, 1:ttmp) * scale, tmp( 3, 1:ttmp ) * scale, ...
+%           'linewidth', 5, 'color', c.green, 'AutoScale', 'on'  )
+
+xlabel( 'X [m]', 'Fontsize', tmp1 ); ylabel( 'Y [m]', 'Fontsize', tmp1); zlabel( 'Z [m]', 'Fontsize', tmp1);
+
 
 %% ==================================================================
 %% (4-) Analysis
@@ -441,3 +445,37 @@ set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...
                  
 ani.run( 0.33, 3.0, false, '1')    
 
+
+%% ==================================================================
+%% (5-) Static Plots
+%% -- (5A) Static Plots of Force, end-effector trajectories and etc.
+
+% close all
+% To show the trace of all 25 markers.
+idx  = 3;
+data = myTxtParse( ['./myData/data_log_T', num2str( idx ), '.txt' ] );
+
+
+hold on 
+
+
+stringList = [          "SH",     "EL",     "EE",     genNodes( N ) ];                                
+sizeList   = [           400,      400,      400, 75 * ones( 1, N ) ];                            
+colorList  = [ repmat( tmpC( idx, : ), 3, 1 ); repmat( [0.5, 0.5, 0.5], N , 1 ) ];                            
+           
+ttmp = 180;
+
+tmpC = copper( length( stringList ) );
+
+
+% For the whole model 
+for i = 1 : length( stringList ) 
+    
+    plot3( data.geomXYZPositions( 3 * i - 2, 1 : ttmp ),data.geomXYZPositions( 3 * i - 1, 1 : ttmp ), data.geomXYZPositions( 3 * i , 1 : ttmp),  'linewidth', 6, 'color', tmpC( i, : ))
+
+end
+
+set( gca, 'xticklabel', [], 'yticklabel', [], 'zticklabel', [] )
+
+axis equal
+axis tight

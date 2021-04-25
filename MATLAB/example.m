@@ -22,10 +22,10 @@ c  = myColor();
 %% -- (1A) Set the 2DOF Robot
 
 % To use the 2DOF robot, use the following line
-robot = my2DOFRobot( );     
+% robot = my2DOFRobot( );     
 
 % To use the 4DOF robot, use the following line
-% robot = my4DOFRobot( );     
+robot = my4DOFRobot( );     
 
 robot.initialize( );
 [M, C, G] = robot.deriveManipulatorEquation( );
