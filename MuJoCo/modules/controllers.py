@@ -7,7 +7,7 @@ import time
 import pickle
 
 from   modules.utils        import my_print
-from   modules.basis_funcs  import min_jerk_traj
+from   modules.traj_funcs   import min_jerk_traj
 import matplotlib.pyplot as plt
 
 try:
