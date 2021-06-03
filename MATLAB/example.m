@@ -10,8 +10,8 @@ clear all; close all; clc; workspace;
 
 cd( fileparts( matlab.desktop.editor.getActiveFilename ) );                % Setting the current directory (cd) as the current location of this folder. 
 addpath( './myGraphics' ); addpath( './myUtils' ); addpath( './myRobots' );
-myFigureConfig( 'fontsize', 20, ...
-               'lineWidth', 5, ...
+myFigureConfig( 'fontsize', 40, ...
+               'lineWidth', 10, ...
               'markerSize', 25    )  
              
 global c                                                                   % Setting color structure 'c' as global variable
@@ -362,3 +362,208 @@ set( ani.hAxes{ 2 }, 'LineWidth', 1.4, 'XLim', [0, 3] )
 
 
 ani.run( 0.33, 8, false, ['output', num2str( idx ) ])
+
+%% ==================================================================
+%% (3-) The modal analysis of the whip
+%% -- (3A) Calculation of the eigenvalues/eigenvectors, Pole-Zero Plot
+
+% Defining the whip parameters of the whip model.
+tmp = num2cell( [25, 0.012, 0.072, 0.242, 0.092] );                        % The whip parameters
+[N, m, l, k, b] = deal( tmp{ : } );
+
+% N, m, l, k, b = [25, 0.012, 0.072, 0.242, 0.000];
+% N, m, l, k, b = [25, 0.012, 0.072, 0.242, 0.092];
+
+g = 9.81;
+
+% Capital letters denote the matrix of the parameters 
+
+if N == 1   % If it is a single pendulum, 
+    % Then the equation of motion is as follows:
+    % ml^2 q'' + bq' + (k + mgl)q = tau
+    K = k / l;
+    M = m * l;
+    G = m * g;
+    B = b / l;
+else
+    tmp = toeplitz([2 -1 zeros(1 , N - 2)]);
+    TK = tmp;
+    tmp(end, end) = 1;
+    TK( 1, 1 ) = 1;
+    M = m * l * inv( TK );
+    K = k / l * tmp;
+    B = b / l * tmp;
+    G = m * g * diag( fliplr( 1 : N ) ) ;
+end
+
+% Original eigenvalue/eigenvector
+[eigV, eigD]  = eig( [ zeros( N ), eye( N );
+               -inv( M ) * ( K + G ), -inv( M ) * B     ]);                % Calculating the eigenvalues of the statespace matrix
+
+% Canonical form of the (complex) eigenvalue/eigenvector problem
+[eigV_c, eigD_c] = cdf2rdf( eigV, eigD );
+% The diagonal part is the "dissipative" elements, and the off-diagonal part is the "oscillatory" elements.
+
+tmpEig = diag( eigD ); 
+
+% Extract-out eigenvalues with imaginary parts 
+idx = find( imag( tmpEig ) ~= 0 );      % Getting the idxs of the complex eigenvalues
+cpxEig = tmpEig( idx' );                % Extracting out the complex eigenvalues
+N = length( cpxEig ) / 2;               % The number of distinct complex eigenvalues
+
+
+colorArr = flipud([c.blue; c.green; c.pink]);
+% colorArr = flipud( colormap( copper( 2 * N ) ) );
+
+tmp1 = [12.31, 6.856, 2.823];
+
+f = figure( );
+a = axes( 'parent', f );
+hold on
+tmpS = [ "*", "d", "o"];
+
+
+th = linspace( pi/2, 3 * pi/2, 100 );
+
+for i = 1 :  N
+    cpx = cpxEig( 2 * i - 1 );
+    scatter3( real( cpx ),  imag( cpx ), 0, 400, tmpS{ i },  ...
+                    'MarkerFaceColor', colorArr( i, :), ...
+                         'MarkerEdgeColor', colorArr( i, :), ...
+                         'LineWidth',4.5, 'parent', a )
+    scatter3( real( cpx ), -imag( cpx ), 0,400, tmpS{ i },  ...
+                     'MarkerFaceColor', colorArr( i, :), ...
+                         'MarkerEdgeColor', colorArr( i, :), ...
+                          'LineWidth',4.5, 'parent', a )    
+                                   
+
+    R( i ) = sqrt( real( cpx ).^2 + imag( cpx ).^2 );  %or whatever radius you want
+    x = R(i) * cos(th);
+    y = R(i) * sin(th);
+    plot(x,y, 'linewidth', 1.3, 'linestyle', '--', 'color', colorArr( i, : ) );                       
+                    
+    text( -R( i )+0.3, -0.8, num2str( -R( i ), '%.2f' ), 'fontsize', 23, 'color', colorArr( i, : ) ) 
+    scatter3( -R( i ),     0, 0.1, 100, 'markerfacecolor', c.white, 'markeredgecolor', colorArr( i, :), 'linewidth', 2 )
+    if i == 3
+        continue
+    end    
+        scatter3(       0, -R(i), 0.1, 100, 'markerfacecolor', c.white, 'markeredgecolor', colorArr( i, :), 'linewidth', 2 )
+        scatter3(       0,  R(i), 0.1, 100, 'markerfacecolor', c.white, 'markeredgecolor', colorArr( i, :), 'linewidth', 2 )
+    
+end
+
+tmpL = 14;
+mxAxis = mArrow3( [ -tmpL, 0, -1], [ 2, 0   , -1 ], 'color', 0.6 * ones( 1,3 ), 'stemWidth', 0.05, 'tipWidth', 0.3 );
+myAxis = mArrow3( [ 0, -tmpL-1, -1], [ 0, tmpL+1, -1 ], 'color', 0.6 * ones( 1,3 ), 'stemWidth', 0.05, 'tipWidth', 0.3 );
+
+text( 1, -1.5,   texlabel('Real'), 'fontsize', 30 )
+text( 0.3, tmpL, texlabel('Imag'), 'fontsize', 30 )
+
+text( -24, 12, '$-6.39 \pm 11.26j$', 'fontsize', 30, 'interpreter',  'latex','color', colorArr( 1, : ))
+text( -24, 10, '$-0.89 \pm  6.910j$', 'fontsize', 30, 'interpreter', 'latex','color', colorArr( 2, : ))
+text( -24, 8,  '$-0.03 \pm  2.830j$', 'fontsize', 30, 'interpreter', 'latex','color', colorArr( 3, : ))
+
+scatter3( -25, 12, 0.1, 400, '*', 'markerfacecolor', colorArr( 1, : ), 'markeredgecolor', colorArr( 1, :), 'linewidth', 4.5 )
+scatter3( -25, 10, 0.1, 400, 'd', 'markerfacecolor', colorArr( 2, : ), 'markeredgecolor', colorArr( 2, :), 'linewidth', 4.5 )
+scatter3( -25,  8, 0.1, 400, 'o', 'markerfacecolor', colorArr( 3, : ), 'markeredgecolor', colorArr( 3, :), 'linewidth', 4.5 )
+
+tmpL = 17;
+set( a, 'ylim', [-tmpL, tmpL] );
+set( a, 'xlim', [-tmpL, tmpL] );
+axis equal off
+grid on
+
+% mySaveFig( gcf, 'S1_PZPlot' )
+exportgraphics( f,'S1_PZPlot.pdf','ContentType','vector')
+
+%% -- (3B) EigenMode Plot
+
+% Defining the whip parameters of the whip model.
+tmp = num2cell( [25, 0.012, 0.072, 0.242, 0.0] );                        % The whip parameters
+[N, m, l, k, b] = deal( tmp{ : } );
+
+if N == 1   % If it is a single pendulum, 
+    % Then the equation of motion is as follows:
+    % ml^2 q'' + bq' + (k + mgl)q = tau
+    K = k / l;
+    M = m * l;
+    G = m * g;
+    B = b / l;
+else
+    tmp = toeplitz([2 -1 zeros(1 , N - 2)]);
+    TK = tmp;
+    tmp(end, end) = 1;
+    TK( 1, 1 ) = 1;
+    M = m * l * inv( TK );
+    K = k / l * tmp;
+    B = b / l * tmp;
+    G = m * g * diag( fliplr( 1 : N ) ) ;
+end
+
+% Original eigenvalue/eigenvector
+[eigV, eigD]  = eig( [ zeros( N ), eye( N );
+               -inv( M ) * ( K + G ), -inv( M ) * B     ]);                % Calculating the eigenvalues of the statespace matrix
+
+% Canonical form of the (complex) eigenvalue/eigenvector problem
+[eigV_c, eigD_c] = cdf2rdf( eigV, eigD );
+% The diagonal part is the "dissipative" elements, and the off-diagonal part is the "oscillatory" elements.
+
+tmpEig = diag( eigD ); 
+
+% For damping b = 0, The last 6 vectors are the eigenvectors.
+if b == 0
+    eigvec = eigV( :, 45 : end );
+    eig_mode = eigvec(1:N, : );
+end
+
+% Amplifying Factor
+alpha = [8, 20, 30];
+% alpha = 18;   % 5, 12
+
+f = figure( );
+a = axes( 'parent', f );
+hold on
+
+
+eigmode3 = alpha( 3 ) * imag( eig_mode( :, 1 ) );
+eigmode2 = alpha( 2 ) * imag( eig_mode( :, 3 ) );
+eigmode1 = alpha( 1 ) * imag( eig_mode( :, 5 ) );
+
+nPoints = 100;
+
+eigmode3_span = eigmode3 - 2 * eigmode3 * log( linspace( exp(0), exp(1), nPoints) );
+eigmode2_span = eigmode2 - 2 * eigmode2 * log( linspace( exp(0), exp(1), nPoints) );
+eigmode1_span = eigmode1 - 2 * eigmode1 * log( linspace( exp(0), exp(1), nPoints) );
+
+eigmode3_span = [eigmode3_span, fliplr( eigmode3_span ) ];
+eigmode2_span = [eigmode2_span, fliplr( eigmode2_span ) ];
+eigmode1_span = [eigmode1_span, fliplr( eigmode1_span ) ];
+
+
+xPos_mode1 =  l * cumsum( sin( eigmode1_span ) ) - 2; 
+zPos_mode1 = -l * cumsum( cos( eigmode1_span ) );
+
+xPos_mode2 =  l * cumsum( sin( eigmode2_span ) );
+zPos_mode2 = -l * cumsum( cos( eigmode2_span ) );
+
+xPos_mode3 =  l * cumsum( sin( eigmode3_span ) ) + 2;
+zPos_mode3 = -l * cumsum( cos( eigmode3_span ) );
+
+
+p1  = plot( xPos_mode1(:,1), zPos_mode1(:,1), '-', 'color', c.blue  , 'linewidth', 8 );
+p2  = plot( xPos_mode2(:,1), zPos_mode2(:,1), '-', 'color', c.green , 'linewidth', 8 );
+p3  = plot( xPos_mode3(:,1), zPos_mode3(:,1), '-', 'color', c.pink  , 'linewidth', 8 );
+
+sp1 = scatter( xPos_mode1(:,1), zPos_mode1(:,1), 350, 'o', 'markeredgecolor', c.blue , 'markerfacecolor', c.white, 'linewidth', 3 );
+sp2 = scatter( xPos_mode2(:,1), zPos_mode2(:,1), 350, 'o', 'markeredgecolor', c.green, 'markerfacecolor', c.white, 'linewidth', 3 );
+sp3 = scatter( xPos_mode3(:,1), zPos_mode3(:,1), 350, 'o', 'markeredgecolor', c.pink , 'markerfacecolor', c.white, 'linewidth', 3 );
+
+set( gca, 'ylim', [-2,0], 'xlim', [-3.5, 3.5] )
+set( gca, 'xticklabel', [], 'yticklabel', [] )
+set( gca,'LineWidth',3) 
+
+
+    % axis box
+
+exportgraphics( f,'S2_ModeShape.pdf','ContentType','vector')
+
