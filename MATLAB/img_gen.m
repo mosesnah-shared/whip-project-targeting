@@ -342,11 +342,11 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
           'view',   viewArr( idx, : ) )  %  [BACKUP] [Target #1] 16.3213    6.0865
       
 
-set(a,'LineWidth',3.5 )%,'TickLength',[0.025 0.025]);
-set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', ["-2", "X[m]", "+2"] )
-set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "Y[m]", "+2"] )
-set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "Z[m]", "+2"] )
 
+set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', [] ) % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', [] ) % ["-2", "Y[m]", "+2"] )
+set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', [] ) % ["-2", "Z[m]", "+2"] )
+set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
 
 exportgraphics( f,['F3_',num2str(idx),'_timelapse.pdf'],'ContentType','vector')
 
@@ -681,10 +681,10 @@ set( a,   'XLim',   [ 0, rawData{idx}.currentTime( idxEnd ) - tStart ], 'fontsiz
 set( a,   'YLim',   [ -1, 1]                                          , 'fontsize', 40 )
 set( a, 'ytick', [-1, -0.5, 0, 0.5, 1], 'yticklabel', ["-1", "", "0", "", "1"] )
 xlabel( 'Time [sec]'      , 'fontsize', 50 ); 
-ylabel( 'Contribution [-]', 'fontsize', 50 );
+ylabel( 'Coefficients [-]', 'fontsize', 50 );
 
 
-exportgraphics( f,['F5_',num2str(idx),'_contribution.pdf'],'ContentType','vector')
+exportgraphics( f,['F5_',num2str(idx),'_coefficients.pdf'],'ContentType','vector')
 
 
 %% ==================================================================

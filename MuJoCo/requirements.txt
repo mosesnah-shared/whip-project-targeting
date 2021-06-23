@@ -14,7 +14,7 @@ numpy==1.19.4
 opencv-python==4.4.0.46
 pycparser==2.20
 pyparsing==2.4.7
-Pillow==8.1.1
+Pillow>=8.2.0
 python-dateutil==2.8.1
 scipy==1.5.4
 six==1.15.0
