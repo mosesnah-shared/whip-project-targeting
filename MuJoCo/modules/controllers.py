@@ -125,8 +125,8 @@ class ImpedanceController( Controller ):
             self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
 
             # The length of the limb and length from proximal joint to center of mass
-            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ) ]
-            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGeom"   )[ 2 ] ) ]
+            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
+            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
 
             # The mass of the whip is the total mass
             self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
@@ -472,7 +472,7 @@ class JointImpedanceController( ImpedanceController ):
         self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ] # The number of ctrl parameters. This definition would be useful for the optimization process.
                                                                                     # K and B has n^2 elements, hence self.n_act ** 2
 
-
+        self.is_grav_comps = is_grav_comps
         self.ctrl_par_names = [ "mov_parameters", "K", "B" ]                    # Useful for self.set_ctrl_par method
 
     def get_G( self ):

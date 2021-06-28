@@ -138,7 +138,7 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 
 # [Local modules]
 from modules.simulation   import Simulation
-from modules.controllers  import ImpedanceController, NullController, CartesianImpedanceController
+from modules.controllers  import ImpedanceController, NullController, CartesianImpedanceController, JointImpedanceController
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.obj_funcs    import dist_from_tip2target
@@ -212,8 +212,8 @@ def main( ):
 
     elif "3D" in args[ 'modelName' ]:
 
-        controller_object = ImpedanceController( mySim.mjModel, mySim.mjData, args )
-        controller_object.set_ctrl_par(  mov_parameters =  [-1.23724,-1.00841, 0.50421, 0.47124, 1.71624, 0.16807,-1.20234, 0.95993, 0.94547],
+        controller_object = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+        controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ],
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
