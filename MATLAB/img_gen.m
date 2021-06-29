@@ -264,7 +264,7 @@ end
 
 %% -- (3B) Plot of Movement Snapshots
 
-idx = 3;        % Choose Target Type
+idx = 1;        % Choose Target Type
 
 idxS = find( rawData{ idx }.outputVal == min( rawData{ idx }.outputVal )  );
 
@@ -356,7 +356,7 @@ exportgraphics( f,['F3_',num2str(idx),'_timelapse.pdf'],'ContentType','vector')
 %% -- (3C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 3;
+idx = 2;
 
 switch idx 
    
@@ -386,12 +386,12 @@ scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
 plot3( rawData{ idx }.geomXPositions( 3, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 3, idxStart : idxEnd ), ...
        rawData{ idx }.geomZPositions( 3, idxStart : idxEnd ), ... 
-      'parent', a,   'LineWidth', 4, 'color', [c.blue, 0.8] )
+      'parent', a,   'LineWidth', 6, 'color', c.grey )
 
 plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomZPositions( 4, idxStart : idxEnd ), ...
-      'parent', a,   'LineWidth', 4, 'color', [c.green, 0.8] )  
+      'parent', a,   'LineWidth', 6, 'color', c.grey )  
 
 alpha = linspace( 0.1, 1, length( idxS ) );
 lwArr = linspace( 1, 8, length( idxS ) );
@@ -408,7 +408,7 @@ for i = mStart( idx ) : mStep( idx ) : mEnd( idx )
     scatter3( rawData{ idx }.geomXPositions( 3, idxS( i ) ), ...
               rawData{ idx }.geomYPositions( 3, idxS( i ) ), ...
               rawData{ idx }.geomZPositions( 3, idxS( i ) ), 2000, ... 
-               'parent', a,   'LineWidth', 4, ...
+               'parent', a,   'LineWidth', 6, ...
                'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky , ...
                'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i) );           
         
@@ -416,7 +416,7 @@ for i = mStart( idx ) : mStep( idx ) : mEnd( idx )
     scatter3( rawData{ idx }.geomXPositions( 4, idxS( i ) ), ...
               rawData{ idx }.geomYPositions( 4, idxS( i ) ), ...
               rawData{ idx }.geomZPositions( 4, idxS( i ) ), 2000, ... 
-               'parent', a,   'LineWidth', 4, ...
+               'parent', a,   'LineWidth', 6, ...
                'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky,  ...
                'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i) );           
 
@@ -431,8 +431,8 @@ xEE = rawData{ idx }.geomXPositions( 4, idxS )';
 yEE = rawData{ idx }.geomYPositions( 4, idxS )';
 zEE = rawData{ idx }.geomZPositions( 4, idxS )';
 
-[ kEL, volEL ] = convhull( xEL, yEL, zEL, 'Simplify',true );
-[ kEE, volEE ] = convhull( xEE, yEE, zEE, 'Simplify',true );
+% [ kEL, volEL ] = convhull( xEL, yEL, zEL, 'Simplify',true );
+% [ kEE, volEE ] = convhull( xEE, yEE, zEE, 'Simplify',true );
 
 % xlabel( 'X [m]', 'fontsize', 50 ); 
 % ylabel( 'Y [m]', 'fontsize', 50 );
@@ -574,14 +574,14 @@ YY = pC( 2 ) + w(2,1) * P + w(2,2) * Q;                                    %   u
 ZZ = pC( 3 ) + w(3,1) * P + w(3,2) * Q;
        
 scatter3(  pC( 1 ) , pC(2), pC(3), 400, 'd',... 
-           'parent', a,   'LineWidth', 4, ...
+           'parent', a,   'LineWidth', 6, ...
            'MarkerFaceColor', c.white, 'MarkerEdgeColor', color, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
 
 if idx == 1       
-    mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.01, 'stemWidth', 0.004 )
+    mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.03, 'stemWidth', 0.008 )
 else    
-    mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.01, 'stemWidth', 0.004 )
+    mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.03, 'stemWidth', 0.008 )
 end
 % mArrow3( pC, pC + 0.3 * eigvecs( : , 2 )', 'colorcl', c.green, 'tipWidth', 0.01, 'stemWidth', 0.004 )
 % mArrow3( pC, pC + 0.3 * eigvecs( : , 3 )', 'color', c.green, 'tipWidth', 0.01, 'stemWidth', 0.004 )
@@ -702,7 +702,7 @@ for i = 1 : 3
    
 end
 
-%% -- (3B) Plot of Movement Snapshots
+%% -- (4B) Plot of Movement Snapshots
 
 idx = 3;        % Choose Target Type
 
@@ -793,7 +793,7 @@ exportgraphics( f,['S3_',num2str(idx),'_posctrl_timelapse.pdf'],'ContentType','v
 
 % mySaveFig( f, ['output', num2str( idx )] );
 
-%% -- (3C) The end-effector and the elbow's trajectory 
+%% -- (4C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
 idx = 3;
@@ -918,3 +918,117 @@ set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.5", "Z[m]", "+0.5"
 % mySaveFig( f, ['output', num2str( idx )] );
 exportgraphics( f,['S4_',num2str(idx),'_timelapse_posctrl_EL_EE.pdf'],'ContentType','vector')
 
+%% ==================================================================
+%% (5-) Cover Image
+%% -- (5A) Read data
+for i = 1 : 3
+    
+   rawData{ i } = myTxtParse( ['myData/simulation_log/data_log_long_T', num2str( i ), '.txt']  );
+%     rawData{ i } = myTxtParse( ['data_log_dense_T', num2str( i ), '.txt']  );
+   
+   rawData{ i }.geomXPositions = rawData{ i }.geomXYZPositions( 1 : 3 : end , : );
+   rawData{ i }.geomYPositions = rawData{ i }.geomXYZPositions( 2 : 3 : end , : );
+   rawData{ i }.geomZPositions = rawData{ i }.geomXYZPositions( 3 : 3 : end , : );
+   
+end
+
+%% -- (5B) Color Gradiation
+
+idx = 1;
+
+N = 25;
+
+
+f = figure( ); a = axes( 'parent', f ); hold on
+
+
+cArr = flipud( colormap( bone( 3 * N ) ) );
+
+
+switch idx 
+    case 1
+        cTarget = c.pink;
+    case 2
+        cTarget = c.blue;
+    case 3
+        cTarget = c.green;
+end
+
+viewArr = [ 49.9456, 4.7355;
+            49.9456, 4.7355;
+            49.9456, 4.7355 ];
+
+alpha = [0.2, 0.5, 1.0];                                                   % The alpha values of each screen shot   
+
+idxS = find( rawData{ idx }.outputVal == min( rawData{ idx }.outputVal )  );
+
+tIdx = [50, 380, idxS;
+        50, 5*37, idxS; 
+        50, 5*61, idxS];        
+
+
+mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
+                    rawData{ idx }.geomYPositions( 1, 1 ), ...
+                    rawData{ idx }.geomZPositions( 1, 1 ), 400, ...        % Setting the handle of the ZFT Plot, 
+                   'parent', a,   'LineWidth', 5,               ...       % For the main plot (s1)
+                   'MarkerFaceColor', cTarget, 'MarkerEdgeColor', cTarget, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha',    1  );
+
+
+for i = 3: 28
+   plot3( rawData{ idx }.geomXPositions( i + 1, 50 : end ), ...
+          rawData{ idx }.geomYPositions( i + 1, 50 : end ), ...
+          rawData{ idx }.geomZPositions( i + 1, 50 : end ), ...
+           'parent', a, 'color', cArr( i , : ), 'linewidth', 2  )    
+
+    
+    
+end
+
+
+for i = 1 : 3
+    p1 = plot3(  rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
+                 rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
+                 rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
+                 'parent', a, ...
+                'linewidth', 7, 'color', [ c.orange_milky, alpha( i ) ] );
+            
+    p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
+                   'parent', a,   'LineWidth', 4, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
+
+               
+%     p3 = plot3(  rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
+%                  rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
+%                  rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), ...
+%                  'parent', a, ...
+%                 'linewidth', 8, 'color', [ c.purple_plum, alpha( i ) ] );
+            
+    p4 = scatter3( rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 300, ... 
+                   'parent', a,   'LineWidth', 5, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.purple_plum, ... c.purple_plum, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
+               
+               
+end    
+        
+       
+
+tmpLim = 2;               
+set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Setting the axis ratio of x-y-z all equal.
+          'YLim',   [ - tmpLim, tmpLim ] , ...    
+          'ZLim',   [ - tmpLim, tmpLim ] , ...
+          'view',   viewArr( idx, : )   )  
+set( a, 'xtick', [-1, 0, 1] ); set( a, 'xticklabel', [] )
+set( a, 'ytick', [-1, 0, 1] ); set( a, 'yticklabel', [] )
+set( a, 'ztick', [-1, 0, 1] ); set( a, 'zticklabel', [] )
+set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
+      
+axis equal; 
+
+exportgraphics( f,['CL_',num2str(idx),'_gradient.pdf'],'ContentType','vector')
