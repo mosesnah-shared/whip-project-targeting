@@ -1,0 +1,32 @@
+<mujoco model="1_3D_model_w_N25">
+  <compiler inertiafromgeom="auto" angle="radian" />
+   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="all">
+     <flag energy="enable" />
+   </option>
+   <asset>
+     <texture type="skybox" builtin="checker" rgb1="1 1 1" rgb2="1 1 1" width="200" height="200"  />
+      <material name="JointColor" rgba="1.0 1.0 0.0 1" />
+      <material name="LimbColor" rgba="0.7 0.7 0.7 1" />
+      <!-- <material name="pointMassColor" rgba="1.0 1.0 1.0 1.0" /> -->
+      <material name="pointMassColor" rgba="1.0 1.0 0.0 1" />
+      <material name="RefMassColor" rgba="0.2 0.9 0.1 1.0" />
+   </asset>
+   <worldbody>
+     <body name="cameramover" mocap="true" pos="0 0 0">
+        <camera name="mycamera" pos="0.0 2.0 2.0" euler="1.5707 0 0" />
+      </body>
+            <body name="node1" euler="0 0 0" pos="0 0 0">
+              <!-- <geom name="geom0" type="sphere" material="pointMassColor" pos="0 0 0" size="0.0120000" mass="0.0120000" /> -->
+              <geom name="geom1" type="sphere" material="pointMassColor" pos="0 0 -0.0180" size="0.0040000" mass="0.0120000" />
+              <joint name="node1JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
+               <joint name="node1JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
+               <geom type="cylinder" fromto="0 0 0 0 0 -0.0180" size="0.0015000" mass="0" />
+               <geom name="geom2" type="sphere" material="pointMassColor" pos="0 0 -0.0180" size="0.0040000" mass="0.0120000" />
+
+            </body>
+            <!-- === [ N, L, M, k, b, rho ] = [25,1.800000,0.300000,0.242000,0.092000,1.000000] -->
+
+   </worldbody>
+
+
+</mujoco>
