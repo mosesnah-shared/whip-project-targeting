@@ -63,12 +63,12 @@ ms  = r.markerSize;
 alw = r.axesLineWidth;
 
 set( 0, 'defaultTextfontSize'               ,     1.6*fs        );
-set( 0, 'defaultTextInterpreter'            ,     'latex'       );
-set( 0, 'defaultLegendInterpreter'          ,     'latex'       );
+% set( 0, 'defaultTextInterpreter'            ,     'latex'       );
+% set( 0, 'defaultLegendInterpreter'          ,     'latex'       );
 set( 0, 'defaultLineLinewidth'              ,       lw          );
 set( 0, 'defaultAxesLinewidth'              ,        alw        );
 set( 0, 'defaultLineMarkerSize'             ,        ms         );
-set( 0, 'defaultAxesTickLabelInterpreter'   ,     'latex'       );  
+% set( 0, 'defaultAxesTickLabelInterpreter'   ,     'latex'       );  
 set( 0, 'defaultAxesfontSize'               ,        fs         );
 set( 0, 'defaultAxesXGrid'                  ,       'on'        );
 set( 0, 'defaultAxesYGrid'                  ,       'on'        );
