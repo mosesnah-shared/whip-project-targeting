@@ -175,3 +175,7 @@ set( ani.hAxes{1}, 'ztick', [-2, 0, 2] ); set( ani.hAxes{1}, 'zticklabel', ["-2"
 set( ani.hAxes{1},'LineWidth',3.5 ); set(ani.hAxes{1}, 'TickLength',[0.04 0.04]);
 
 ani.run( 0.5, 3.0, true, ['output', num2str( idx ) ])
+
+%% ==================================================================
+%% (2-) [2021 DOSIM WORKSHOP] Video Geneartion
+%% -- (2A) Reading the Datas

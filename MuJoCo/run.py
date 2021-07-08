@@ -262,7 +262,7 @@ def main( ):
             ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
         # Note that this is for "Minimizing the objective function"
-        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 600 )
+        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 400 )
 
     if args[ 'saveDir' ] is not None:
         mySim.save_simulation_data( args[ 'saveDir' ]  )

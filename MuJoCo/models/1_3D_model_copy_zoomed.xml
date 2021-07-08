@@ -53,21 +53,19 @@
 
     <!-- ============ UPPER ARM START =============== -->
 		<body name='upperArm' pos='0 0 0' euler='0 0 0'>
-			<inertial pos='0 0 -0.129'     mass='1.595'         diaginertia='0.011917 0.011937 0.001325'/>
+			<inertial pos='0 0 -0.03225'     mass='1.595'         diaginertia='0.011917 0.011937 0.001325'/>
 			<!-- <geom name='shoulderGEOM' type='sphere' pos='0 0 0' material='JointColor' size='0.0294' mass='0'/> -->
-			<geom name="shoulderGEOM" type="sphere" pos="0 0 0" material="JointColor" size="0.0430" mass="0" />
+			<geom name="shoulderGEOM" type="sphere" pos="0 0 0" material="JointColor" size="0.005375" mass="0" />
 			<joint name="shoulderFlexExt" ref="0" type="hinge" stiffness="0" pos="0 0 0" axis = "0 -1 0" />
 			<joint name='shoulderAddAbd' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis='-1 0 0' />
 			<joint name='shoulderMedLat' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis=' 0 0 1' />
-			<site name="upperArmCOM" pos="0 0 -0.129" />
-			<geom type="cylinder" fromto="0 0 0 0 0 -0.294" material="LimbColor" mass="0" size="0.0147" />
-			<body name="foreArm" pos="0 0 -0.294" euler="0 0 0">
-				<inertial pos="0 0 -0.112" mass="0.869" diaginertia="0.004765 0.004855 0.000472" />
-				 <geom name="elbowGEOM" type="sphere" pos="0 0 0" material="JointColor" size="0.0430" mass="0" />
+			<geom type="cylinder" fromto="0 0 0 0 0 -0.03675" material="LimbColor" mass="0" size="0.0018375" />
+			<body name="foreArm" pos="0 0 -0.03675" euler="0 0 0">
+				<inertial pos="0 0 -0.014" mass="0.869" diaginertia="0.004765 0.004855 0.000472" />
+				 <geom name="elbowGEOM" type="sphere" pos="0 0 0" material="JointColor" size="0.005375" mass="0" />
 				 <joint name="elbow" ref="0" type="hinge" stiffness="0" pos="0 0 0" axis="0 -1 0" />
-				 <geom type="cylinder" fromto="0 0 0 0 0 -0.291" material="LimbColor" mass="0" size="0.0147" />
-				 <site name="foreArmCOM" pos="0 0 -0.112" />
-				 <geom name="geom_EE" type="sphere" pos="0 0 -0.291" material="JointColor" size="0.0430" mass="0" />
+				 <geom type="cylinder" fromto="0 0 0 0 0 -0.036375" material="LimbColor" mass="0" size="0.0018375" />
+				 <geom name="geom_EE" type="sphere" pos="0 0 -0.036375" material="JointColor" size="0.005375" mass="0" />
 
 			</body>
 			<!-- ============ FORE ARM END   =============== -->
