@@ -66,14 +66,14 @@ clear gObjs
 genNodes = @(x) ( "node" + (1:x) );
 N        = 25;
 
-tmpC = [ c.pink; c.blue; c.green ];   
+tmpC = [ [1,0,0]; [0,0.5,0]; [0,0,1] ];   
 
 % For the target of the model
 gObjs(  1 ) = myMarker( 'XData', data.geomXYZPositions( 1, :  ) , ... 
                         'YData', data.geomXYZPositions( 2, :  ) , ... 
                         'ZData', data.geomXYZPositions( 3, :  ) , ... 
                          'name', "target" , ...
-                     'SizeData',  250            , ...
+                     'SizeData',  500            , ...
                     'LineWidth',   3             , ...
               'MarkerEdgeColor',  tmpC( idx, : ) , ...
               'MarkerFaceColor',  tmpC( idx, : ) , ...
@@ -82,8 +82,8 @@ gObjs(  1 ) = myMarker( 'XData', data.geomXYZPositions( 1, :  ) , ...
           
 
 stringList = [      "SH", "EL", "EE",     genNodes( N ) ];                                
-sizeList   = [           400,      400,      400, 75 * ones( 1, N ) ];                            
-colorList  = [ repmat( c.orange_milky, 3, 1 ); repmat( c.purple, N , 1 ) ];                            
+sizeList   = [           800,      800,      800, 100 * ones( 1, N ) ];                            
+colorList  = [ repmat( c.black, 3, 1 ); repmat( [0.75, 0, 0.75], N , 1 ) ];                            
            
 
 % For the whole model
@@ -93,7 +93,7 @@ for i = 1 : length( stringList )
                               'ZData', data.geomXYZPositions( 3 * i + 3, :  ) , ... 
                                'name', stringList( i ), ...
                            'SizeData',   sizeList( i ), ...
-                          'LineWidth',   7            , ...
+                          'LineWidth',   15            , ...
                     'MarkerEdgeColor',  colorList( i, : ) ); 
 
 end
@@ -133,7 +133,7 @@ colorList  = repmat( tmpC( idx, : ), 3, 1 );
 ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
                                                                            %       (2) Graphic Objects (Heterogeneouus) Array
 
-ani.connectMarkers( 1, [     "SH",     "EL",     "EE" ], 'Color', c.grey, 'LineStyle',  '-' );      
+ani.connectMarkers( 1, [     "SH",     "EL",     "EE" ], 'Color', c.black, 'LineStyle',  '-' );      
 % ani.connectMarkers( 1, [ "SH_ZFT", "EL_ZFT", "EE_ZFT" ], 'Color', c.grey, 'LineStyle', '--' );      
 
 tmpC = [ c.pink; c.green; c.blue; c.yellow ];
@@ -169,12 +169,12 @@ set( ani.hAxes{ 3 }, 'LineWidth', 1.4 )
 
 tmp1 = 40;
 
-set( ani.hAxes{1}, 'xtick', [-2, 0, 2] ); set( ani.hAxes{1}, 'xticklabel', ["-2", "X[m]", "+2"], 'xticklabelrotation', 0 ) % ["-2", "X[m]", "+2"] )
-set( ani.hAxes{1}, 'ytick', [-2, 0, 2] ); set( ani.hAxes{1}, 'yticklabel', ["-2", "Y[m]", "+2"], 'yticklabelrotation', 0 ) % ["-2", "Y[m]", "+2"] )
-set( ani.hAxes{1}, 'ztick', [-2, 0, 2] ); set( ani.hAxes{1}, 'zticklabel', ["-2", "Z[m]", "+2"], 'zticklabelrotation', 0 ) % ["-2", "Z[m]", "+2"] )
+set( ani.hAxes{1}, 'xtick', [-2, 0, 2] ); set( ani.hAxes{1}, 'xticklabel', ["-2", "X (m)", "+2"], 'xticklabelrotation', 0 ) % ["-2", "X[m]", "+2"] )
+set( ani.hAxes{1}, 'ytick', [-2, 0, 2] ); set( ani.hAxes{1}, 'yticklabel', ["-2", "Y (m)", "+2"], 'yticklabelrotation', 0 ) % ["-2", "Y[m]", "+2"] )
+set( ani.hAxes{1}, 'ztick', [-2, 0, 2] ); set( ani.hAxes{1}, 'zticklabel', ["-2", "Z (m)", "+2"], 'zticklabelrotation', 0 ) % ["-2", "Z[m]", "+2"] )
 set( ani.hAxes{1},'LineWidth',3.5 ); set(ani.hAxes{1}, 'TickLength',[0.04 0.04]);
 
-ani.run( 0.5, 3.0, true, ['output', num2str( idx ) ])
+ani.run( 0.5, 3, true, ['output', num2str( idx ) ])
 
 %% ==================================================================
 %% (2-) [2021 DOSIM WORKSHOP] Video Geneartion
