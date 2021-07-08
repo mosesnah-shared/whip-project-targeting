@@ -37,13 +37,17 @@
 			<texture type="skybox" builtin="checker" rgb1="1 1 1" rgb2="1 1 1" width="200" height="200"  />
 
      <!-- Joint and Limb Color -->
-		 <material name="JointColor" 		 rgba="0.5 0.5 0.5 1" />
-		 <material name="LimbColor" 		 rgba="0.5 0.5 0.5 1" />
-		 <material name="pointMassColor" rgba="1.0 0.0 1.0 1" />
+		 <material name="JointColor" 		 rgba="0.1 0.1 0.1 1" />
+		 <material name="LimbColor" 		 rgba="0.1 0.1 0.1 1" />
+		 <material name="pointMassColor" rgba="0.75 0.0 0.75 1" />
 		 <material name="RefMassColor" 	 rgba="0.2 0.9 0.1 1.0" />
 
   </asset>
 
+	<visual>
+		<global glow="1.0" fovy="45" ipd="0.0"/>
+		<headlight specular="0.0 0.0 0.0" diffuse="1.0 1.0 1.0"/>
+	</visual>
 
   <worldbody>
 

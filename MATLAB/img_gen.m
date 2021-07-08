@@ -477,7 +477,7 @@ exportgraphics( f,['F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','ve
 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx  = 1;
+idx  = 2;
 idx2 = 2;       % 1: EL, 2: EE 
 
 switch idx 
@@ -599,9 +599,9 @@ else
     set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "\fontsize{50}X (m)", "+0.5"] )
     if idx == 2
         set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["", "", ""] ); % ["-2", "X[m]", "+2"] )
-        annotation('textbox', [0.30, 0.15, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{50}Y (m)")
-        annotation('textbox', [0.23, 0.18, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}-0.5")
-        annotation('textbox', [0.41, 0.13, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}+0.5")
+        annotation('textbox', [0.30, 0.13, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{50}Y (m)")
+        annotation('textbox', [0.23, 0.16, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}-0.5")
+        annotation('textbox', [0.41, 0.11, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}+0.5")
     else
         set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.5", "\fontsize{50}Y (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
     end
@@ -921,6 +921,7 @@ for i = 1 : 3
 end
 
 %% -- (5B) Color Gradiation
+close all
 
 idx = 3;
 
@@ -928,22 +929,21 @@ N = 25;
 
 
 f = figure( ); a = axes( 'parent', f ); hold on
-axis equal; 
-
+axis equal; box off; axis off; grid off;
 cArr = flipud( colormap( bone( 3 * N ) ) );
 
 
 switch idx 
     case 1
-        cTarget = c.pink;
+        cTarget = [1,0,0];
     case 2
-        cTarget = c.blue;
+        cTarget = [0,0.5,0];
     case 3
-        cTarget = c.blue;
+        cTarget = [0,0,1];
 end
 
-viewArr = [ 49.9456, 4.7355;
-            49.9456, 4.7355;
+viewArr = [ 10, 10;
+            30, 4.7;
             49.9456, 4.7355 ];
 
 alpha = [0.2, 0.5, 1.0];                                                   % The alpha values of each screen shot   
@@ -957,8 +957,8 @@ tIdx = [50, 380, idxS;
 
 mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
                     rawData{ idx }.geomYPositions( 1, 1 ), ...
-                    rawData{ idx }.geomZPositions( 1, 1 ), 400, ...        % Setting the handle of the ZFT Plot, 
-                   'parent', a,   'LineWidth', 5,               ...       % For the main plot (s1)
+                    rawData{ idx }.geomZPositions( 1, 1 ), 500, ...        % Setting the handle of the ZFT Plot, 
+                   'parent', a,   'LineWidth', 1,               ...       % For the main plot (s1)
                    'MarkerFaceColor', cTarget, 'MarkerEdgeColor', cTarget, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha',    1  );
 
@@ -984,7 +984,7 @@ for i = 1 : 3
     p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
-                   'parent', a,   'LineWidth', 4, ...
+                   'parent', a,   'LineWidth', 5, ...
                    'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
 
@@ -997,8 +997,8 @@ for i = 1 : 3
             
     p4 = scatter3( rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
-                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 300, ... 
-                   'parent', a,   'LineWidth', 5, ...
+                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
+                   'parent', a,   'LineWidth', 3, ...
                    'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.purple_plum, ... c.purple_plum, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
@@ -1007,7 +1007,7 @@ end
         
        
 
-tmpLim = 2;               
+tmpLim = 2.5;               
 set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Setting the axis ratio of x-y-z all equal.
           'YLim',   [ - tmpLim, tmpLim ] , ...    
           'ZLim',   [ - tmpLim, tmpLim ] , ...
@@ -1016,7 +1016,7 @@ set( a, 'xtick', [-1, 0, 1] ); set( a, 'xticklabel', [] )
 set( a, 'ytick', [-1, 0, 1] ); set( a, 'yticklabel', [] )
 set( a, 'ztick', [-1, 0, 1] ); set( a, 'zticklabel', [] )
 set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
-      
+
 
 
 exportgraphics( f,['CL_',num2str(idx),'_gradient.pdf'],'ContentType','vector')

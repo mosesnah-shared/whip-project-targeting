@@ -97,7 +97,7 @@ classdef myAnimation < handle
             % Setting the default figure and Axes for the plot
             obj.hFigure     = figure();
             obj.hAxes{ 1 }  = subplot( 'Position', obj.pos1m, 'parent', obj.hFigure );    
-            obj.hTitle      = title( obj.hAxes{ 1 }, sprintf( '[Time] %5.3f (s)', obj.tVec( 1 ) ) );
+            obj.hTitle      = title( obj.hAxes{ 1 }, sprintf( '[Time] %5.3fs', obj.tVec( 1 ) ), 'fontsize',30 );
             hold( obj.hAxes{ 1 },'on' ); axis( obj.hAxes{ 1 } , 'equal' )             
 
             for g = gObjs
