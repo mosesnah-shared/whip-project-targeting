@@ -329,7 +329,7 @@ for i = 1 : length( tIdx )
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
                    'parent', a,   'LineWidth', 3, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0.75, 0, 0.75], ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
                
@@ -343,13 +343,12 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
           'view',   viewArr( idx, : ) )  %  [BACKUP] [Target #1] 16.3213    6.0865
       
 
-
 set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', ["-2", "\fontsize{50}X (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
 set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)", "+2"] ); % ["-2", "Y[m]", "+2"] )
 set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "Z[m]", "+2"] )
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 )
-exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','image')
+exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
 
 
 % mySaveFig( f, ['output', num2str( idx )] );
@@ -583,7 +582,8 @@ tmpLim2 = 0.7;
 
 viewArr = [97.3451, 5.0653;
           142.4901, 3.2252;
-          133.9720    3.2060];
+          133.9720, 3.2252];
+%           133.9720    3.2060];
 %           126.8750, 3.20293];
 
 set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
@@ -592,12 +592,19 @@ set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % S
           'view',   viewArr( idx, : ) )  
 
 if idx == 1 
-    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X[m]", ""] )
-    set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{33}-0.5", "\fontsize{43}Y (m)", "\fontsize{33}+0.5"] ); % ["-2", "X[m]", "+2"] )
-    set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{33}-0.5", "\fontsize{43}Z (m)", "\fontsize{33}+0.5"] ); % ["-2", "X[m]", "+2"] )        
+    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m))", ""] )
+    set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
+    set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )        
 else
-    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "\fontsize{50}X[m]", "+0.5"] )
-    set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.5", "\fontsize{50}Y (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
+    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "\fontsize{50}X (m)", "+0.5"] )
+    if idx == 2
+        set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["", "", ""] ); % ["-2", "X[m]", "+2"] )
+        annotation('textbox', [0.30, 0.15, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{50}Y (m)")
+        annotation('textbox', [0.23, 0.18, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}-0.5")
+        annotation('textbox', [0.41, 0.13, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}+0.5")
+    else
+        set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.5", "\fontsize{50}Y (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
+    end
     set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.5", "\fontsize{50}Z (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )    
 end
 
@@ -624,7 +631,7 @@ v2 = V( :,2 );
 v3 = V( :,3 );
 v4 = V( :,4 );      % Ordered in ascending order of the size of eigenvalues. 
 
-idx = 3;
+idx = 1;
 
 switch idx 
    
@@ -668,15 +675,27 @@ plot( rawData{idx}.currentTime( idxS ) - tStart, c1_K( idxS ), 'linewidth', 4, '
 plot( rawData{idx}.currentTime( idxS ) - tStart, c2_K( idxS ), 'linewidth', 4, 'linestyle', '--' , 'color', c.black )
 plot( rawData{idx}.currentTime( idxS ) - tStart, c3_K( idxS ), 'linewidth', 4, 'linestyle', ':'  , 'color', c.black )
 plot( rawData{idx}.currentTime( idxS ) - tStart, c4_K( idxS ), 'linewidth', 4, 'linestyle', '-.' , 'color', c.black )
-% plot( rawData{idx}.currentTime, [c1_K, c2_K, c3_K, c4_K]' )
-% plot( rawData{idx}.currentTime, [c1_B, c2_B, c3_B, c4_B]' )
-legend( "$c_1$","$c_2$","$c_3$","$c_4$", 'fontsize', 50, 'location', 'northwest' );
 
-set( a,   'XLim',   [ 0, rawData{idx}.currentTime( idxEnd ) - tStart ], 'fontsize', 20 )
-set( a,   'YLim',   [ -1, 1]                                          , 'fontsize', 20 )
-set( a, 'ytick', [-1, -0.5, 0, 0.5, 1], 'yticklabel', ["-1", "", "0", "", "1"] )
-xlabel( 'Time [sec]'      , 'fontsize', 50 ); 
-ylabel( 'Coefficients [-]', 'fontsize', 50 );
+[hleg1, hobj1] = legend( "c","c","c","c", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
+   set(hleg1,'position',[0.15 0.70 0.1 0.15])
+
+
+set( a,   'XLim',   [ 0, rawData{idx}.currentTime( idxEnd ) - tStart ], 'fontsize', 35,'fontname', 'myriad pro' )
+set( a,   'YLim',   [ -1, 1]                                          , 'fontsize', 35,'fontname', 'myriad pro' )
+set( a, 'ytick', [-1, -0.5, 0, 0.5, 1], 'yticklabel', ["-1", "", "0", "", "1"], 'fontname','myriad pro'  )
+
+if idx == 1
+    set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
+elseif idx  ==2 
+    set( a, 'xtick', [0, 0.25, 0.5], 'xticklabel', ["0", "0.25", "0.5" ], 'fontname','myriad pro', 'fontsize', 40  )
+        
+elseif idx ==3 
+    set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
+
+end
+
+% xlabel( 'Time (sec)'      , 'fontsize', 50, 'fontname', 'myriad pro' ); 
+% ylabel( 'Coefficients (-)', 'fontsize', 50, 'fontname', 'myriad pro' );
 
 
 exportgraphics( f,['F5_',num2str(idx),'_coefficients.pdf'],'ContentType','vector')
@@ -715,26 +734,26 @@ viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355 ];
 
-alpha = [0.2, 0.5, 1.0];                                              % The alpha values of each screen shot   
+alpha = [0.4, 0.6, 1.0];                                              % The alpha values of each screen shot   
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
 
 switch idx 
    
     case 1
-        cTarget = c.pink;
+        cTarget = [1,0,0];
 
     case 2
-        cTarget = c.blue;
+        cTarget = [0,0.5,0];
     case 3
-        cTarget = c.green;
+        cTarget = [0,0,1];
 end
 
 mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
                     rawData{ idx }.geomYPositions( 1, 1 ), ...
-                    rawData{ idx }.geomZPositions( 1, 1 ), 400, ...        % Setting the handle of the ZFT Plot, 
-                   'parent', a,   'LineWidth', 5,               ...       % For the main plot (s1)
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', cTarget, ...
+                    rawData{ idx }.geomZPositions( 1, 1 ), 500, ...        % Setting the handle of the ZFT Plot, 
+                   'parent', a,   'LineWidth', 1,               ...       % For the main plot (s1)
+                   'MarkerFaceColor', cTarget, 'MarkerEdgeColor', cTarget, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha',    1  );
 
       
@@ -743,13 +762,13 @@ for i = 1 : length( tIdx )
                  rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                  rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
                  'parent', a, ...
-                'linewidth', 7, 'color', [ c.orange_milky, alpha( i ) ] );
+                'linewidth', 7, 'color', [ c.black, alpha( i ) ] );
             
     p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
-                   'parent', a,   'LineWidth', 4, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
+                   'parent', a,   'LineWidth',  5, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
 
                
@@ -763,7 +782,7 @@ for i = 1 : length( tIdx )
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
                    'parent', a,   'LineWidth', 3, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.purple_plum, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor',  [0.75, 0, 0.75], ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
                
@@ -777,11 +796,12 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
           'view',   viewArr( idx, : ) )  %  [BACKUP] [Target #1] 16.3213    6.0865
       
 
-set(a,'LineWidth',3.5 )%,'TickLength',[0.025 0.025]);
-set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', ["-2", "X[m]", "+2"] )
-set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "Y[m]", "+2"] )
-set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "Z[m]", "+2"] )
 
+set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', ["-2", "\fontsize{50}X (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)", "+2"] ); % ["-2", "Y[m]", "+2"] )
+set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "Z[m]", "+2"] )
+set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
+xtickangle( 0 ); ytickangle( 0 )
 
 exportgraphics( f,['S3_',num2str(idx),'_posctrl_timelapse.pdf'],'ContentType','vector')
 
@@ -809,68 +829,61 @@ idxStart = min( idxS ); idxEnd = max( idxS );
 
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
-
 scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
           rawData{ idx }.geomYPositions( 2, idxStart ), ...
           rawData{ idx }.geomZPositions( 2, idxStart ), 2000, ... 
            'parent', a,   'LineWidth', 4, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
-
 
 plot3( rawData{ idx }.geomXPositions( 3, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 3, idxStart : idxEnd ), ...
        rawData{ idx }.geomZPositions( 3, idxStart : idxEnd ), ... 
-      'parent', a,   'LineWidth', 4, 'color', [c.blue, 0.8] )
+      'parent', a,   'LineWidth', 3, 'color', c.black );
 
 plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomZPositions( 4, idxStart : idxEnd ), ...
-      'parent', a,   'LineWidth', 4, 'color', [c.green, 0.8] )  
+      'parent', a,   'LineWidth', 3, 'color', c.black );
 
-alpha = linspace( 0.3, 1, length( idxS ) );
-lwArr = linspace( 1, 8, length( idxS ) );
-mStart = [ 5,  1,   2 ];
-mStep  = [ 14, 12, 11 ];
-mEnd   = [ 54, 55, 35 ];
 
-tmparr = {5:14:54, 1:12:55, 2:11:35};
+switch idx 
+   
+    case 1
+        idx_list = [5, 20, 28, 38, 54];
+        alpha    = [0.4, 0.7, 0.8, 0.9, 1.0];
+    case 2
+        idx_list = [1, 20, 28, 37, 55];
+        alpha    = [0.4, 0.7, 0.8, 0.9, 1.0];
+    case 3
+        idx_list = [2, 16, 22,35];
+        alpha    = [0.4, 0.7, 0.8, 1.0];
+end
 
-tmparr{3} = sort( [tmparr{3}, 17 ] );
-
-for i = tmparr{ idx }
+itmp = 1;
+for i = idx_list
     
     plot3( rawData{ idx }.geomXPositions( 2:4, idxS( i ) ), ...
            rawData{ idx }.geomYPositions( 2:4, idxS( i ) ), ...
            rawData{ idx }.geomZPositions( 2:4, idxS( i ) ), ...
-                          'parent', a,   'LineWidth', lwArr( i ), 'color', [ c.orange_milky, alpha( i ) ]  )    
-    
+                          'parent', a,   'LineWidth', 7, 'color', [ c.black, alpha( itmp ) ]  )    
+%     
     scatter3( rawData{ idx }.geomXPositions( 3, idxS( i ) ), ...
               rawData{ idx }.geomYPositions( 3, idxS( i ) ), ...
               rawData{ idx }.geomZPositions( 3, idxS( i ) ), 2000, ... 
-               'parent', a,   'LineWidth', 4, ...
-               'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky , ...
-               'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i) );           
+               'parent', a,   'LineWidth', 6, ...
+               'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black , ...
+               'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha( itmp ) );           
         
            
     scatter3( rawData{ idx }.geomXPositions( 4, idxS( i ) ), ...
               rawData{ idx }.geomYPositions( 4, idxS( i ) ), ...
               rawData{ idx }.geomZPositions( 4, idxS( i ) ), 2000, ... 
-               'parent', a,   'LineWidth', 4, ...
-               'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky,  ...
-               'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i) );           
-
+               'parent', a,   'LineWidth', 6, ...
+               'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black,  ...
+               'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha( itmp ) );           
+    itmp = itmp + 1;
 end
-
-
-xEL = rawData{ idx }.geomXPositions( 3, idxS )';
-yEL = rawData{ idx }.geomYPositions( 3, idxS )';
-zEL = rawData{ idx }.geomZPositions( 3, idxS )';
-
-xEE = rawData{ idx }.geomXPositions( 4, idxS )';
-yEE = rawData{ idx }.geomYPositions( 4, idxS )';
-zEE = rawData{ idx }.geomZPositions( 4, idxS )';
-
 
 
 viewArr = [ 49.9456, 4.7355;
@@ -883,32 +896,12 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
           'ZLim',   [ - tmpLim, tmpLim ] , ...
           'view',   viewArr( idx, : )   )  
       
-set(a,'LineWidth',3.5,'TickLength',[0.025 0.025]);
       
-set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "X[m]", "+0.5"] )
-set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.5", "Y[m]", "+0.5"] )
-set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.5", "Z[m]", "+0.5"] )
-
-               
-% trisurf( kEL, xEL, yEL, zEL, 'Facecolor',  c.blue, 'FaceAlpha', 0.1, 'EdgeColor', 'none' );
-% trisurf( kEE, xEE, yEE, zEE, 'Facecolor', c.green, 'FaceAlpha', 0.1, 'EdgeColor', 'none' );
-
-% xEE = d3.geomXYZPositions( 10, : );
-% yEE = d3.geomXYZPositions( 11, : );
-% zEE = d3.geomXYZPositions( 12, : );
-% 
-% [xx, yy] = meshgrid( xEE, yEE );
-% C = planefit( xEE, yEE, zEE );
-% zzft = C( 1 ) * xx + C( 2 ) * yy + C( 3 );
-% surf( xx, yy, zzft, 'edgecolor', 'none', 'facecolor', c.green, 'facealpha', 0.3 )
-% hold on
-% plot3( xEE, yEE, zEE, 'o' );
-% axis equal
-% p3 = plot3(  rawData{ idx }.geomXPositions( 5:end, tIdx( i ) ), ...
-%              rawData{ idx }.geomYPositions( 5:end, tIdx( i ) ), ...
-%              rawData{ idx }.geomZPositions( 5:end, tIdx( i ) ), ...
-%              'parent', a, ..
-%             'linewidth', 6, 'color', [ c.purple_plum, alpha( i ) ] );
+set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-2", "\fontsize{50}X (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
+xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 
 % mySaveFig( f, ['output', num2str( idx )] );
 exportgraphics( f,['S4_',num2str(idx),'_timelapse_posctrl_EL_EE.pdf'],'ContentType','vector')
@@ -929,13 +922,13 @@ end
 
 %% -- (5B) Color Gradiation
 
-idx = 1;
+idx = 3;
 
 N = 25;
 
 
 f = figure( ); a = axes( 'parent', f ); hold on
-
+axis equal; 
 
 cArr = flipud( colormap( bone( 3 * N ) ) );
 
@@ -946,7 +939,7 @@ switch idx
     case 2
         cTarget = c.blue;
     case 3
-        cTarget = c.green;
+        cTarget = c.blue;
 end
 
 viewArr = [ 49.9456, 4.7355;
@@ -986,13 +979,13 @@ for i = 1 : 3
                  rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                  rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
                  'parent', a, ...
-                'linewidth', 7, 'color', [ c.orange_milky, alpha( i ) ] );
+                'linewidth', 7, 'color', [ c.black, alpha( i ) ] );
             
     p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
                    'parent', a,   'LineWidth', 4, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
 
                
@@ -1024,6 +1017,6 @@ set( a, 'ytick', [-1, 0, 1] ); set( a, 'yticklabel', [] )
 set( a, 'ztick', [-1, 0, 1] ); set( a, 'zticklabel', [] )
 set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
       
-axis equal; 
+
 
 exportgraphics( f,['CL_',num2str(idx),'_gradient.pdf'],'ContentType','vector')

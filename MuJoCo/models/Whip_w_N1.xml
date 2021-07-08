@@ -5,10 +5,10 @@
    </option>
    <asset>
      <texture type="skybox" builtin="checker" rgb1="1 1 1" rgb2="1 1 1" width="200" height="200"  />
-      <material name="JointColor" rgba="1.0 1.0 0.0 1" />
-      <material name="LimbColor" rgba="0.7 0.7 0.7 1" />
+     <material name="JointColor" 		 rgba="0.5 0.5 0.5 1" />
+		 <material name="LimbColor" 		 rgba="0.5 0.5 0.5 1" />
       <!-- <material name="pointMassColor" rgba="1.0 1.0 1.0 1.0" /> -->
-      <material name="pointMassColor" rgba="1.0 1.0 0.0 1" />
+      <material name="pointMassColor" rgba="1.0 0.0 1.0 1" />
       <material name="RefMassColor" rgba="0.2 0.9 0.1 1.0" />
    </asset>
    <worldbody>
