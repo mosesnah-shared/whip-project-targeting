@@ -5,12 +5,16 @@
    </option>
    <asset>
      <texture type="skybox" builtin="checker" rgb1="1 1 1" rgb2="1 1 1" width="200" height="200"  />
-     <material name="JointColor" 		 rgba="0.5 0.5 0.5 1" />
-		 <material name="LimbColor" 		 rgba="0.5 0.5 0.5 1" />
-      <!-- <material name="pointMassColor" rgba="1.0 1.0 1.0 1.0" /> -->
-      <material name="pointMassColor" rgba="1.0 0.0 1.0 1" />
+		 <material name="JointColor" 		 rgba="0.1 0.1 0.1 1" />
+		 <material name="LimbColor" 		 rgba="0.1 0.1 0.1 1" />
+      <!-- <material name="pointMassColor" rgba="0.75 0.0 0.75 1" /> -->
+			<material name="pointMassColor" rgba="0 0.4470 0.7410 1" />			
       <material name="RefMassColor" rgba="0.2 0.9 0.1 1.0" />
    </asset>
+	 <visual>
+ 		<global glow="1.0" fovy="45" ipd="0.0"/>
+ 		<headlight specular="0.0 0.0 0.0" diffuse="1.0 1.0 1.0"/>
+ 	</visual>
    <worldbody>
      <body name="cameramover" mocap="true" pos="0 0 0">
         <camera name="mycamera" pos="0.0 2.0 2.0" euler="1.5707 0 0" />
@@ -19,127 +23,127 @@
               <geom name="geom0" type="sphere" material="pointMassColor" pos="0 0 0" size="0.0220000" mass="0.0120000" />
               <joint name="node1JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <joint name="node1JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
-               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                <geom name="geom1" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                <body name="node2" euler="0 0 0" pos="0 0 -0.0720">
                  <joint name="node2JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                   <joint name="node2JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                   <geom name="geom2" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                   <body name="node3" euler="0 0 0" pos="0 0 -0.0720">
                     <joint name="node3JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                      <joint name="node3JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                      <geom name="geom3" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                      <body name="node4" euler="0 0 0" pos="0 0 -0.0720">
                        <joint name="node4JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                         <joint name="node4JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                         <geom name="geom4" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                         <body name="node5" euler="0 0 0" pos="0 0 -0.0720">
                           <joint name="node5JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                            <joint name="node5JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                           <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                           <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                            <geom name="geom5" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                            <body name="node6" euler="0 0 0" pos="0 0 -0.0720">
                              <joint name="node6JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                               <joint name="node6JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                              <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                              <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                               <geom name="geom6" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                               <body name="node7" euler="0 0 0" pos="0 0 -0.0720">
                                 <joint name="node7JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                  <joint name="node7JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                  <geom name="geom7" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                  <body name="node8" euler="0 0 0" pos="0 0 -0.0720">
                                    <joint name="node8JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                     <joint name="node8JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                     <geom name="geom8" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                     <body name="node9" euler="0 0 0" pos="0 0 -0.0720">
                                       <joint name="node9JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                        <joint name="node9JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                        <geom name="geom9" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                        <body name="node10" euler="0 0 0" pos="0 0 -0.0720">
                                          <joint name="node10JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                           <joint name="node10JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                          <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                          <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                           <geom name="geom10" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                           <body name="node11" euler="0 0 0" pos="0 0 -0.0720">
                                             <joint name="node11JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                              <joint name="node11JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                             <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                             <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                              <geom name="geom11" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                              <body name="node12" euler="0 0 0" pos="0 0 -0.0720">
                                                <joint name="node12JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                 <joint name="node12JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                 <geom name="geom12" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                 <body name="node13" euler="0 0 0" pos="0 0 -0.0720">
                                                   <joint name="node13JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                    <joint name="node13JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                   <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                   <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                    <geom name="geom13" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                    <body name="node14" euler="0 0 0" pos="0 0 -0.0720">
                                                      <joint name="node14JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                       <joint name="node14JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                      <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                      <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                       <geom name="geom14" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                       <body name="node15" euler="0 0 0" pos="0 0 -0.0720">
                                                         <joint name="node15JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                          <joint name="node15JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                         <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                         <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                          <geom name="geom15" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                          <body name="node16" euler="0 0 0" pos="0 0 -0.0720">
                                                            <joint name="node16JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                             <joint name="node16JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                            <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                            <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                             <geom name="geom16" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                             <body name="node17" euler="0 0 0" pos="0 0 -0.0720">
                                                               <joint name="node17JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                <joint name="node17JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                <geom name="geom17" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                <body name="node18" euler="0 0 0" pos="0 0 -0.0720">
                                                                  <joint name="node18JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                   <joint name="node18JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                   <geom name="geom18" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                   <body name="node19" euler="0 0 0" pos="0 0 -0.0720">
                                                                     <joint name="node19JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                      <joint name="node19JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                      <geom name="geom19" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                      <body name="node20" euler="0 0 0" pos="0 0 -0.0720">
                                                                        <joint name="node20JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                         <joint name="node20JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                         <geom name="geom20" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                         <body name="node21" euler="0 0 0" pos="0 0 -0.0720">
                                                                           <joint name="node21JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                            <joint name="node21JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                           <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                           <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                            <geom name="geom21" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                            <body name="node22" euler="0 0 0" pos="0 0 -0.0720">
                                                                              <joint name="node22JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                               <joint name="node22JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                              <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                              <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                               <geom name="geom22" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                               <body name="node23" euler="0 0 0" pos="0 0 -0.0720">
                                                                                 <joint name="node23JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                  <joint name="node23JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                                  <geom name="geom23" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                                  <body name="node24" euler="0 0 0" pos="0 0 -0.0720">
                                                                                    <joint name="node24JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                     <joint name="node24JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                                     <geom name="geom24" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                                     <body name="node25" euler="0 0 0" pos="0 0 -0.0720">
                                                                                       <joint name="node25JointX" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                        <joint name="node25JointY" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
-                                                                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
+                                                                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
                                                                                        <geom name="geom25Tip" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0220000" mass="0.0120000" />
                                                                                     </body>
                                                                                  </body>

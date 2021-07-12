@@ -230,6 +230,9 @@ exportgraphics( f,'S_fig2.eps')
 data1 = myTxtParse( './myData/optimization_process/optimization_log_T1.txt');
 data2 = myTxtParse( './myData/optimization_process/optimization_log_T2.txt');
 data3 = myTxtParse( './myData/optimization_process/optimization_log_T3.txt');
+data4 = myTxtParse( './myData/optimization_process/optimization_log_T4.txt');
+data5 = myTxtParse( './myData/optimization_process/optimization_log_T5.txt');
+data6 = myTxtParse( './myData/optimization_process/optimization_log_T6.txt');
 
 f = figure(  );
 a = axes( 'parent', f );
@@ -244,7 +247,7 @@ plot( data3.Iter, data3.output, 'linewidth', 2.5, 'color', [0,0,1]);
 set( gca,'LineWidth', 2.0 ) 
 xlabel( 'Iteration (-)' ) % ylabel( '$L^*$ [m]' );
 legend( 'Target 1', 'Target 2', 'Target 3', 'fontsize', 30 )
-
+set( gca, 'xlim', [0,300] )
 exportgraphics( f,'fig2.eps')%,'ContentType','vector')
 
 
@@ -929,7 +932,7 @@ N = 25;
 
 
 f = figure( ); a = axes( 'parent', f ); hold on
-axis equal; box off; axis off; grid off;
+axis equal; 
 cArr = flipud( colormap( bone( 3 * N ) ) );
 
 
@@ -939,7 +942,7 @@ switch idx
     case 2
         cTarget = [0,0.5,0];
     case 3
-        cTarget = [0,0,1];
+        cTarget = [1,0,0];
 end
 
 viewArr = [ 10, 10;
@@ -997,9 +1000,9 @@ for i = 1 : 3
             
     p4 = scatter3( rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
-                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
+                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 200, ... 
                    'parent', a,   'LineWidth', 3, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.purple_plum, ... c.purple_plum, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ... c.purple_plum, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
                
@@ -1017,6 +1020,6 @@ set( a, 'ytick', [-1, 0, 1] ); set( a, 'yticklabel', [] )
 set( a, 'ztick', [-1, 0, 1] ); set( a, 'zticklabel', [] )
 set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
 
-
+axis equal
 
 exportgraphics( f,['CL_',num2str(idx),'_gradient.pdf'],'ContentType','vector')
