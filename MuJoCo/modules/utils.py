@@ -46,6 +46,8 @@ class MyVideo:
 
     def write( self, myViewer ):
         data = myViewer.read_pixels( self.height, self.width, depth = False )   # Get the pixel from the render screen
+        data = cv2.cvtColor( data, cv2.COLOR_BGR2RGB )
+
         # data = cv2.resize( data,( self.height, self.width  ) )
 
         self.outVideo.write( np.flip( data, axis = 0 ) )

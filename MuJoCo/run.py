@@ -81,6 +81,8 @@ Options:
                                [default: False]
     --camPos=STRING            Setting the Camera Position of the simulation.
                                default is None
+    --movPar=STRING            Setting the movementParameters
+                               default is None
     --verbose                  Print more text
                                [default: False]
     --attachWhipModel=STRING   Auto generating the xml model file used for the simulation.
@@ -184,7 +186,7 @@ def main( ):
     # ============================================================================= #
     # (1C) [RUN SIMULATION]
 
-    VISUALIZE = False if args[ 'runOptimization' ] or args[ 'videoOFF' ]else True                    # Turn-off visualization if runOptimization
+    VISUALIZE = False if args[ 'runOptimization' ] or args[ 'videoOFF' ] else True                    # Turn-off visualization if runOptimization
 
 
     mySim = Simulation(   model_name = model_name,
@@ -213,9 +215,9 @@ def main( ):
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
-        controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ]  ,
+        controller_object.set_ctrl_par(  mov_parameters = str2float( args[ 'movPar' ] ) ,
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
-                                                     B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
+                                                     B  = ( controller_object.B + np.transpose( controller_object.B ) ) * 2 )
 
         obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
         # [BACKUP] [Moses Nah]
@@ -227,6 +229,15 @@ def main( ):
         # Target 1 [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] idx 592, output 0.05086
         # Target 2 [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
         # Target 3 [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
+        # Target 4 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
+        # Target 5 [-0.94248,-0.00431, 0.01293, 1.41372, 1.72788, 0.6852 ,-0.10343, 1.2896 , 0.58333] idx 357, output 0.00400
+
+        # [CAMPOS]
+        # Target 1 camera position array [  0.40343,  0.72967, -0.71018,  3.7052 , -19.8 ,  152.2  ]
+        # Target 2 camera position array [  0.44317,  0.65556, -0.53888,  4.66869, -22.4 ,-151.8   ]
+        # Target 3 camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
+        # Target 4 camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
+        # Target 5 camera position array  [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6    ]
 
         # If distance is halved!
         # Target 3 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
