@@ -215,9 +215,9 @@ def main( ):
     elif "3D" in args[ 'modelName' ]:
 
         controller_object = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
-        controller_object.set_ctrl_par(  mov_parameters = str2float( args[ 'movPar' ] ) ,
+        controller_object.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
-                                                     B  = ( controller_object.B + np.transpose( controller_object.B ) ) * 2 )
+                                                     B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
         obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
         # [BACKUP] [Moses Nah]
