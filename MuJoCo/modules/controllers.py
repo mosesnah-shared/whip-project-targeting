@@ -455,7 +455,8 @@ class JointImpedanceController( ImpedanceController ):
 
         elif self.n_act == 4:   # 4DOF Robot
 
-            c = 0.05
+            # c = 0.05
+            c = 0.1
             self.K = np.array( [ [ 17.40, 4.70, -1.90, 8.40 ] ,
                                  [  9.00, 33.0,  4.40, 0.00 ] ,
                                  [ -13.6, 3.00,  27.7, 0.00 ] ,

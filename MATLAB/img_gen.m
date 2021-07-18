@@ -268,7 +268,7 @@ end
 
 %% -- (3B) Plot of Movement Snapshots
 
-idx = 3;        % Choose Target Type
+idx = 1;        % Choose Target Type
 
 idxS = find( rawData{ idx }.outputVal == min( rawData{ idx }.outputVal )  );
 
@@ -284,7 +284,7 @@ viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355 ];
 
-alpha = [0.4, 0.6, 1.0];                                              % The alpha values of each screen shot   
+alpha = [0.3, 0.5, 1.0];                                              % The alpha values of each screen shot   
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
 
@@ -292,11 +292,14 @@ switch idx
    
     case 1
         cTarget = [1,0,0];
-
+        cTarget = c.pink;
     case 2
         cTarget = [0,0.5,0];
+        cTarget = c.blue;
+        
     case 3
         cTarget = [0,0,1];
+        cTarget = c.green;
 end
 
 mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
@@ -312,13 +315,13 @@ for i = 1 : length( tIdx )
                  rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                  rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
                  'parent', a, ...
-                'linewidth', 7, 'color', [ c.black, alpha( i ) ] );
+                'linewidth', 7, 'color', [ 0.2,0.2, 0.2, alpha( i ) ] );
             
     p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
                    'parent', a,   'LineWidth',  5, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
 
                
@@ -332,7 +335,7 @@ for i = 1 : length( tIdx )
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
                    'parent', a,   'LineWidth', 3, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0.75, 0, 0.75], ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor',  c.black, ...[0.75, 0, 0.75], ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
                
