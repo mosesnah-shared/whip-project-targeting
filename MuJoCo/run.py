@@ -241,6 +241,11 @@ def main( ):
 
         # If distance is halved!
         # Target 3 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
+    elif "2" == args[ 'modelName' ][ 0 ]
+        # For two targets.
+        controller_object = JointSlidiingController( mySim.mjModel, mySim.mjData, args )
+
+
     else:   # If simply dummy, example model for quick debugging
         controller_object = NullController( mySim.mjModel, mySim.mjData )
         obj_func = None

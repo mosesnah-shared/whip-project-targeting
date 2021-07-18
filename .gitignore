@@ -19,7 +19,7 @@ results
 *include*
 *.cfg
 *share*
-
+backup
 
 
 # Ignore name called "html" and "latex" folder
@@ -29,6 +29,6 @@ latex
 jpg
 *.m~
 *.pyc
-*.asv 
+*.asv
 *.mp4
 *.sh

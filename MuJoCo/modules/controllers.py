@@ -49,6 +49,18 @@ class Controller( ):
         self.ctrl_par_names = None
 
 
+        # Basic Parameters of the model.
+        # Mostly the upper-limb model parameters
+        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
+        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
+        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
+        self.type           = None
+
+        # The gravity value
+        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
+
+
     def set_ctrl_par( self, **kwargs ):
         """
             Setting the control parameters
@@ -93,6 +105,117 @@ class NullController( Controller ):
 # [TODO] [Moses C. Nah] [04.20.2021]
 # We can simply use inheritance for the impedance controller
 
+class SlidingController( Controller ):
+    """
+        Description:
+        ----------
+            Sliding mode controller basic template.
+            This will be the parent class for "Joint" and "Cartesian" Space sliding controller.
+
+    """
+    def __init__( self, mjModel, mjData, mjArgs ):
+        super().__init__( mjModel, mjData, mjArgs )
+
+        # The symbolic function of the joint trajectory to track.
+        self.func_traj   = None
+        self.func_dtraj  = None
+        self.func_ddtraj = None
+
+        if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
+            bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
+
+            # Mass and Inertia Information of the limbs.
+            self.M  = [ self.mjModel.body_mass[ idx ]     for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
+            self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
+
+            # The length of the limb and length from proximal joint to center of mass
+            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
+            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
+
+            # The mass of the whip is the total mass
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
+    def input_calc( self, start_time, current_time ):
+        """
+            Calculating the torque input
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+    def set_traj( self ):
+        """
+            Set the trajectory of the sliding controller
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+    def get_traj( self):
+        """
+            Get the trajectory of the sliding controller
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+class JointSlidingController( SlidingController ):
+
+    def __init__( self, mjModel, mjData, mjArgs ):
+
+        super().__init__( mjModel, mjData, mjArgs )
+
+    def get_C( self ):
+        # Getting the Coriolis Term.    
+
+    def get_G( self ):
+        # Torque for Gravity compensation is simply tau = J^TF
+        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+        G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+          + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+
+        if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
+            G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+        return G
+
+    def get_M( self ):
+
+        # Just to simplfy or shrinken the length of code for this.
+        q        = self.mjData.qpos[ 0 : self.n_act ]
+        M1,   M2 = self.M
+        Lc1, Lc2 = self.Lc
+        L1,   L2 = self.L
+        I1xx, I1yy, I1zz = self.I[ 0 ]
+        I2xx, I2yy, I2zz = self.I[ 1 ]
+
+        if   self.n_act == 2:
+            NotImplementedError( )
+
+        elif self.n_act == 4:
+
+            M = np.zeros( (4, 4) )
+
+            M[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
+            M[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M[ 1, 1 ] = I2yy + Lc2**2*M2
+            M[ 0, 0 ] = I1zz*np.sin(q[1])**2 + M2*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2xx*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2zz*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3]))**2 + I1xx*np.cos(q[1])**2*np.sin(q[2])**2 + I1yy*np.cos(q[1])**2*np.cos(q[2])**2 + I2yy*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.sin(q[2])**2 + M2*np.cos(q[1])**2*np.cos(q[2])**2*(Lc2 + L1*np.cos(q[3]))**2 + L1**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.sin(q[3])**2
+            M[ 0, 1 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
+            M[ 0, 2 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
+            M[ 0, 3 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M[ 1, 0 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
+            M[ 1, 1 ] = I1xx + I2yy - I2yy*np.cos(q[2])**2 + I2zz*np.cos(q[2])**2 + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 - I1xx*np.sin(q[2])**2 + I1yy*np.sin(q[2])**2 - Lc2**2*M2*np.cos(q[2])**2 + I2xx*np.cos(q[2])**2*np.cos(q[3])**2 - I2zz*np.cos(q[2])**2*np.cos(q[3])**2 + 2*L1*Lc2*M2*np.cos(q[3]) + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])**2
+            M[ 1, 2 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
+            M[ 1, 3 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M[ 2, 0 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
+            M[ 2, 1 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
+            M[ 2, 2 ] = I1zz + I2zz + I2xx*np.sin(q[3])**2 - I2zz*np.sin(q[3])**2 + Lc2**2*M2*np.sin(q[3])**2
+            M[ 2, 3 ] = 0
+            M[ 3, 0 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M[ 3, 1 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M[ 3, 2 ] = 0
+            M[ 3, 3 ] = I2yy + Lc2**2*M2
+
+        return M
+
 class ImpedanceController( Controller ):
     """
         Description:
@@ -104,13 +227,6 @@ class ImpedanceController( Controller ):
     def __init__( self, mjModel, mjData, mjArgs ):
 
         super().__init__( mjModel, mjData, mjArgs )
-
-        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
-        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
-        self.type           = None
-        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
 
         # Impedance Controller uses pos, vel and acc of the ZFT (Zero-force trajectory), ZTT (Zero-torque trajectory)
         self.ZFT_func_pos   = None
