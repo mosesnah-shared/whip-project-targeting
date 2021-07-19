@@ -140,9 +140,11 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 
 # [Local modules]
 from modules.simulation   import Simulation
-from modules.controllers  import ImpedanceController, NullController, CartesianImpedanceController, JointImpedanceController
+from modules.controllers  import ( ImpedanceController, NullController, CartesianImpedanceController,
+                              JointImpedanceController, JointSlidingController )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
+from modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
 from modules.obj_funcs    import dist_from_tip2target
 from modules.constants    import Constants
 
@@ -156,8 +158,8 @@ if sys.version_info[ : 3 ] < ( 3, 0, 0 ):                                       
 
 
                                                                                 # [Printing Format]
-prec = 4                                                                        # Defining the float precision for print/number comparison.
-np.set_printoptions( linewidth = 8000, suppress = True, precision = prec )      # Setting the numpy print options, useful for printing out data with consistent pattern.
+np.set_printoptions( linewidth = 8000, suppress = True, precision = 4 )         # Setting the numpy print options, useful for printing out data with consistent pattern.
+                                                                                # precision: float precision for print/number comparison.
 
 args = docopt( __doc__, version = Constants.VERSION )                           # Parsing the Argument
 args = args_cleanup( args, '--' )                                               # Cleaning up the dictionary, discard prefix string '--' for the variables
@@ -194,13 +196,10 @@ def main( ):
                            arg_parse = args )
 
 
-    if   "2D" in args[ 'modelName' ]:
+    if  "1" == args[ 'modelName' ][ 0 ] and "2D" in args[ 'modelName' ]:
 
-        # [BACKUP]
         controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData, args )
-        # controller_object.set_ctrl_par(  mov_parameters =  [-1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011 ] )
 
-        # controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData, args )
         controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.6, 0, 1.5] )
 
         # [BACKUP]
@@ -208,13 +207,13 @@ def main( ):
         # 1_2D_model_w_N15.xml:  mov_parameters = [ -1.39303, 0.35122, 1.56649, 0.01508, 0.79451 ] ), min_val = 0.05939
         # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.56748, 0.09553, 1.57128, 0.05834, 0.80366 ] ), min_val = 0.08106
         # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] ), min_val = 0.02032
-
         obj_func = None
 
+    elif "1" == args[ 'modelName' ][ 0 ] and "3D" in args[ 'modelName' ]:
 
-    elif "3D" in args[ 'modelName' ]:
-
+        upper_limb        = UpperLimbModelSpatial(    mySim.mjModel, mySim.mjData, args )
         controller_object = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+
         controller_object.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
@@ -225,26 +224,27 @@ def main( ):
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
         #                                              K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
         #                                              B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
-        # AND THE RESULTS
-        # Target 1 [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] idx 592, output 0.05086
-        # Target 2 [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
-        # Target 3 [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
-        # Target 4 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
-        # Target 5 [-0.94248,-0.00431, 0.01293, 1.41372, 1.72788, 0.6852 ,-0.10343, 1.2896 , 0.58333] idx 357, output 0.00400
+        # [AND THE RESULTS]
+        # [Target 1] [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] idx 592, output 0.05086
+        # [Target 2] [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
+        # [Target 3] [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
+        # [Target 4] [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
+        # [Target 5] [-0.94248,-0.00431, 0.01293, 1.41372, 1.72788, 0.6852 ,-0.10343, 1.2896 , 0.58333] idx 357, output 0.00400
 
         # [CAMPOS]
-        # Target 1 camera position array [  0.40343,  0.72967, -0.71018,  3.7052 , -19.8 ,  152.2  ]
-        # Target 2 camera position array [  0.44317,  0.65556, -0.53888,  4.66869, -22.4 ,-151.8   ]
-        # Target 3 camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
-        # Target 4 camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
-        # Target 5 camera position array  [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6    ]
+        # [Target 1] camera position array [  0.40343,  0.72967, -0.71018,  3.7052 , -19.8 ,  152.2  ]
+        # [Target 2] camera position array [  0.44317,  0.65556, -0.53888,  4.66869, -22.4 ,-151.8   ]
+        # [Target 3] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
+        # [Target 4] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
+        # [Target 5] camera position array [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6  ]
 
-        # If distance is halved!
-        # Target 3 [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
-    elif "2" == args[ 'modelName' ][ 0 ]
-        # For two targets.
-        controller_object = JointSlidiingController( mySim.mjModel, mySim.mjData, args )
 
+    elif "2" == args[ 'modelName' ][ 0 ]:
+
+        controller_object = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
+        controller_object.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 1   ],
+                                                     Kl = 20 * np.identity( controller_object.n_act ) , Kd = 7 * np.identity( controller_object.n_act )  )
+        obj_func = None
 
     else:   # If simply dummy, example model for quick debugging
         controller_object = NullController( mySim.mjModel, mySim.mjData )
@@ -253,7 +253,6 @@ def main( ):
 
     mySim.attach_controller( controller_object )
     mySim.attach_obj_function( obj_func  )
-
 
     if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
 
