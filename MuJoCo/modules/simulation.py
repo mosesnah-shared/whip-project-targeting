@@ -92,13 +92,12 @@ class Simulation( ):
             self.fps         = 60                                               # Frames per second for the mujoco render
             self.dt          = self.mjModel.opt.timestep                        # Time step of the simulation [sec]
             self.sim_step    = 0                                                # Number of steps of the simulation, in integer [-]
-            self.update_rate = round( 1 / self.dt / self.fps )#/ 5 )         # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
+            self.update_rate = round( 1 / self.dt / self.fps  )                 # 1/dt = number of steps N for 1 second simulaiton, dividing this with frames-per-second (fps) gives us the frame step to be updated.
             self.g           = self.mjModel.opt.gravity                         # Calling the gravity vector of the simulation environment
 
             # Saving additional model parameters for multiple purposes
             self.act_names      = self.mjModel.actuator_names
-            self.geom_names     = self.mjModel.geom_names
-            self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.geom_names  ]
+            self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.mjModel.geom_names  ]
 
             self.n_acts      = len( self.mjModel.actuator_names )
             self.n_limbs     = '-'.join( self.mjModel.body_names ).lower().count( 'arm' )
@@ -226,11 +225,10 @@ class Simulation( ):
         if self.args[ 'saveData' ] or self.args[ 'runOptimization' ]:
             file = open( self.args[ 'saveDir' ] + "data_log.txt", "a+" )
 
-
-
         # Setting the initial condition of the robot.
         self.set_initial_condition()
-        self.controller.set_ZFT( )
+        self.controller.set_traj( )
+        # self.controller.set_ZFT( )
 
         if self.args[ 'camPos' ] is not None:
 
@@ -347,7 +345,7 @@ class Simulation( ):
         if "_w_" in self.model_name:                                            # If whip is attached to the model.
                                                                                 # This is distinguished by the xml model file's name. "_w_" is included on the name.
 
-            tmp = self.mjData.get_body_xquat( "node1" )                         # Getting the quaternion angle of the whip handle
+            tmp = self.mjData.get_body_xquat( "body_node1" )                         # Getting the quaternion angle of the whip handle
             yaw, pitch, roll = quaternion2euler( tmp )
 
             if   nJ == 2: # for 2DOF Robot - The connection between the whip and upper-limb has 1DOF

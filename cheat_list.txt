@@ -1,0 +1,73 @@
+# output of dir( mySim.mjModel)
+#     '__class__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__
+# init__', '__init_subclass__', '__le__', '__lt__', '__ne__', '__new__', '__pyx_vtable__', '__reduce__', '__reduce_ex__', '__repr__'
+# , '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', '_actuator_id2name', '_actuator_name2id', '_body_id2
+# name', '_body_name2id', '_camera_id2name', '_camera_name2id', '_geom_id2name', '_geom_name2id', '_joint_id2name', '_joint_name2id'
+# , '_light_id2name', '_light_name2id', '_mesh_id2name', '_mesh_name2id', '_sensor_id2name', '_sensor_name2id', '_site_id2name', '_s
+# ite_name2id', '_tendon_id2name', '_tendon_name2id', '_userdata_id2name', '_userdata_name2id', 'actuator_acc0', 'actuator_biasprm',
+#  'actuator_biastype', 'actuator_cranklength', 'actuator_ctrllimited', 'actuator_ctrlrange', 'actuator_dynprm', 'actuator_dyntype',
+#  'actuator_forcelimited', 'actuator_forcerange', 'actuator_gainprm', 'actuator_gaintype', 'actuator_gear', 'actuator_group', 'actu
+# ator_id2name', 'actuator_length0', 'actuator_lengthrange', 'actuator_name2id', 'actuator_names', 'actuator_trnid', 'actuator_trnty
+# pe', 'actuator_user', 'body_dofadr', 'body_dofnum', 'body_geomadr', 'body_geomnum', 'body_id2name', 'body_inertia', 'body_invweigh
+# t0', 'body_ipos', 'body_iquat', 'body_jntadr', 'body_jntnum', 'body_mass', 'body_mocapid', 'body_name2id', 'body_names', 'body_par
+# entid', 'body_pos', 'body_quat', 'body_rootid', 'body_sameframe', 'body_simple', 'body_subtreemass', 'body_user', 'body_weldid',
+# 'cam_bodyid', 'cam_fovy', 'cam_ipd', 'cam_mat0', 'cam_mode', 'cam_pos', 'cam_pos0', 'cam_poscom0', 'cam_quat', 'cam_targetbodyid',
+# 'cam_user', 'camera_id2name', 'camera_name2id', 'camera_names', 'dof_M0', 'dof_Madr', 'dof_armature', 'dof_bodyid', 'dof_damping',
+#  'dof_frictionloss', 'dof_invweight0', 'dof_jntid', 'dof_parentid', 'dof_simplenum', 'dof_solimp', 'dof_solref', 'eq_active', 'eq_
+# data', 'eq_obj1id', 'eq_obj2id', 'eq_solimp', 'eq_solref', 'eq_type', 'exclude_signature', 'geom_bodyid', 'geom_conaffinity', 'geo
+# m_condim', 'geom_contype', 'geom_dataid', 'geom_friction', 'geom_gap', 'geom_group', 'geom_id2name', 'geom_margin', 'geom_matid',
+# 'geom_name2id', 'geom_names', 'geom_pos', 'geom_priority', 'geom_quat', 'geom_rbound', 'geom_rgba', 'geom_sameframe', 'geom_size',
+#  'geom_solimp', 'geom_solmix', 'geom_solref', 'geom_type', 'geom_user', 'get_joint_qpos_addr', 'get_joint_qvel_addr', 'get_mjb', '
+# get_xml', 'hfield_adr', 'hfield_data', 'hfield_ncol', 'hfield_nrow', 'hfield_size', 'jnt_axis', 'jnt_bodyid', 'jnt_dofadr', 'jnt_g
+# roup', 'jnt_limited', 'jnt_margin', 'jnt_pos', 'jnt_qposadr', 'jnt_range', 'jnt_solimp', 'jnt_solref', 'jnt_stiffness', 'jnt_type'
+# , 'jnt_user', 'joint_id2name', 'joint_name2id', 'joint_names', 'key_act', 'key_qpos', 'key_qvel', 'key_time', 'light_active', 'lig
+# ht_ambient', 'light_attenuation', 'light_bodyid', 'light_castshadow', 'light_cutoff', 'light_diffuse', 'light_dir', 'light_dir0',
+# 'light_directional', 'light_exponent', 'light_id2name', 'light_mode', 'light_name2id', 'light_names', 'light_pos', 'light_pos0',
+# 'light_poscom0', 'light_specular', 'light_targetbodyid', 'mat_emission', 'mat_reflectance', 'mat_rgba', 'mat_shininess', 'mat_specu
+# lar', 'mat_texid', 'mat_texrepeat', 'mat_texuniform', 'mesh_face', 'mesh_faceadr', 'mesh_facenum', 'mesh_graph', 'mesh_graphadr',
+# 'mesh_id2name', 'mesh_name2id', 'mesh_names', 'mesh_normal', 'mesh_texcoord', 'mesh_texcoordadr', 'mesh_vert', 'mesh_vertadr', 'me
+# sh_vertnum', 'nM', 'na', 'name_actuatoradr', 'name_bodyadr', 'name_camadr', 'name_eqadr', 'name_excludeadr', 'name_geomadr', 'name
+# _hfieldadr', 'name_jntadr', 'name_keyadr', 'name_lightadr', 'name_matadr', 'name_meshadr', 'name_numericadr', 'name_pairadr', 'nam
+# e_sensoradr', 'name_siteadr', 'name_skinadr', 'name_tendonadr', 'name_texadr', 'name_textadr', 'name_tupleadr', 'names', 'nbody',
+# 'nbuffer', 'ncam', 'nconmax', 'nemax', 'neq', 'nexclude', 'ngeom', 'nhfield', 'nhfielddata', 'njmax', 'njnt', 'nkey', 'nlight', 'n
+# mat', 'nmesh', 'nmeshface', 'nmeshgraph', 'nmeshtexvert', 'nmeshvert', 'nmocap', 'nnames', 'nnumeric', 'nnumericdata', 'npair', 'n
+# q', 'nsensor', 'nsensordata', 'nsite', 'nskin', 'nskinbone', 'nskinbonevert', 'nskinface', 'nskintexvert', 'nskinvert', 'nstack',
+# 'ntendon', 'ntex', 'ntexdata', 'ntext', 'ntextdata', 'ntuple', 'ntupledata', 'nu', 'numeric_adr', 'numeric_data', 'numeric_size',
+# 'nuser_actuator', 'nuser_body', 'nuser_cam', 'nuser_geom', 'nuser_jnt', 'nuser_sensor', 'nuser_site', 'nuser_tendon', 'nuserdata',
+#  'nv', 'nwrap', 'opt', 'pair_dim', 'pair_friction', 'pair_gap', 'pair_geom1', 'pair_geom2', 'pair_margin', 'pair_signature','pair_solimp', 'pair_solref', 'qpos0', 'qpos_spring', 'sensor_adr', 'sensor_cutoff', 'sensor_datatype', 'sensor_dim', 'sensor_id2name',
+#  'sensor_name2id', 'sensor_names', 'sensor_needstage', 'sensor_noise', 'sensor_objid', 'sensor_objtype', 'sensor_type', 'sensor_us
+# er', 'set_userdata_names', 'site_bodyid', 'site_group', 'site_id2name', 'site_matid', 'site_name2id', 'site_names', 'site_pos', 's
+# ite_quat', 'site_rgba', 'site_sameframe', 'site_size', 'site_type', 'site_user', 'skin_boneadr', 'skin_bonebindpos', 'skin_bonebin
+# dquat', 'skin_bonebodyid', 'skin_bonenum', 'skin_bonevertadr', 'skin_bonevertid', 'skin_bonevertnum', 'skin_bonevertweight', 'skin
+# _face', 'skin_faceadr', 'skin_facenum', 'skin_inflate', 'skin_matid', 'skin_rgba', 'skin_texcoord', 'skin_texcoordadr', 'skin_vert
+# ', 'skin_vertadr', 'skin_vertnum', 'stat', 'tendon_adr', 'tendon_damping', 'tendon_frictionloss', 'tendon_group', 'tendon_id2name'
+# , 'tendon_invweight0', 'tendon_length0', 'tendon_lengthspring', 'tendon_limited', 'tendon_margin', 'tendon_matid', 'tendon_name2id
+# ', 'tendon_names', 'tendon_num', 'tendon_range', 'tendon_rgba', 'tendon_solimp_fri', 'tendon_solimp_lim', 'tendon_solref_fri', 'te
+# ndon_solref_lim', 'tendon_stiffness', 'tendon_user', 'tendon_width', 'tex_adr', 'tex_height', 'tex_rgb', 'tex_type', 'tex_width',
+# 'text_adr', 'text_data', 'text_size', 'tuple_adr', 'tuple_objid', 'tuple_objprm', 'tuple_objtype', 'tuple_size', 'uintptr', 'userd
+# ata_id2name', 'userdata_name2id', 'userdata_names', 'vis', 'wrap_objid', 'wrap_prm', 'wrap_type']
+
+# [BACKUP] LIST FOR mjData
+# output of dir( mySim.mjData )
+# ['__class__', '__delattr__', '__dir__', '__doc__', '__eq__', '__format__', '__ge__', '__getattribute__', '__gt__', '__hash__', '__
+# init__', '__init_subclass__', '__le__', '__lt__', '__ne__', '__new__', '__pyx_vtable__', '__reduce__', '__reduce_ex__', '__repr__'
+# , '__setattr__', '__setstate__', '__sizeof__', '__str__', '__subclasshook__', 'act', 'act_dot', 'active_contacts_efc_pos', 'actuat
+# or_force', 'actuator_length', 'actuator_moment', 'actuator_velocity', 'body_jacp', 'body_jacr', 'body_xmat', 'body_xpos', 'body_xq
+# uat', 'body_xvelp', 'body_xvelr', 'cacc', 'cam_xmat', 'cam_xpos', 'cdof', 'cdof_dot', 'cfrc_ext', 'cfrc_int', 'cinert', 'contact',
+#  'crb', 'ctrl', 'cvel', 'efc_AR', 'efc_AR_colind', 'efc_AR_rowadr', 'efc_AR_rownnz', 'efc_D', 'efc_J', 'efc_JT', 'efc_JT_colind',
+# 'efc_JT_rowadr', 'efc_JT_rownnz', 'efc_JT_rowsuper', 'efc_J_colind', 'efc_J_rowadr', 'efc_J_rownnz', 'efc_J_rowsuper', 'efc_KBIP',
+#  'efc_R', 'efc_aref', 'efc_b', 'efc_diagApprox', 'efc_force', 'efc_frictionloss', 'efc_id', 'efc_margin', 'efc_pos', 'efc_state',
+# 'efc_type', 'efc_vel', 'energy', 'geom_jacp', 'geom_jacr', 'geom_xmat', 'geom_xpos', 'geom_xvelp', 'geom_xvelr', 'get_body_jacp',
+# 'get_body_jacr', 'get_body_ximat', 'get_body_xipos', 'get_body_xmat', 'get_body_xpos', 'get_body_xquat', 'get_body_xvelp', 'get_bo
+# dy_xvelr', 'get_cam_xmat', 'get_cam_xpos', 'get_camera_xmat', 'get_camera_xpos', 'get_geom_jacp', 'get_geom_jacr', 'get_geom_xmat'
+# , 'get_geom_xpos', 'get_geom_xvelp', 'get_geom_xvelr', 'get_joint_qpos', 'get_joint_qvel', 'get_joint_xanchor', 'get_joint_xaxis',
+#  'get_light_xdir', 'get_light_xpos', 'get_mocap_pos', 'get_mocap_quat', 'get_sensor', 'get_sensordata', 'get_site_jacp', 'get_site
+# _jacr', 'get_site_xmat', 'get_site_xpos', 'get_site_xvelp', 'get_site_xvelr', 'get_userdata', 'get_xanchor', 'get_xaxis', 'get_xim
+# at', 'get_xipos', 'get_xmat', 'get_xpos', 'get_xquat', 'light_xdir', 'light_xpos', 'maxuse_con', 'maxuse_efc', 'maxuse_stack', 'mo
+# cap_pos', 'mocap_quat', 'nbuffer', 'ncon', 'ne', 'nefc', 'nf', 'nstack', 'pstack', 'qLD', 'qLDiagInv', 'qLDiagSqrtInv', 'qM', 'qac
+# c', 'qacc_unc', 'qacc_warmstart', 'qfrc_actuator', 'qfrc_applied', 'qfrc_bias', 'qfrc_constraint', 'qfrc_inverse', 'qfrc_passive',
+#  'qfrc_unc', 'qpos', 'qvel', 'sensordata', 'set_joint_qpos', 'set_joint_qvel', 'set_mocap_pos', 'set_mocap_quat', 'site_jacp', 'si
+# te_jacr', 'site_xmat', 'site_xpos', 'site_xvelp', 'site_xvelr', 'solver', 'solver_fwdinv', 'solver_iter', 'solver_nnz', 'subtree_a
+# ngmom', 'subtree_com', 'subtree_linvel', 'ten_J', 'ten_J_colind', 'ten_J_rowadr', 'ten_J_rownnz', 'ten_length', 'ten_velocity', 't
+# en_wrapadr', 'ten_wrapnum', 'time', 'timer', 'uintptr', 'userdata', 'warning', 'wrap_obj', 'wrap_xpos', 'xanchor', 'xaxis', 'xfrc_
+# applied', 'ximat', 'xipos', 'xmat', 'xpos', 'xquat']

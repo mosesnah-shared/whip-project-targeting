@@ -8,6 +8,7 @@ import pickle
 
 from   modules.utils        import my_print
 from   modules.traj_funcs   import min_jerk_traj
+from   modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
 import matplotlib.pyplot as plt
 
 try:
@@ -48,18 +49,14 @@ class Controller( ):
         self.mjArgs         = mjArgs
         self.ctrl_par_names = None
 
-
         # Basic Parameters of the model.
         # Mostly the upper-limb model parameters
-        self.act_names      = mjModel.actuator_names                            # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( mjModel.actuator_names )                     # The number of actuators, 2 for 2D model and 4 for 3D model
+        self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
         self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-        self.n_limbs        = '-'.join( mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
-        self.type           = None
-
-        # The gravity value
         self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
 
+        self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
 
     def set_ctrl_par( self, **kwargs ):
         """
@@ -116,45 +113,37 @@ class SlidingController( Controller ):
     def __init__( self, mjModel, mjData, mjArgs ):
         super().__init__( mjModel, mjData, mjArgs )
 
-        # The symbolic function of the joint trajectory to track.
-        self.func_traj   = None
-        self.func_dtraj  = None
-        self.func_ddtraj = None
+        # Sliding controller requires to know the inertial and coriolis term matrices for the controller.
+        # Hence creating the upperlimb_model class
+        if   self.n_act == 2:
+            self.upperlimb_model = UpperLimbModelPlanar(  mjModel, mjData, mjArgs )
 
-        if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
-            bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
+        elif self.n_act == 4:
+            self.upperlimb_model = UpperLimbModelSpatial( mjModel, mjData, mjArgs )
 
-            # Mass and Inertia Information of the limbs.
-            self.M  = [ self.mjModel.body_mass[ idx ]     for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
-            self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
+        # The symbolic function of the trajectory to track.
+        self.func_pos = None
+        self.func_vel = None
+        self.func_acc = None
 
-            # The length of the limb and length from proximal joint to center of mass
-            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
-            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
-
-            # The mass of the whip is the total mass
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
-
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
 
     def input_calc( self, start_time, current_time ):
         """
             Calculating the torque input
         """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
 
     def set_traj( self ):
         """
             Set the trajectory of the sliding controller
         """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
 
     def get_traj( self):
         """
             Get the trajectory of the sliding controller
         """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
 
 class JointSlidingController( SlidingController ):
 
@@ -162,59 +151,64 @@ class JointSlidingController( SlidingController ):
 
         super().__init__( mjModel, mjData, mjArgs )
 
-    def get_C( self ):
-        # Getting the Coriolis Term.    
+        self.n_mov_pars     = self.n_act * 2 + 1                                # Starting point (2), ending point (2) and the duration (1) between the two.
+        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
+        self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ]  # The number of ctrl parameters. This definition would be useful for the optimization process.
+                                                                                # K and B has 2^2 elements, hence 4
 
-    def get_G( self ):
-        # Torque for Gravity compensation is simply tau = J^TF
-        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-        G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-          + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+        self.ctrl_par_names = [ "mov_parameters", "Kd", "Kl" ]                  # Kl: s = q' + Kl q
+                                                                                # Kd: tau = M(q)qr'' + C(q,q')qr' + G(q) - Kds
+
+    def set_traj( self ):
+
+        pi = np.array( self.mov_parameters[ 0          :     self.n_act ] )
+        pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
+        D  = self.mov_parameters[ -1 ]
+
+        self.func_pos = min_jerk_traj( self.t_sym, pi, pf, D )
+        self.func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_pos ]
+        self.func_acc = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_vel ]
+
+        # Lambdify the functions
+        # [TIP] This is necessary for computation Speed!
+        self.func_pos = lambdify( self.t_sym, self.func_pos )
+        self.func_vel = lambdify( self.t_sym, self.func_vel )
+        self.func_acc = lambdify( self.t_sym, self.func_acc )
+
+    def input_calc( self, start_time, current_time ):
+
+        q    = self.mjData.qpos[ 0 : self.n_act ]
+        dq   = self.mjData.qvel[ 0 : self.n_act ]
+
+        if   current_time >= start_time and current_time <= start_time + self.mov_parameters[ -1 ]:   # If time greater than startTime
+            qd   = self.func_pos( current_time - start_time )
+            dqd  = self.func_vel( current_time - start_time )
+            ddqd = self.func_acc( current_time - start_time )
+
+        elif current_time >= start_time + self.mov_parameters[ -1 ]:            # If time greater than startTime
+            qd   = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
+            dqd  = np.zeros( self.n_act )
+            ddqd = np.zeros( self.n_act )
+
+        else:
+            qd   = np.array( self.mov_parameters[ 0 :  self.n_act ] )
+            dqd  = np.zeros( self.n_act )
+            ddqd = np.zeros( self.n_act )
+
+        dqr  =  dqd - self.Kl.dot(  q - qd   )
+        ddqr = ddqd - self.Kl.dot( dq - dqd  )
+        s    = dq - dqr
+
+        Mmat = self.upperlimb_model.get_M( q     )
+        Cmat = self.upperlimb_model.get_C( q, dq )
+        Gmat = self.upperlimb_model.get_G(       )
 
         if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
-            G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+            Gmat += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"  ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, -0.3 * self.g  )
 
-        return G
+        tau = Mmat.dot( ddqr ) + Cmat.dot( dqr ) + Gmat - self.Kd.dot( s )
+        return self.mjData.ctrl, self.idx_act, tau
 
-    def get_M( self ):
-
-        # Just to simplfy or shrinken the length of code for this.
-        q        = self.mjData.qpos[ 0 : self.n_act ]
-        M1,   M2 = self.M
-        Lc1, Lc2 = self.Lc
-        L1,   L2 = self.L
-        I1xx, I1yy, I1zz = self.I[ 0 ]
-        I2xx, I2yy, I2zz = self.I[ 1 ]
-
-        if   self.n_act == 2:
-            NotImplementedError( )
-
-        elif self.n_act == 4:
-
-            M = np.zeros( (4, 4) )
-
-            M[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
-            M[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 1 ] = I2yy + Lc2**2*M2
-            M[ 0, 0 ] = I1zz*np.sin(q[1])**2 + M2*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2xx*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2zz*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3]))**2 + I1xx*np.cos(q[1])**2*np.sin(q[2])**2 + I1yy*np.cos(q[1])**2*np.cos(q[2])**2 + I2yy*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.sin(q[2])**2 + M2*np.cos(q[1])**2*np.cos(q[2])**2*(Lc2 + L1*np.cos(q[3]))**2 + L1**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.sin(q[3])**2
-            M[ 0, 1 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
-            M[ 0, 2 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
-            M[ 0, 3 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 1, 0 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
-            M[ 1, 1 ] = I1xx + I2yy - I2yy*np.cos(q[2])**2 + I2zz*np.cos(q[2])**2 + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 - I1xx*np.sin(q[2])**2 + I1yy*np.sin(q[2])**2 - Lc2**2*M2*np.cos(q[2])**2 + I2xx*np.cos(q[2])**2*np.cos(q[3])**2 - I2zz*np.cos(q[2])**2*np.cos(q[3])**2 + 2*L1*Lc2*M2*np.cos(q[3]) + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])**2
-            M[ 1, 2 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
-            M[ 1, 3 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 2, 0 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
-            M[ 2, 1 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
-            M[ 2, 2 ] = I1zz + I2zz + I2xx*np.sin(q[3])**2 - I2zz*np.sin(q[3])**2 + Lc2**2*M2*np.sin(q[3])**2
-            M[ 2, 3 ] = 0
-            M[ 3, 0 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 3, 1 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 3, 2 ] = 0
-            M[ 3, 3 ] = I2yy + Lc2**2*M2
-
-        return M
 
 class ImpedanceController( Controller ):
     """
@@ -342,78 +336,6 @@ class CartesianImpedanceController( ImpedanceController ):
 
         return dJ
 
-
-    def get_C( self ):
-
-        # Just to simplfy or shrinken the length of code for this.
-        q        = self.mjData.qpos[ 0 : self.n_act ]
-        dq       = self.mjData.qvel[ 0 : self.n_act ]
-        M1,   M2 = self.M
-        Lc1, Lc2 = self.Lc
-        L1,   L2 = self.L
-        I1xx, I1yy, I1zz = self.I[ 0 ]
-        I2xx, I2yy, I2zz = self.I[ 1 ]
-
-        if   self.n_act == 2:
-
-            C = np.zeros( (2, 2) )
-
-            C[0, 0] = -L1*Lc2*M2*np.sin(q[1])*dq[1]
-            C[0, 1] = -L1*Lc2*M2*np.sin(q[1])*(dq[0] + dq[1])
-            C[1, 0] = L1*Lc2*M2*np.sin(q[1])*dq[0]
-            C[1, 1] = 0
-
-        elif self.n_act == 4:
-            NotImplementedError( )
-
-        return C
-
-
-    def get_M( self ):
-
-        # Just to simplfy or shrinken the length of code for this.
-        q        = self.mjData.qpos[ 0 : self.n_act ]
-        M1,   M2 = self.M
-        Lc1, Lc2 = self.Lc
-        L1,   L2 = self.L
-        I1xx, I1yy, I1zz = self.I[ 0 ]
-        I2xx, I2yy, I2zz = self.I[ 1 ]
-
-        if   self.n_act == 2:
-
-            M = np.zeros( (2, 2) )
-
-            M[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
-            M[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 1 ] = I2yy + Lc2**2*M2
-
-        elif self.n_act == 4:
-
-            M = np.zeros( (4, 4) )
-
-            M[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
-            M[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
-            M[ 1, 1 ] = I2yy + Lc2**2*M2
-            M[ 0, 0 ] = I1zz*np.sin(q[1])**2 + M2*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2xx*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2zz*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3]))**2 + I1xx*np.cos(q[1])**2*np.sin(q[2])**2 + I1yy*np.cos(q[1])**2*np.cos(q[2])**2 + I2yy*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.sin(q[2])**2 + M2*np.cos(q[1])**2*np.cos(q[2])**2*(Lc2 + L1*np.cos(q[3]))**2 + L1**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.sin(q[3])**2
-            M[ 0, 1 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
-            M[ 0, 2 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
-            M[ 0, 3 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 1, 0 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
-            M[ 1, 1 ] = I1xx + I2yy - I2yy*np.cos(q[2])**2 + I2zz*np.cos(q[2])**2 + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 - I1xx*np.sin(q[2])**2 + I1yy*np.sin(q[2])**2 - Lc2**2*M2*np.cos(q[2])**2 + I2xx*np.cos(q[2])**2*np.cos(q[3])**2 - I2zz*np.cos(q[2])**2*np.cos(q[3])**2 + 2*L1*Lc2*M2*np.cos(q[3]) + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])**2
-            M[ 1, 2 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
-            M[ 1, 3 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 2, 0 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
-            M[ 2, 1 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
-            M[ 2, 2 ] = I1zz + I2zz + I2xx*np.sin(q[3])**2 - I2zz*np.sin(q[3])**2 + Lc2**2*M2*np.sin(q[3])**2
-            M[ 2, 3 ] = 0
-            M[ 3, 0 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 3, 1 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
-            M[ 3, 2 ] = 0
-            M[ 3, 3 ] = I2yy + Lc2**2*M2
-
-        return M
 
 
     def get_G( self ):
