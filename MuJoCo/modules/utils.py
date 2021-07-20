@@ -55,6 +55,51 @@ class MyVideo:
     def release( self ):
         self.outVideo.release()
 
+class MyModelParser:
+
+    def __init__( self, model_name ):
+        """
+            Input the model_name (i.e., directory to the xml model file), and then parse the important information.
+        """
+        
+
+    def length_elem2elem( self, elem_name1, elem_name2 ):
+        type1 = self.get_elem_type( elem_name1 )
+        type2 = self.get_elem_type( elem_name2 )
+
+        # The euclidean distance between two elements, calling using "get_geom_xpos" or "get_site_xpos" or "get_body_xpos" methods
+        return np.linalg.norm( getattr( self.mjData, "get_" + type1 + "_" + "xpos" )( elem_name1 )
+                             - getattr( self.mjData, "get_" + type2 + "_" + "xpos" )( elem_name2 ) , ord = 1  )
+
+    def get_elem_type( self, elem_name ):
+        """
+            The naming convention of our mujoco simulation is "{elem}_name", where elem = [geom, site, body]
+            The string before the first underbar '_' describes the elem(ent) of the model.
+            This function parses the string and returns the first string (i.e., the element of the model)
+        """
+        return elem_name.split( '_' )[ 0 ]                                      # Parse and get the first string before "_"
+
+    def get_property( self, elem_name, prop_name ):
+        # Get the property of the name
+
+        # The name of the elements start with "XXXX_", hence getting the string before the underbar.
+        type = self.get_elem_type( elem_name )
+
+        for idx, s in enumerate( getattr( self.mjModel, type + "_" + "names" ) ):  # run through the list of "geom_names" or "body_names"
+            if elem_name == s:
+                tmp = getattr( self.mjModel, type + "_" + prop_name )
+                return tmp[ idx ]
+
+        # If couldn't match in list, raise error
+        raise NameError( 'Cannot find geom_name with {0} in list, please check'.format( elem_name )  )
+
+    def get_elem_type( self, elem_name ):
+
+        return elem_name.split( '_' )[ 0 ]                                      # Parse and get the first string before "_"
+
+
+
+
 def snake2camel( s ):
     """
         Switch string s from snake_form_naming to CamelCase
@@ -170,7 +215,6 @@ def quaternion2euler( quatVec ):                                                
     yaw    = myMath.atan2( t3, t4 )
 
     return yaw, pitch, roll
-
 
 def str2bool( s ):
     """

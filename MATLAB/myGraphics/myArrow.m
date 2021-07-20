@@ -48,7 +48,7 @@ classdef myArrow < myGraphics
         
         LineWidth   = 2;
         Color       = [0, 0.4470, 0.7410 ];
-        MaxheadSize = 0.4;
+        MaxheadSize = 0.9;
         
     end
     

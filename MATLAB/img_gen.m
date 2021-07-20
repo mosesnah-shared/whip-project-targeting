@@ -1026,3 +1026,103 @@ set(a,'LineWidth',3.5 ); set(a, 'TickLength',[0.000 0.000]);
 axis equal
 
 exportgraphics( f,['CL_',num2str(idx),'_gradient.pdf'],'ContentType','vector')
+
+%% ==================================================================
+%% (6-) Cover Image
+%% -- (6A) Force-end-effector Plot
+close all
+
+idx  = 3;
+
+data = myTxtParse( ['./myData/force_data/data_log_T', num2str( idx ), '_Force.txt' ] );
+
+%%
+D = [0.95, 0.579, 0.95];
+
+[ ~,closestIndex] = min(abs( data.currentTime - ( 0.1 + D( idx ) ) ));
+
+myC = [c.pink; c.blue; c.green ];
+
+ttmp = closestIndex;
+% ttmp = find( data.minVal == min( data.minVal ) );
+
+EEpos = data.geomXYZPositions(  10:12, 1:ttmp );
+EEvel = data.geomXYZVelocities( 10:12, 1:ttmp );
+
+fVec  = data.forceVec( :, 1:ttmp + 20 );
+
+plot3( EEpos( 1,: ), EEpos( 2,: ), EEpos( 3,: ), 'color', myC( idx, : ), 'linewidth', 5 );
+hold on 
+scatter3( EEpos( 1,: ), EEpos( 2,: ), EEpos( 3,: ), 400, 'o', 'markeredgecolor', myC( idx, : ), 'markerfacecolor', c.white, 'markerfacealpha', 0.8, 'linewidth', 6 );
+
+% Adding force vector.
+scale = 0.02;
+quiver3(  data.geomXYZPositions( 10,1:ttmp  ), data.geomXYZPositions( 11, 1:ttmp  ), data.geomXYZPositions( 12,1:ttmp  ),...
+          data.forceVec( 1, 1:ttmp ) * scale, data.forceVec( 2, 1:ttmp  ) * scale, data.forceVec( 3, 1:ttmp ) * scale, ...
+          'linewidth', 5, 'color', c.black, 'AutoScale', 'off'  )
+
+   
+      
+axis equal
+
+
+% for i = 1: ttmp
+%    J_vals( :, :, i ) = J_func( L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
+%    ZFTvel( :, i ) = J_vals( :, :, i ) * data.jointVelActual( 1:4, i );
+%    
+%    Cx = Cx_func(  L1, L2, qMat( i, 1 ), qMat( i, 2 ), qMat( i, 3 ), qMat( i, 4 ) );
+%    Kx = Cx^-1;       
+%    
+%    tmp1( :, i ) = Kx * ( pEE_ZFT( :, i ) - EEpos( :, i ) );
+% end
+
+% What is the force due to Kx x
+
+% tmp2 = 0.05 * Kx * ( ZFTvel - EEvel );
+
+% tmp = tmp1 + tmp2;
+% tmp = tmp1;
+
+% scale = 0.0000001;
+% quiver3(  EEpos( 1,1:ttmp ), EEpos( 2, 1:ttmp ), EEpos( 3,1:ttmp ),...
+%           tmp( 1,1:ttmp) * scale, tmp( 2, 1:ttmp) * scale, tmp( 3, 1:ttmp ) * scale, ...
+%           'linewidth', 5, 'color', c.green, 'AutoScale', 'on'  )
+
+tmpLim = 0.8;
+set( gca, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
+                     'YLim',   [ -tmpLim , tmpLim ] , ...    
+                     'ZLim',   [ -tmpLim , tmpLim ] , ...
+                     'view',   [0   0]     )           
+                 
+set( gca, 'xtick', [-0.5, 0, 0.5] ); set( gca, 'xticklabel', ["-0.5", "\fontsize{50}X (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
+set( gca, 'ytick', [-0.5, 0, 0.5] ); set( gca, 'yticklabel', ["-0.5", "\fontsize{50}Y (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
+set( gca, 'ztick', [-0.5, 0, 0.5] ); set( gca, 'zticklabel', ["-0.5", "\fontsize{50}Z (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
+set(gca,'LineWidth',3.0 ); set(gca, 'TickLength',[0.01, 0.03]);
+xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
+                 
+
+%% -- (6B) Time-Power Plot
+
+f = figure( ) ;
+a = axes( 'parent', f ) ;
+
+ttmp = find( data.minVal == min( data.minVal ) );
+st = 20;
+
+pIn = sum( data.forceVec .* data.geomXYZVelocities( 10:12, : ));
+hold on
+
+D = [0.95, 0.579, 0.95];
+
+yyaxis right
+ylabel('Distance (m)')
+plot( a, data.currentTime( 1: ttmp + st ) , data.minVal( 1: ttmp + st) )
+
+yyaxis left
+ylabel('Power-In (W)')
+plot( a, data.currentTime( 1: ttmp + st ) , pIn( 1: ttmp + st) )
+set( gca, 'xtick', [0.1, 0.1+D( idx ), round( data.currentTime( ttmp ), 2 ) ] )
+set( gca, 'xlim', [0, max( data.currentTime( 1: ttmp + st ) ) ] )
+
+xlabel( 'Time (sec)' ); 
+ mySaveFig( f, ['output', num2str( idx )] );

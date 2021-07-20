@@ -10,7 +10,7 @@ clear all; close all; clc; workspace;
 
 cd( fileparts( matlab.desktop.editor.getActiveFilename ) );                % Setting the current directory (cd) as the current location of this folder. 
 addpath( './myGraphics' ); addpath( './myUtils' ); addpath( './myRobots' );
-myFigureConfig( 'fontsize', 40, ...
+myFigureConfig( 'fontsize', 30, ...
                'lineWidth', 10, ...
               'markerSize', 25    )  
              
@@ -267,3 +267,114 @@ set( ani.hAxes{ 3 }, 'XLim',   [ -1.5 , 2.0] , ...
 %                      'view',   [41.8506   15.1025 ]     )      
 
 ani.run( 0.5, 3, true, 'output' )
+
+%% ==================================================================
+%% (3-) Force Vector vs. Power Plot
+%% -- (3A) Reading the Datas
+
+
+idx = 3;
+data = myTxtParse( ['./myData/force_data/data_log_T', num2str( idx ), '_Force.txt' ] );
+
+clear gObjs
+% Marker in order, upper limb 3 joints( SH, EL, WR) 
+genNodes = @(x) ( "node" + (1:x) );
+N        = 25;
+
+
+EEvel = data.geomXYZVelocities( 10:12, : );
+fVec  = data.forceVec;
+pIn = sum( fVec .* EEvel );
+
+myC = [c.pink; c.blue; c.green ];          
+
+% For the target of the model
+gObjs(  1 ) = myMarker( 'XData', data.geomXYZPositions( 1, :  ) , ... 
+                        'YData', data.geomXYZPositions( 2, :  ) , ... 
+                        'ZData', data.geomXYZPositions( 3, :  ) , ... 
+                         'name', "target"  , ...
+                     'SizeData',  500      , ...
+                    'LineWidth',   1       , ...
+              'MarkerEdgeColor',   myC(idx, :) , ...
+              'MarkerFaceColor',   myC(idx, :) , ...
+              'MarkerFaceAlpha', 0.8       );                         % Defining the markers for the plot
+
+
+stringList = [      "SH", "EL", "EE",     genNodes( N ) ];                                
+sizeList   = [           700,      700,      700, 200 * ones( 1, N ) ];                            
+colorList  = [ repmat( c.orange_milky, 3, 1 ); repmat( c.black, N , 1 ) ];                            
+           
+% For the whole model
+for i = 1 : length( stringList )
+   gObjs( i + 1 ) = myMarker( 'XData', data.geomXYZPositions( 3 * i + 1, :  ) , ... 
+                              'YData', data.geomXYZPositions( 3 * i + 2, :  ) , ... 
+                              'ZData', data.geomXYZPositions( 3 * i + 3, :  ) , ... 
+                               'name', stringList( i ), ...
+                           'SizeData',   sizeList( i ), ...
+                          'LineWidth',   15            , ...
+                    'MarkerEdgeColor',  colorList( i, : ) ); 
+
+end
+
+scale = 0.1;
+gObjs( end + 1 ) = myArrow( 'XData', data.geomXYZPositions( 10, : ), 'YData', data.geomXYZPositions( 11, : ), 'ZData', data.geomXYZPositions( 12, : ), ...
+                            'UData', scale * data.forceVec( 1, : ),  'VData', scale * data.forceVec( 2, : ), 'WData', scale * data.forceVec( 3, : ), 'LineWidth', 10, 'Color', c.black );              
+
+
+ani = myAnimation( data.currentTime( 2 ), gObjs );                         % Input (1) Time step of sim. 
+                                                                           %       (2) Graphic Objects (Heterogeneouus) Array
+
+ani.connectMarkers( 1, [     "SH",     "EL",     "EE" ], 'Color', c.grey, 'LineStyle',  '-' );      
+% ani.connectMarkers( 1, [ "SH_ZFT", "EL_ZFT", "EE_ZFT" ], 'Color', c.grey, 'LineStyle', '--' );      
+
+tmpC = [ c.pink; c.green; c.blue; c.yellow ];
+
+% Add the 2nd figure plot
+ani.adjustFigures( 2 );                     
+% 
+% for i = 1 : 4
+%     plot( ani.hAxes{ 2 }, data.currentTime, data.pZFT( i, : ), 'color', tmpC( i, : ) , 'linestyle', '--','linewidth', 5 );
+%     tmp = myMarker( 'XData', data.currentTime , 'YData', data.jointAngleActual( i, : ) , 'ZData', zeros( 1, length( data.currentTime ) ), ...
+%                  'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  tmpC( i, : )  ); 
+%     ani.addTrackingPlots( 2, tmp );
+%     
+% end
+
+tmpLim = 2.5;
+set( ani.hAxes{ 1 }, 'XLim',   [ -tmpLim , tmpLim ] , ...                  
+                     'YLim',   [ -tmpLim , tmpLim ] , ...    
+                     'ZLim',   [ -tmpLim , tmpLim ] , ...
+                     'view',   [41.8506   15.1025 ]     )              
+
+
+
+ani.addZoomWindow( 3 , "EE", 0.6 );   
+
+set( ani.hAxes{ 1 }, 'LineWidth', 1.4 )
+set( ani.hAxes{ 3 }, 'LineWidth', 1.4 )
+set( ani.hAxes{ 3 }, 'Xticklabel',   [] , 'Yticklabel', [] , 'Zticklabel', [] ,'view',   [41.8506   15.1025 ]     )   
+
+tmp1 = 40;
+
+set( ani.hAxes{1}, 'xtick', [-2, 0, 2] ); set( ani.hAxes{1}, 'xticklabel', ["-2", "X (m)", "+2"], 'xticklabelrotation', 0 ) % ["-2", "X[m]", "+2"] )
+set( ani.hAxes{1}, 'ytick', [-2, 0, 2] ); set( ani.hAxes{1}, 'yticklabel', ["-2", "Y (m)", "+2"], 'yticklabelrotation', 0 ) % ["-2", "Y[m]", "+2"] )
+set( ani.hAxes{1}, 'ztick', [-2, 0, 2] ); set( ani.hAxes{1}, 'zticklabel', ["-2", "Z (m)", "+2"], 'zticklabelrotation', 0 ) % ["-2", "Z[m]", "+2"] )
+set( ani.hAxes{1},'LineWidth',3.5 ); set(ani.hAxes{1}, 'TickLength',[0.04 0.04]);
+
+
+tmp = myMarker( 'XData', data.currentTime , 'YData', pIn , 'ZData', zeros( 1, length( data.currentTime ) ), ...
+                 'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  [0, 0.4470, 0.7410]  ); 
+ani.addTrackingPlots( 2, tmp );
+
+
+tmp = myMarker( 'XData', data.currentTime , 'YData', data.minVal , 'ZData', zeros( 1, length( data.currentTime ) ), ...
+                 'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  [0.8500, 0.3250, 0.0980]  ); 
+ani.addTrackingPlots( 2, tmp );
+
+
+D = [0.95, 0.579, 0.95];
+ttmp = find( data.minVal == min(data.minVal) );
+set( ani.hAxes{2}, 'xtick', [0.1, 0.1+D( idx ), round( data.currentTime( ttmp  ), 2 ) ] )
+set( ani.hAxes{2}, 'xlim', [0, max( data.currentTime ) ] )
+legend( ani.hAxes{2}, 'Power', '', 'Dist.' )
+ani.run( 0.5, 3, true, ['output', num2str( idx ) ])

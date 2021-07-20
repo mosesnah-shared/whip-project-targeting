@@ -227,8 +227,8 @@ class Simulation( ):
 
         # Setting the initial condition of the robot.
         self.set_initial_condition()
-        self.controller.set_traj( )
-        # self.controller.set_ZFT( )
+        # self.controller.set_traj( )
+        self.controller.set_ZFT( )
 
         if self.args[ 'camPos' ] is not None:
 
@@ -297,23 +297,33 @@ class Simulation( ):
                     #                dZFT = self.controller.dphi,
                     #                file = file )
 
-                # elif self.args[ 'runOptimization' ]:
+                    my_print(   inputVal = input,
+                                    qPos = self.mjData.qpos[ : ],
+                        geomXYZPositions = self.mjData.geom_xpos[  self.idx_geom_names ],
+                       geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
+                            ZFTPositions = self.controller.x0,
+                                forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
+                               torqueVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 3 : 6 ] ),
+                                  minVal = self.obj_func( self.mjModel, self.mjData ) ,
+                                    file = file         )
 
-                    my_print(  geomXYZPositions  = self.mjData.geom_xpos[ self.idx_geom_names ],
-                                            ZFT  = self.controller.x0,
-                                           dZFT  = self.controller.dx0,
-                                           qPos  = self.mjData.qpos[ : ],
-                                            file = file  )
 
+                else:
+                    pass
+                    # tmp1 = self.mjData.get_joint_qpos( 'joint_node1_Y' )
+                    # c, s = np.cos( tmp1 ), np.sin( tmp1 )
+                    # tmp2 = np.array( ( ( c, 0, -s ), (0, 0, 0),( s, 0, c ) ) )
 
-
-                    # outputVal  = self.obj_func( self.mjModel, self.mjData )
+                    # print( tmp2 )
                     #
-
-                    my_print(    minVal = self.min_val )
-
-                # else:
-                    # my_print(    minVal = self.min_val )
+                    # my_print(    sensor   = self.mjData.sensordata[ : ],
+                    #                     J1 = self.mjData.get_joint_qpos( 'joint_node1_X' ),
+                    #                    dJ1 = self.mjData.get_joint_qvel( 'joint_node1_X' ),
+                    #                     J2 = tmp,
+                    #                    dJ2 = self.mjData.get_joint_qvel( 'joint_node1_Y' ),
+                    #              forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
+                    #             torqueVec = self.mjData.sensordata[ 3 : 6 ],
+                    #         torqueVecComp = np.dot( tmp2, self.mjData.sensordata[ 3 : 6 ] ) )
 
             self.sim_step += 1
 
