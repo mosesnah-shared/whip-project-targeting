@@ -37,6 +37,17 @@ class Controller( ):
         Description:
         -----------
             Parent class for the controllers
+
+            For all of the controllers, there exist some sort of nominal trajectory (e.g., zero-force traj, zero-torque traj etc.).
+            Hence, a lambdified function should exist, which can calculate the position of nominal trajectory at arbitrary time.
+
+            Moreover, since the controller must identify some model parameters of our upper-limb model, there should be a "parse" function
+            that parses the "mjModel" class and retrieves the essential data (e.g., number of actuators, number of limbs etc. )
+
+            For the parsing, some member functions which faciliate this are required, and hence defined in this controller class.
+
+            From this parent class, the children classes are subsequently defined, and the input_calc function are augmented.
+
     """
 
 
@@ -49,7 +60,9 @@ class Controller( ):
         self.mjArgs         = mjArgs
         self.ctrl_par_names = None
 
-        # Basic Parameters of the model.
+        # Parsing the current model that we are using.
+        self.parse_model( )
+
         # Mostly the upper-limb model parameters
         self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
         self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
@@ -57,6 +70,13 @@ class Controller( ):
         self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
 
         self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
+
+
+    def parse_model( self ):
+        # [Basic Parameters of the model]
+        # The number of actuators, number of limbs should be calculated.
+
+        NotImplementedError( )
 
     def set_ctrl_par( self, **kwargs ):
         """
@@ -227,16 +247,20 @@ class ImpedanceController( Controller ):
         self.ZFT_func_vel   = None
         self.ZFT_func_acc   = None
 
+        self.n_limbs  = '-'.join( self.mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
+        self.n_act    = len( self.mjModel.actuator_names )                      # The number of actuators, 2 for 2D model and 4 for 3D model
+
+
         if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
-            bodyName  = ['upperArm', 'foreArm' ]                                # Masses of the body that are needed for the gravity compensation
+            bodyName  = ['body_upper_arm', 'body_fore_arm' ]                                # Masses of the body that are needed for the gravity compensation
 
             # Mass and Inertia Information of the limbs.
             self.M  = [ self.mjModel.body_mass[ idx ]     for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
             self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
 
             # The length of the limb and length from proximal joint to center of mass
-            self.L  = [ abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_EE"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
-            self.Lc = [ abs( self.mjData.get_site_xpos( "upperArmCOM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "foreArmCOM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "elbowGEOM"   )[ 2 ] ) ]
+            self.L  = [ abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_end_effector"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ) ]
+            self.Lc = [ abs( self.mjData.get_site_xpos( "site_upper_arm_COM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "site_fore_arm_COM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ) ]
 
             # The mass of the whip is the total mass
             self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
@@ -484,6 +508,9 @@ class JointImpedanceController( ImpedanceController ):
 
         super().__init__( mjModel, mjData, mjArgs )
 
+
+
+
         if   self.n_act == 2:   # 2DOF Robot
 
             c = 0.1
@@ -493,8 +520,8 @@ class JointImpedanceController( ImpedanceController ):
 
         elif self.n_act == 4:   # 4DOF Robot
 
-            # c = 0.05
-            c = 0.1
+            c = 0.05
+            # c = 0.1
             self.K = np.array( [ [ 17.40, 4.70, -1.90, 8.40 ] ,
                                  [  9.00, 33.0,  4.40, 0.00 ] ,
                                  [ -13.6, 3.00,  27.7, 0.00 ] ,
@@ -522,11 +549,11 @@ class JointImpedanceController( ImpedanceController ):
 
                 # Torque for Gravity compensation is simply tau = J^TF
                 # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-                  + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
 
                 if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
-                    G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+                    G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
 
             elif self.n_limbs == 3:
                 raise NotImplementedError( )

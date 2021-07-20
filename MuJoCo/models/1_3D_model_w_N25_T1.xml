@@ -39,7 +39,7 @@
             <site name="site_fore_arm_COM" pos="0 0 -0.112" />
             <geom name="geom_end_effector" type="sphere" pos="0 0 -0.291" material="JointColor" size="0.0294" mass="0" />
             <body name="body_node1" euler="0 0 0" pos="0 0 -0.291">
-    					<site name='site_for_force_sensor' pos='0 0 0' />   <!-- Attaching force sensor -->
+    					<site name='site_for_force_sensor_0' pos='0 0 0' />   <!-- Attaching force  sensor -->
               <joint name="joint_node1_X" type="hinge" axis="1 0 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <joint name="joint_node1_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" material="LimbColor" size="0.0060000" mass="0" />
@@ -199,7 +199,8 @@
 
    <!-- BACKUP-->
     <sensor>
-  			<force name = 'force_sensor_wrist' site = 'site_for_force_sensor' />
+  			<force  name = 'force_sensor_wrist'  site = 'site_for_force_sensor_0' />
+				<torque name = 'torque_sensor_wrist' site = 'site_for_force_sensor_0' />
   	</sensor>
 
 

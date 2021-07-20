@@ -42,31 +42,6 @@ class UpperLimbModel( ):
             NotImplementedError( )
 
 
-    def length_elem2elem( self, elem_name1, elem_name2 ):
-        type1 = self.get_elem_type( elem_name1 )
-        type2 = self.get_elem_type( elem_name2 )
-
-        # The euclidean distance between two elements, calling using "get_geom_xpos" or "get_site_xpos" or "get_body_xpos" methods
-        return np.linalg.norm( getattr( self.mjData, "get_" + type1 + "_" + "xpos" )( elem_name1 )
-                             - getattr( self.mjData, "get_" + type2 + "_" + "xpos" )( elem_name2 ) , ord = 1  )
-
-    def get_elem_type( self, elem_name ):
-        return elem_name.split( '_' )[ 0 ]                                      # Parse and get the first string before "_"
-
-    def get_property( self, elem_name, prop_name ):
-        # Get the property of the name
-
-        # The name of the elements start with "XXXX_", hence getting the string before the underbar.
-        type = self.get_elem_type( elem_name )
-
-        for idx, s in enumerate( getattr( self.mjModel, type + "_" + "names" ) ):  # run through the list of "geom_names" or "body_names"
-            if elem_name == s:
-                tmp = getattr( self.mjModel, type + "_" + prop_name )
-                return tmp[ idx ]
-
-        # If couldn't match in list, raise error
-        raise NameError( 'Cannot find geom_name with {0} in list, please check'.format( elem_name )  )
-
 # 2DOF upper-limb model
 class UpperLimbModelPlanar( UpperLimbModel ):
 

@@ -141,7 +141,7 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 # [Local modules]
 from modules.simulation   import Simulation
 from modules.controllers  import ( ImpedanceController, NullController, CartesianImpedanceController,
-                              JointImpedanceController, JointSlidingController )
+                                  JointImpedanceController, JointSlidingController )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
@@ -199,7 +199,6 @@ def main( ):
     if  "1" == args[ 'modelName' ][ 0 ] and "2D" in args[ 'modelName' ]:
 
         controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData, args )
-
         controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.6, 0, 1.5] )
 
         # [BACKUP]
@@ -211,10 +210,10 @@ def main( ):
 
     elif "1" == args[ 'modelName' ][ 0 ] and "3D" in args[ 'modelName' ]:
 
-        upper_limb        = UpperLimbModelSpatial(    mySim.mjModel, mySim.mjData, args )
+        # upper_limb        = UpperLimbModelSpatial(    mySim.mjModel, mySim.mjData, args )
         controller_object = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
 
-        controller_object.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
+        controller_object.set_ctrl_par(  mov_parameters = [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] ,
                                                      K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
                                                      B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
 
