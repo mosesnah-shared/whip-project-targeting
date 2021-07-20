@@ -88,6 +88,9 @@ class Simulation( ):
             self.mjViewer = mjPy.MjViewerBasic( self.mjSim ) if is_visualize else None    # Construct the basic MuJoCo viewer and save it as "myViewer"
             self.args     = arg_parse
 
+            self.run_time    = float( self.args[ 'runTime'   ] )                 # Run time of the total simulation
+            self.start_time  = float( self.args[ 'startTime' ] )                 # Start time of the movements
+
             # Saving the default simulation variables
             self.fps         = 60                                               # Frames per second for the mujoco render
             self.dt          = self.mjModel.opt.timestep                        # Time step of the simulation [sec]
@@ -99,11 +102,6 @@ class Simulation( ):
             self.act_names      = self.mjModel.actuator_names
             self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.mjModel.geom_names  ]
 
-            self.n_acts      = len( self.mjModel.actuator_names )
-            self.n_limbs     = '-'.join( self.mjModel.body_names ).lower().count( 'arm' )
-
-            self.run_time   = float( self.args[ 'runTime'   ] )                 # Run time of the total simulation
-            self.start_time = float( self.args[ 'startTime' ] )                 # Start time of the movements
 
 
         self.VISUALIZE = is_visualize                                           # saving the VISUALIZE Flag
@@ -115,7 +113,7 @@ class Simulation( ):
 
         self.__init__( model_name )
 
-    def attach_controller( self, controller_name ):
+    def attach_controller( self, ctrl ):
         """
             Attaching the controller object for running the simulation.
 
@@ -123,7 +121,7 @@ class Simulation( ):
 
         """
 
-        self.controller = controller_name
+        self.ctrl = ctrl
 
     def attach_obj_function( self, obj_func, weights = 1):
         """
@@ -138,7 +136,7 @@ class Simulation( ):
         self.obj_func = obj_func
 
 
-    def run_nlopt_optimization( self, input_pars = "mov_parameters", idx = 1, lb = None, ub = None, max_iter = 600 ):
+    def run_nlopt_optimization( self, input_pars = "mov_pars", idx = 1, lb = None, ub = None, max_iter = 600 ):
         """
             Running the optimization, using the nlopt library
         """
@@ -155,13 +153,13 @@ class Simulation( ):
         idx_opt = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
         self.algorithm = idx_opt[ idx ]                                             # Selecting the algorithm to be executed
 
-        if input_pars not in self.controller.ctrl_par_names:
+        if input_pars not in self.ctrl.ctrl_par_names:
             raise ValueError( "The input parameters {0:s} is not defined or found in the ctrl parameter names in the controller. \
                                Possible options are '{1:s}'".format( input_pars, ", ".join( self.ctrl_input.ctrl_par_names )  ) )
 
-        idx = [ i for i, elem in enumerate( self.controller.ctrl_par_names ) if input_pars == elem ][ 0 ]
+        idx = [ i for i, elem in enumerate( self.ctrl.ctrl_par_names ) if input_pars == elem ][ 0 ]
 
-        self.n_opt = self.controller.n_ctrl_pars[ idx ]                         # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
+        self.n_opt = self.ctrl.n_ctrl_pars[ idx ]                         # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
         self.opt   = nlopt.opt( self.algorithm, self.n_opt )                    # Defining the class for optimization
 
         self.opt.set_lower_bounds( lb )                                         # Setting the upper/lower bound of the optimization
@@ -175,7 +173,7 @@ class Simulation( ):
 
         def nlopt_obj_func( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
 
-            setattr( self.controller, input_pars, pars )                        # Setting the input parameters directory
+            setattr( self.ctrl, input_pars, pars )                        # Setting the input parameters directory
             val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
 
             self.reset( )
@@ -194,6 +192,12 @@ class Simulation( ):
 
         tmp_file.close()
 
+    def set_cam_pos( self, cam_pos ):
+        tmp = str2float( self.args[ 'camPos' ] )
+        self.mjViewer.cam.lookat[ 0:3 ] = tmp[ 0 : 3 ]
+        self.mjViewer.cam.distance      = tmp[ 3 ]
+        self.mjViewer.cam.elevation     = tmp[ 4 ]
+        self.mjViewer.cam.azimuth       = tmp[ 5 ]
 
     def run( self ):
         """
@@ -213,7 +217,7 @@ class Simulation( ):
             raise ValueError( "mjModel and mjSim is Empty! Add it before running simulation"  )
 
         # Warn the user if input and output function is empty
-        if self.controller is None:
+        if self.ctrl is None:
             raise ValueError( "CONTROLLER NOT ATTACHED TO SIMULATION. \
                                PLEASE REFER TO METHOD 'attach_obj_function' and 'attach_controller' " )
 
@@ -227,17 +231,9 @@ class Simulation( ):
 
         # Setting the initial condition of the robot.
         self.set_initial_condition()
-        # self.controller.set_traj( )
-        self.controller.set_ZFT( )
 
         if self.args[ 'camPos' ] is not None:
-
-            tmp = str2float( self.args[ 'camPos' ] )
-
-            self.mjViewer.cam.lookat[ 0:3 ] = tmp[ 0 : 3 ]
-            self.mjViewer.cam.distance      = tmp[ 3 ]
-            self.mjViewer.cam.elevation     = tmp[ 4 ]
-            self.mjViewer.cam.azimuth       = tmp[ 5 ]
+            self.set_cam_pos( self.args[ 'camPos' ] )
 
         while self.current_time <= self.run_time:
 
@@ -263,7 +259,11 @@ class Simulation( ):
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
             # input:     The actual input value which is inputted to input_ref
-            input_ref, input_idx, input = self.controller.input_calc( self.start_time, self.current_time )
+
+            if self.start_time >= self.current_time:
+                input_ref, input_idx, input = self.ctrl.input_calc( 0 )
+            else:
+                input_ref, input_idx, input = self.ctrl.input_calc( self.current_time - self.start_time )
 
             if input_ref is not None:
                 input_ref[ input_idx ] = input
@@ -293,15 +293,15 @@ class Simulation( ):
                     # Saving all the necessary datas for the simulation
                     # my_print(  inputVal = input,
                     #             minVal  = self.min_val,
-                    #                ZFT  = self.controller.phi,
-                    #                dZFT = self.controller.dphi,
+                    #                ZFT  = self.ctrl.phi,
+                    #                dZFT = self.ctrl.dphi,
                     #                file = file )
 
                     my_print(   inputVal = input,
                                     qPos = self.mjData.qpos[ : ],
                         geomXYZPositions = self.mjData.geom_xpos[  self.idx_geom_names ],
                        geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
-                            ZFTPositions = self.controller.x0,
+                            ZFTPositions = self.ctrl.x0,
                                 forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
                                torqueVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 3 : 6 ] ),
                                   minVal = self.obj_func( self.mjModel, self.mjData ) ,
@@ -309,21 +309,8 @@ class Simulation( ):
 
 
                 else:
-                    pass
-                    # tmp1 = self.mjData.get_joint_qpos( 'joint_node1_Y' )
-                    # c, s = np.cos( tmp1 ), np.sin( tmp1 )
-                    # tmp2 = np.array( ( ( c, 0, -s ), (0, 0, 0),( s, 0, c ) ) )
+                    my_print( dist = self.obj_func( self.mjModel, self.mjData ) )
 
-                    # print( tmp2 )
-                    #
-                    # my_print(    sensor   = self.mjData.sensordata[ : ],
-                    #                     J1 = self.mjData.get_joint_qpos( 'joint_node1_X' ),
-                    #                    dJ1 = self.mjData.get_joint_qvel( 'joint_node1_X' ),
-                    #                     J2 = tmp,
-                    #                    dJ2 = self.mjData.get_joint_qvel( 'joint_node1_Y' ),
-                    #              forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
-                    #             torqueVec = self.mjData.sensordata[ 3 : 6 ],
-                    #         torqueVecComp = np.dot( tmp2, self.mjData.sensordata[ 3 : 6 ] ) )
 
             self.sim_step += 1
 
@@ -340,13 +327,13 @@ class Simulation( ):
             Manually setting the initial condition of the system.
         """
 
-        ctrl_name = self.controller.__class__.__name__.lower()                  # Getting the name of the controller. The controller names are indicated in "input_ctrls.py"
+        ctrl_name = self.ctrl.__class__.__name__.lower()                  # Getting the name of the controller. The controller names are indicated in "input_ctrls.py"
 
-        nJ = self.controller.n_act                                              # Getting the number of active joints
+        nJ = self.ctrl.n_act                                              # Getting the number of active joints
 
 
         if nJ != 0 and "2D" not in self.model_name:
-            self.mjData.qpos[ 0 : nJ ] = self.controller.mov_parameters[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
+            self.mjData.qpos[ 0 : nJ ] = self.ctrl.mov_pars[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
             self.mjSim.forward()                                                    # Update Needed for setting the posture of the upper limb by "forward" method.
 
 
@@ -394,7 +381,7 @@ class Simulation( ):
         # [REF] https://lerner.co.il/2015/01/18/dont-use-python-close-files-answer-depends/
 
         with open( dir + "simulation_details.txt", "w+" ) as f:
-            pprint.pprint( self.controller.__dict__, f )                        # Using pretty-print (pprint) to flush out the data in a much readable format
+            pprint.pprint( self.ctrl.__dict__, f )                        # Using pretty-print (pprint) to flush out the data in a much readable format
             print( self.args                , file = f )                        # Flushing out all the arguments detail.
 
 

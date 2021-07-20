@@ -6,7 +6,7 @@ import sys
 import time
 import pickle
 
-from   modules.utils        import my_print
+from   modules.utils        import my_print, get_elem_type, length_elem2elem, get_property
 from   modules.traj_funcs   import min_jerk_traj
 from   modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
 import matplotlib.pyplot as plt
@@ -63,20 +63,33 @@ class Controller( ):
         # Parsing the current model that we are using.
         self.parse_model( )
 
-        # Mostly the upper-limb model parameters
-        self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
-        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-        self.g              = mjModel.opt.gravity                               # The gravity vector of the simulation
-
-        self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
+        # The symbolic lambdified function of the trajectory to track.
+        # This is the nominal trajectory of any sort of controller
+        self.func_pos = None
+        self.func_vel = None
+        self.func_acc = None
+        self.t_sym    = sp.symbols( 't' )
 
 
     def parse_model( self ):
         # [Basic Parameters of the model]
         # The number of actuators, number of limbs should be calculated.
+        # Mostly the upper-limb model parameters
+        self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
+        self.n_limbs        = '-'.join( self.mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
 
-        NotImplementedError( )
+        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
+        self.g              = self.mjModel.opt.gravity                          # The gravity vector of the simulation
+
+        if   self.n_limbs == 2:
+            self.M  = [ get_property( self.mjModel, 'body_upper_arm', 'mass'    ), get_property( self.mjModel, 'body_fore_arm', 'mass'    ) ]
+            self.I  = [ get_property( self.mjModel, 'body_upper_arm', 'inertia' ), get_property( self.mjModel, 'body_fore_arm', 'inertia' ) ]
+            self.L  = [ length_elem2elem( self.mjModel, self.mjData, 'geom_shoulder', 'geom_elbow'        ), length_elem2elem( self.mjModel, self.mjData, 'geom_elbow' , 'geom_end_effector'  )  ]
+            self.Lc = [ length_elem2elem( self.mjModel, self.mjData, 'geom_shoulder', 'site_fore_arm_COM' ), length_elem2elem( self.mjModel, self.mjData, 'geom_elbow' , 'site_upper_arm_COM' )  ]
+
+        elif self.n_limbs == 3:
+            NotImplementedError( )
 
     def set_ctrl_par( self, **kwargs ):
         """
@@ -94,18 +107,24 @@ class Controller( ):
                 else:
                     pass
 
-    def input_calc( self, start_time, current_time ):
+    def input_calc( self, time ):
         """
             Calculating the torque input
         """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
 
+    def append_ctrl( self, ctrl1 ):
+        """
+            Append the current controller to ctrl1
+            Usually we append the controller with convex combinations
+        """
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.        
 
-class NullController( Controller ):
+class DebugController( Controller ):
     """
         Description:
         ----------
-            Controller which is simply empty, useful when practicing/debugging with MuJoCo
+            Controller for quick debugging, useful when practicing/debugging with MuJoCo
 
     """
     def __init__( self, mjModel, mjData, mjArgs ):
@@ -115,12 +134,164 @@ class NullController( Controller ):
     def set_ZFT( self ):
         return 0
 
-    def input_calc( self, start_time, current_time ):
+    def input_calc( self, current_time ):
         return None, None, 0
 
 
-# [TODO] [Moses C. Nah] [04.20.2021]
-# We can simply use inheritance for the impedance controller
+
+class ImpedanceController( Controller ):
+    """
+        Description:
+        ----------
+            Class for an Impedance Controller
+            Inheritance of parent class "Contronller"
+
+    """
+    def __init__( self, mjModel, mjData, mjArgs ):
+
+        super().__init__( mjModel, mjData, mjArgs )
+
+        # The impedance parameter of the controller
+        # Used for both Cartesian or Joint impedances.
+        self.Kmat = None
+        self.Bmat = None
+        self.Mmat = None
+
+        self.n_mov_pars     = None                                              # The number of parameters of the movement
+        self.n_ctrl_pars    = None                                              # The number of ctrl parameters. This definition would be useful for the optimization process.
+        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
+        self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
+
+    def set_traj( self ):
+        """
+            Calculating the torque input
+        """
+        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
+
+
+class JointImpedanceController( ImpedanceController ):
+
+    """
+        Description:
+        ----------
+            Class for a Joint Impedance Controller
+            First order impedance controller with gravity compenation
+
+    """
+
+    def __init__( self, mjModel, mjData, mjArgs ):
+
+        super().__init__( mjModel, mjData, mjArgs )
+
+
+        if   self.n_act == 2:   # The default K and B matrices used for the 2-DOF Robot
+                                # [REF] Nah, Moses C., et al. "Dynamic primitives facilitate manipulating a whip."
+                                # 2020 8th IEEE RAS/EMBS International Conference for Biomedical Robotics and Biomechatronics (BioRob). IEEE, 2020.
+
+            c = 0.1
+            self.K = np.array( [ [ 29.50, 14.30 ] ,
+                                 [ 14.30, 39.30 ] ] )
+            self.B = c * self.K
+
+        elif self.n_act == 4:   # The default K and B matrices used for the 2-DOF Robot
+                                # [TODO] [2021.07.19] Add reference when it is publicly published
+            c = 0.05
+            self.K = np.array( [ [ 17.40, 4.70, -1.90, 8.40 ] ,
+                                 [  9.00, 33.0,  4.40, 0.00 ] ,
+                                 [ -13.6, 3.00,  27.7, 0.00 ] ,
+                                 [  8.40, 0.00,  0.00, 23.2 ] ] )
+            self.B = c * self.K
+
+
+        # [2DOF Robot] 5 movement parameters in total - Intial posture (2), Final posture (2) and duration (1)
+        # [4DOF RObot] 9 movement parameters in total - Intial posture (4), Final posture (4) and duration (1)
+        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.3.] Implementation
+        # [REF] [Moses C. Nah] Ibid.        ,                                                              [Section 8.2.2.] Zero-Torque Trajectory
+
+        self.pi = None                                                          # Initial Posture
+        self.pf = None                                                          # Final   Posture
+        self.D  = None                                                          # Duration
+
+        self.n_mov_pars     = 2 * self.n_act + 1                                    # 2 *, for initial/final postures and +1 for movement duration
+        self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ] # The number of ctrl parameters. This definition would be useful for the optimization process.
+                                                                                    # K and B has n^2 elements, hence self.n_act ** 2
+
+        self.mov_pars       = None                                              # The actual values of the movement parameters, initializing it with random values
+        self.ctrl_par_names = [ "mov_pars", "K", "B" ]                          # Useful for self.set_ctrl_par method
+
+    def get_G( self ):
+
+        if   self.n_limbs == 2:
+
+            # Torque for Gravity compensation is simply tau = J^TF
+            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+
+            # The mass of the whip is the other masses summed up
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
+
+            # If no whip is attached, then the mass will be zero.
+            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
+
+        return G
+
+
+    def set_traj( self, mov_pars = None ):
+        """
+            Description:
+            ----------
+                Setting the trajectory, which is the ZTT (Zero-torque trajectory)
+                For setting the mov_parameters, we need to call this function separately.
+
+        """
+        if mov_pars is None:
+            raise ValueError( "mov_parameters should be inputted!")
+
+        self.mov_pars = mov_pars
+
+
+        # [Please check!]
+        # The movement parameters are saved as follows
+        # <------- 0 ~ n_act -------> <----- n_act ~ 2n_act ----><--------1----------->
+        # [=====INITIAL POSTURE=====] [=====FINAL POSTURE=======][=====DURATION=======]
+        self.pi = np.array( self.mov_pars[          0 : self.n_act     ] )     # Initial Posture
+        self.pf = np.array( self.mov_pars[ self.n_act : 2 * self.n_act ] )     # Final   Posture
+        self.D  = self.mov_pars[ -1 ]                                          # Duration it took from start to end
+
+        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
+        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
+        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
+        self.func_pos = min_jerk_traj( self.t_sym, self.pi, self.pf, self.D )
+        self.func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_pos ]
+        self.func_acc = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_vel ]
+
+        # Lambdify the functions
+        # [TIP] This is necessary for computation Speed!
+        self.func_pos = lambdify( self.t_sym, self.func_pos )
+        self.func_vel = lambdify( self.t_sym, self.func_vel )
+        self.func_acc = lambdify( self.t_sym, self.func_acc )
+
+
+    def input_calc( self, time ):
+
+        q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
+        dq = self.mjData.qvel[ 0 : self.n_act ]
+        D  = self.mov_pars[ -1 ]
+        if   time <= D:                                                         # If time greater than startTime
+            self.x0, self.dx0 = self.func_pos( time  ), self.func_vel( time  )  # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
+        else:
+            self.x0, self.dx0 = self.pf, np.zeros( ( 4 ) )                      # Before start time, the posture should be remained at ZFT's initial posture
+
+        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq ) # Calculating the torque due to impedance
+        tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
+
+        return self.mjData.ctrl, self.idx_act, tau_imp  + tau_g
+
 
 class SlidingController( Controller ):
     """
@@ -132,19 +303,6 @@ class SlidingController( Controller ):
     """
     def __init__( self, mjModel, mjData, mjArgs ):
         super().__init__( mjModel, mjData, mjArgs )
-
-        # Sliding controller requires to know the inertial and coriolis term matrices for the controller.
-        # Hence creating the upperlimb_model class
-        if   self.n_act == 2:
-            self.upperlimb_model = UpperLimbModelPlanar(  mjModel, mjData, mjArgs )
-
-        elif self.n_act == 4:
-            self.upperlimb_model = UpperLimbModelSpatial( mjModel, mjData, mjArgs )
-
-        # The symbolic function of the trajectory to track.
-        self.func_pos = None
-        self.func_vel = None
-        self.func_acc = None
 
 
     def input_calc( self, start_time, current_time ):
@@ -172,9 +330,10 @@ class JointSlidingController( SlidingController ):
         super().__init__( mjModel, mjData, mjArgs )
 
         self.n_mov_pars     = self.n_act * 2 + 1                                # Starting point (2), ending point (2) and the duration (1) between the two.
-        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
         self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ]  # The number of ctrl parameters. This definition would be useful for the optimization process.
                                                                                 # K and B has 2^2 elements, hence 4
+
+        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
 
         self.ctrl_par_names = [ "mov_parameters", "Kd", "Kl" ]                  # Kl: s = q' + Kl q
                                                                                 # Kd: tau = M(q)qr'' + C(q,q')qr' + G(q) - Kds
@@ -228,75 +387,6 @@ class JointSlidingController( SlidingController ):
 
         tau = Mmat.dot( ddqr ) + Cmat.dot( dqr ) + Gmat - self.Kd.dot( s )
         return self.mjData.ctrl, self.idx_act, tau
-
-
-class ImpedanceController( Controller ):
-    """
-        Description:
-        ----------
-            Class for an Impedance Controller
-            Inheritance of parent class "Contronller"
-
-    """
-    def __init__( self, mjModel, mjData, mjArgs ):
-
-        super().__init__( mjModel, mjData, mjArgs )
-
-        # Impedance Controller uses pos, vel and acc of the ZFT (Zero-force trajectory), ZTT (Zero-torque trajectory)
-        self.ZFT_func_pos   = None
-        self.ZFT_func_vel   = None
-        self.ZFT_func_acc   = None
-
-        self.n_limbs  = '-'.join( self.mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
-        self.n_act    = len( self.mjModel.actuator_names )                      # The number of actuators, 2 for 2D model and 4 for 3D model
-
-
-        if self.n_limbs == 2:                                                   # For arm model with 2 limbs.
-            bodyName  = ['body_upper_arm', 'body_fore_arm' ]                                # Masses of the body that are needed for the gravity compensation
-
-            # Mass and Inertia Information of the limbs.
-            self.M  = [ self.mjModel.body_mass[ idx ]     for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
-            self.I  = [ self.mjModel.body_inertia[ idx ]  for idx, s in enumerate( self.mjModel.body_names ) if s in bodyName ]
-
-            # The length of the limb and length from proximal joint to center of mass
-            self.L  = [ abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ), abs( self.mjData.get_geom_xpos( "geom_end_effector"    )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ) ]
-            self.Lc = [ abs( self.mjData.get_site_xpos( "site_upper_arm_COM" )[ 2 ] ), abs( self.mjData.get_site_xpos( "site_fore_arm_COM" )[ 2 ] ) - abs( self.mjData.get_geom_xpos( "geom_elbow"   )[ 2 ] ) ]
-
-            # The mass of the whip is the total mass
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M )
-
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
-
-        # The impedance parameter of the controller
-        self.Kmat = None
-        self.Bmat = None
-        self.Mmat = None
-
-        self.n_mov_pars     = None                                              # The number of parameters of the movement
-        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
-        self.n_ctrl_pars    = None                                              # The number of ctrl parameters. This definition would be useful for the optimization process.
-        self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
-        self.t_sym = sp.symbols( 't' )                                          # time symbol of the equation
-
-
-    def input_calc( self, start_time, current_time ):
-        """
-            Calculating the torque input
-        """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
-
-    def set_ZFT( self ):
-        """
-            Calculating the torque input
-        """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
-
-    def get_ZFT( self):
-        """
-            Calculating the torque input
-        """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
 
 
 class CartesianImpedanceController( ImpedanceController ):
@@ -368,11 +458,14 @@ class CartesianImpedanceController( ImpedanceController ):
 
             # Torque for Gravity compensation is simply tau = J^TF
             # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-            G = np.dot( self.mjData.get_site_jacp( "upperArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-              + np.dot( self.mjData.get_site_jacp(  "foreArmCOM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
 
-            if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
-                G += np.dot( self.mjData.get_geom_jacp(  "geom_EE"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+            # The mass of the whip is the other masses summed up
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
+
+            # If no whip is attached, then the mass will be zero.
+            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
 
         elif self.n_limbs == 3:
             raise NotImplementedError( )
@@ -493,134 +586,6 @@ class CartesianImpedanceController( ImpedanceController ):
 
         return self.mjData.ctrl, self.idx_act, tau
 
-
-class JointImpedanceController( ImpedanceController ):
-
-    """
-        Description:
-        ----------
-            Class for a Joint Impedance Controller
-            First order impedance controller with gravity compenation
-
-    """
-
-    def __init__( self, mjModel, mjData, mjArgs, is_grav_comps = True ):
-
-        super().__init__( mjModel, mjData, mjArgs )
-
-
-
-
-        if   self.n_act == 2:   # 2DOF Robot
-
-            c = 0.1
-            self.K = np.array( [ [ 29.50, 14.30 ] ,
-                                 [ 14.30, 39.30 ] ] )
-            self.B = c * self.K
-
-        elif self.n_act == 4:   # 4DOF Robot
-
-            c = 0.05
-            # c = 0.1
-            self.K = np.array( [ [ 17.40, 4.70, -1.90, 8.40 ] ,
-                                 [  9.00, 33.0,  4.40, 0.00 ] ,
-                                 [ -13.6, 3.00,  27.7, 0.00 ] ,
-                                 [  8.40, 0.00,  0.00, 23.2 ] ] )
-            self.B = c * self.K
-
-
-        # [2DOF Robot] 5 movement parameters in total - Intial posture (2), Final posture (2) and duration (1)
-        # [4DOF RObot] 9 movement parameters in total - Intial posture (4), Final posture (4) and duration (1)
-        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.3.] Implementation
-        # [REF] [Moses C. Nah] Ibid.        ,                                                              [Section 8.2.2.] Zero-Torque Trajectory
-        self.n_mov_pars     = 2 * self.n_act + 1                                    # 2 *, for initial/final postures and +1 for movement duration
-        self.mov_parameters = None                                                  # The actual values of the movement parameters, initializing it with random values
-        self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ] # The number of ctrl parameters. This definition would be useful for the optimization process.
-                                                                                    # K and B has n^2 elements, hence self.n_act ** 2
-
-        self.is_grav_comps = is_grav_comps
-        self.ctrl_par_names = [ "mov_parameters", "K", "B" ]                    # Useful for self.set_ctrl_par method
-
-    def get_G( self ):
-
-        if self.is_grav_comps:
-
-            if   self.n_limbs == 2:
-
-                # Torque for Gravity compensation is simply tau = J^TF
-                # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
-
-                if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
-                    G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
-
-            elif self.n_limbs == 3:
-                raise NotImplementedError( )
-
-        else:
-            G = np.zeros( self.n_act )
-
-        return G
-
-
-    def set_ZFT( self ):
-        """
-            Description:
-            ----------
-                Setting the ZFT(Zero-torque trajectory, strictly speaking it should be ZTT, but ZFT is much popular usage :)
-                This method is only called once "before" running the simulation, and "after" the self.mov_parameters are well-defined
-
-        """
-
-        # Defining the equations for the ZFT, this function must be done before the actual simulation
-        if self.mov_parameters is None:
-            raise ValueError( "Movement parameters are not defined")
-
-        pi = np.array( self.mov_parameters[          0 : self.n_act     ] )     # Initial Posture
-        pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )     # Final   Posture
-        D  = self.mov_parameters[ -1 ]                                          # Duration it took from start to end
-
-        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
-        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
-        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
-        self.ZFT_func_pos = min_jerk_traj( self.t_sym, pi, pf, D )
-        self.ZFT_func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.ZFT_func_pos ]
-
-        # Lambdify the functions
-        # [TIP] This is necessary for computation Speed!
-        self.ZFT_func_pos = lambdify( self.t_sym, self.ZFT_func_pos )
-        self.ZFT_func_vel = lambdify( self.t_sym, self.ZFT_func_vel )
-
-
-    def get_ZFT( self, time ): # ZFT and ZTT will be the same for this code.
-
-        D = self.mov_parameters[ -1 ]                                           # Last element is duration
-        t = D if time >= D else time                                            # Rectifying the time value if time is larger than D
-                                                                                # This means that the ZFT of the controller remains at final posture.
-        x0  = np.array( self.ZFT_func_pos( t ) )
-        dx0 = np.array( self.ZFT_func_vel( t ) )
-
-
-        return x0, dx0
-
-
-
-    def input_calc( self, start_time, current_time ):
-
-
-        q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
-        dq = self.mjData.qvel[ 0 : self.n_act ]
-
-        if   current_time >= start_time:                                        # If time greater than startTime
-            self.x0, self.dx0 = self.get_ZFT( current_time - start_time  )    # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
-        else:
-            self.x0, self.dx0 = q, dq                                         # Before start time, the posture should be remained at ZFT's initial posture
-
-        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq ) # Calculating the torque due to impedance
-        tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
-
-        return self.mjData.ctrl, self.idx_act, tau_imp  + tau_g
 
 
 if __name__ == "__main__":
