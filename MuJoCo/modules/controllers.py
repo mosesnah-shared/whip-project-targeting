@@ -7,8 +7,7 @@ import time
 import pickle
 
 from   modules.utils        import my_print, get_elem_type, length_elem2elem, get_property
-from   modules.traj_funcs   import min_jerk_traj
-from   modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
+from   modules.traj_funcs   import MinJerkTrajectory
 import matplotlib.pyplot as plt
 
 try:
@@ -64,12 +63,8 @@ class Controller( ):
         self.parse_model( )
 
         # The symbolic lambdified function of the trajectory to track.
-        # This is the nominal trajectory of any sort of controller
-        self.func_pos = None
-        self.func_vel = None
-        self.func_acc = None
-        self.t_sym    = sp.symbols( 't' )
-
+        # Trajectory is defined under "modules.traj_funcs"
+        self.traj = None
 
     def parse_model( self ):
         # [Basic Parameters of the model]
@@ -118,7 +113,30 @@ class Controller( ):
             Append the current controller to ctrl1
             Usually we append the controller with convex combinations
         """
-        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.        
+        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+
+
+
+    def get_G( self ):
+
+        if   self.n_limbs == 2:
+
+            # Torque for Gravity compensation is simply tau = J^TF
+            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+
+            # The mass of the whip is the other masses summed up
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
+
+            # If no whip is attached, then the mass will be zero.
+            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
+
+        return G
 
 class DebugController( Controller ):
     """
@@ -208,40 +226,13 @@ class JointImpedanceController( ImpedanceController ):
         # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.3.] Implementation
         # [REF] [Moses C. Nah] Ibid.        ,                                                              [Section 8.2.2.] Zero-Torque Trajectory
 
-        self.pi = None                                                          # Initial Posture
-        self.pf = None                                                          # Final   Posture
-        self.D  = None                                                          # Duration
+        self.n_ctrl_pars    = [ self.n_act ** 2, self.n_act ** 2 ]              # The number of ctrl parameters. This definition would be useful for the optimization process.
+                                                                                # K and B has n^2 elements, hence self.n_act ** 2
 
-        self.n_mov_pars     = 2 * self.n_act + 1                                    # 2 *, for initial/final postures and +1 for movement duration
-        self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ] # The number of ctrl parameters. This definition would be useful for the optimization process.
-                                                                                    # K and B has n^2 elements, hence self.n_act ** 2
-
-        self.mov_pars       = None                                              # The actual values of the movement parameters, initializing it with random values
-        self.ctrl_par_names = [ "mov_pars", "K", "B" ]                          # Useful for self.set_ctrl_par method
-
-    def get_G( self ):
-
-        if   self.n_limbs == 2:
-
-            # Torque for Gravity compensation is simply tau = J^TF
-            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
-
-            # The mass of the whip is the other masses summed up
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
-
-            # If no whip is attached, then the mass will be zero.
-            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
-
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
+        self.ctrl_par_names = [  "K", "B" ]                                     # Useful for self.set_ctrl_par method
 
 
-        return G
-
-
-    def set_traj( self, mov_pars = None ):
+    def set_traj( self, traj = None ):
         """
             Description:
             ----------
@@ -249,48 +240,27 @@ class JointImpedanceController( ImpedanceController ):
                 For setting the mov_parameters, we need to call this function separately.
 
         """
-        if mov_pars is None:
-            raise ValueError( "mov_parameters should be inputted!")
+        if traj is None:
+            raise ValueError( "trajectory class should be inputted!")
 
-        self.mov_pars = mov_pars
-
-
-        # [Please check!]
-        # The movement parameters are saved as follows
-        # <------- 0 ~ n_act -------> <----- n_act ~ 2n_act ----><--------1----------->
-        # [=====INITIAL POSTURE=====] [=====FINAL POSTURE=======][=====DURATION=======]
-        self.pi = np.array( self.mov_pars[          0 : self.n_act     ] )     # Initial Posture
-        self.pf = np.array( self.mov_pars[ self.n_act : 2 * self.n_act ] )     # Final   Posture
-        self.D  = self.mov_pars[ -1 ]                                          # Duration it took from start to end
-
-        # Basis function used for the ZFT Trajectory is minimum-jerk-trajectory
-        # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.2.] Zero-torque trajectory
-        # [REF] [T. Flash and N. Hogan]             : "Flash, Tamar, and Neville Hogan. "The coordination of arm movements: an experimentally confirmed mathematical model."
-        self.func_pos = min_jerk_traj( self.t_sym, self.pi, self.pf, self.D )
-        self.func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_pos ]
-        self.func_acc = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_vel ]
-
-        # Lambdify the functions
-        # [TIP] This is necessary for computation Speed!
-        self.func_pos = lambdify( self.t_sym, self.func_pos )
-        self.func_vel = lambdify( self.t_sym, self.func_vel )
-        self.func_acc = lambdify( self.t_sym, self.func_acc )
+        self.traj = traj
 
 
     def input_calc( self, time ):
 
         q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
         dq = self.mjData.qvel[ 0 : self.n_act ]
-        D  = self.mov_pars[ -1 ]
+        D  = self.traj.pars[ "D" ]
+
         if   time <= D:                                                         # If time greater than startTime
-            self.x0, self.dx0 = self.func_pos( time  ), self.func_vel( time  )  # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
+            self.x0, self.dx0 = self.traj.func_pos( time ), self.traj.func_vel( time  )  # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
         else:
-            self.x0, self.dx0 = self.pf, np.zeros( ( 4 ) )                      # Before start time, the posture should be remained at ZFT's initial posture
+            self.x0, self.dx0 = self.traj.pars[ "pf" ], np.zeros( ( 4 ) )       # Before start time, the posture should be remained at ZFT's initial posture
 
         tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq ) # Calculating the torque due to impedance
         tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
 
-        return self.mjData.ctrl, self.idx_act, tau_imp  + tau_g
+        return self.mjData.ctrl, self.idx_act, tau_imp + tau_g
 
 
 class SlidingController( Controller ):
@@ -310,18 +280,97 @@ class SlidingController( Controller ):
             Calculating the torque input
         """
         raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+                                                                                # Adding this NotImplementedError will force the child class to override parent's methods.
 
-    def set_traj( self ):
-        """
-            Set the trajectory of the sliding controller
-        """
-        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+    def get_M( self, q ):
 
-    def get_traj( self):
-        """
-            Get the trajectory of the sliding controller
-        """
-        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+        M_mat = np.zeros( ( self.n_acts, self.n_acts ) )
+
+        if  self.n_acts == 2:
+            # Get the q position, putting the whole
+            M1,   M2 = self.M
+            Lc1, Lc2 = self.Lc
+            L1,   L2 = self.L
+            I1xx, I1yy, I1zz = self.I[ 0 ]
+            I2xx, I2yy, I2zz = self.I[ 1 ]
+
+            M_mat[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
+            M_mat[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M_mat[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M_mat[ 1, 1 ] = I2yy + Lc2**2*M2
+
+        elif self.n_acts == 4:
+
+            # Get the q position, putting the whole
+            M1,   M2 = self.M
+            Lc1, Lc2 = self.Lc
+            L1,   L2 = self.L
+            I1xx, I1yy, I1zz = self.I[ 0 ]
+            I2xx, I2yy, I2zz = self.I[ 1 ]
+
+            M_mat[ 0, 0 ] = I1yy + I2yy + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 + 2*L1*Lc2*M2*np.cos(q[1])
+            M_mat[ 0, 1 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M_mat[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
+            M_mat[ 1, 1 ] = I2yy + Lc2**2*M2
+            M_mat[ 0, 0 ] = I1zz*np.sin(q[1])**2 + M2*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2xx*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))**2 + I2zz*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3]))**2 + I1xx*np.cos(q[1])**2*np.sin(q[2])**2 + I1yy*np.cos(q[1])**2*np.cos(q[2])**2 + I2yy*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.cos(q[2])**2 + Lc1**2*M1*np.cos(q[1])**2*np.sin(q[2])**2 + M2*np.cos(q[1])**2*np.cos(q[2])**2*(Lc2 + L1*np.cos(q[3]))**2 + L1**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.sin(q[3])**2
+            M_mat[ 0, 1 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
+            M_mat[ 0, 2 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
+            M_mat[ 0, 3 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M_mat[ 1, 0 ] = np.cos(q[2])*(I2zz*np.cos(q[1])*np.sin(q[2])*np.sin(q[3])**2 - I2yy*np.cos(q[1])*np.sin(q[2]) + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) - Lc2**2*M2*np.cos(q[1])*np.sin(q[2]) + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3]) + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2]) + L1*Lc2*M2*np.sin(q[1])*np.sin(q[3])) + np.cos(q[1])*np.cos(q[2])*np.sin(q[2])*(I1xx - I1yy)
+            M_mat[ 1, 1 ] = I1xx + I2yy - I2yy*np.cos(q[2])**2 + I2zz*np.cos(q[2])**2 + L1**2*M2 + Lc1**2*M1 + Lc2**2*M2 - I1xx*np.sin(q[2])**2 + I1yy*np.sin(q[2])**2 - Lc2**2*M2*np.cos(q[2])**2 + I2xx*np.cos(q[2])**2*np.cos(q[3])**2 - I2zz*np.cos(q[2])**2*np.cos(q[3])**2 + 2*L1*Lc2*M2*np.cos(q[3]) + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])**2
+            M_mat[ 1, 2 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
+            M_mat[ 1, 3 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M_mat[ 2, 0 ] = - I1zz*np.sin(q[1]) - I2zz*np.cos(q[3])*(np.cos(q[3])*np.sin(q[1]) - np.cos(q[1])*np.sin(q[2])*np.sin(q[3])) - I2xx*np.sin(q[3])*(np.sin(q[1])*np.sin(q[3]) + np.cos(q[1])*np.cos(q[3])*np.sin(q[2])) - Lc2*M2*np.sin(q[3])*(L1*np.cos(q[1])*np.sin(q[2]) + Lc2*np.sin(q[1])*np.sin(q[3]) + Lc2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2]))
+            M_mat[ 2, 1 ] = -np.cos(q[2])*np.sin(q[3])*(I2xx*np.cos(q[3]) - I2zz*np.cos(q[3]) + L1*Lc2*M2 + Lc2**2*M2*np.cos(q[3]))
+            M_mat[ 2, 2 ] = I1zz + I2zz + I2xx*np.sin(q[3])**2 - I2zz*np.sin(q[3])**2 + Lc2**2*M2*np.sin(q[3])**2
+            M_mat[ 2, 3 ] = 0
+            M_mat[ 3, 0 ] = np.cos(q[1])*np.cos(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M_mat[ 3, 1 ] = -np.sin(q[2])*(I2yy + Lc2**2*M2 + L1*Lc2*M2*np.cos(q[3]))
+            M_mat[ 3, 2 ] = 0
+            M_mat[ 3, 3 ] = I2yy + Lc2**2*M2
+
+
+        return Mmat
+
+
+    def get_C( self, q, dq):
+
+        C_mat = np.zeros( ( self.n_acts, self.n_acts ) )
+
+        M1,   M2 = self.M
+        Lc1, Lc2 = self.Lc
+        L1,   L2 = self.L
+        I1xx, I1yy, I1zz = self.I[ 0 ]
+        I2xx, I2yy, I2zz = self.I[ 1 ]
+
+        if   self.n_acts == 2:
+
+            C_mat[ 0, 0 ] = -L1*Lc2*M2*np.sin(q[1])*dq[1]
+            C_mat[ 0, 1 ] = -L1*Lc2*M2*np.sin(q[1])*(dq[0] + dq[1])
+            C_mat[ 1, 0 ] = L1*Lc2*M2*np.sin(q[1])*dq[0]
+            C_mat[ 1, 1 ] = 0
+
+        elif self.n_acts == 4:
+
+            C_mat[0, 0] = (I2xx*np.sin(2*q[1])*dq[1])/2 - (I1xx*np.sin(2*q[1])*dq[1])/2 + (I2xx*np.sin(2*q[3])*dq[3])/2 + (I1zz*np.sin(2*q[1])*dq[1])/2 - (I2zz*np.sin(2*q[1])*dq[1])/2 - (I2zz*np.sin(2*q[3])*dq[3])/2 - (L1**2*M2*np.sin(2*q[1])*dq[1])/2 - (Lc1**2*M1*np.sin(2*q[1])*dq[1])/2 + (Lc2**2*M2*np.sin(2*q[1])*dq[1])/2 + (Lc2**2*M2*np.sin(2*q[3])*dq[3])/2 - I2xx*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] - I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I2zz*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] + I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I1xx*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] + I1xx*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - I1yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - I2yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - I1yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - I2yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] + 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] + I2zz*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] + 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[3])*dq[3] + 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] + 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] - 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - Lc2**2*M2*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] - Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] + I2xx*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] + I2xx*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] - I2zz*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - I2zz*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[1] - 2*L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] + 2*L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[2])*np.sin(q[3])*dq[1] + 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] + 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[1])*np.sin(q[3])*dq[2] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2]
+            C_mat[0, 1] = (I2xx*np.sin(2*q[1])*dq[0])/2 - (I1xx*np.sin(2*q[1])*dq[0])/2 + (I1zz*np.sin(2*q[1])*dq[0])/2 - (I2zz*np.sin(2*q[1])*dq[0])/2 - (I1xx*np.cos(q[1])*dq[2])/2 - (I2xx*np.cos(q[1])*dq[2])/2 + (I1yy*np.cos(q[1])*dq[2])/2 + (I2yy*np.cos(q[1])*dq[2])/2 - (I1zz*np.cos(q[1])*dq[2])/2 - (I2zz*np.cos(q[1])*dq[2])/2 - (I2xx*np.cos(q[2])*np.sin(q[1])*dq[3])/2 - (I2yy*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + (I2zz*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[2] - (L1**2*M2*np.sin(2*q[1])*dq[0])/2 - (Lc1**2*M1*np.sin(2*q[1])*dq[0])/2 + (Lc2**2*M2*np.sin(2*q[1])*dq[0])/2 + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I1xx*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I1yy*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] + I2yy*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - I2zz*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] + I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I1xx*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] - I1yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - I2yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] - Lc2**2*M2*np.cos(q[2])*np.sin(q[1])*dq[3] - I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] + 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] - 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[0] - 2*L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*dq[0] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[3])*dq[1] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] + 2*L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] + 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3]
+            C_mat[0, 2] = (I1yy*np.cos(q[1])*dq[1])/2 - (I2xx*np.cos(q[1])*dq[1])/2 - (I1xx*np.cos(q[1])*dq[1])/2 + (I2yy*np.cos(q[1])*dq[1])/2 - (I1zz*np.cos(q[1])*dq[1])/2 - (I2zz*np.cos(q[1])*dq[1])/2 + (I2xx*np.cos(q[1])*np.sin(q[2])*dq[3])/2 - (I2yy*np.cos(q[1])*np.sin(q[2])*dq[3])/2 - (I2zz*np.cos(q[1])*np.sin(q[2])*dq[3])/2 + I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[1] - I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[1] - I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[1] + I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[1] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] + I1xx*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] - I1yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - I2yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] + I2zz*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] + I2xx*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] - I2zz*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[2] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[3])*dq[2] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2])*dq[3] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[2] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[1])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0]
+            C_mat[0, 3] = (I2xx*np.sin(2*q[3])*dq[0])/2 - (I2zz*np.sin(2*q[3])*dq[0])/2 - (I2xx*np.cos(q[2])*np.sin(q[1])*dq[1])/2 + (I2xx*np.cos(q[1])*np.sin(q[2])*dq[2])/2 - (I2yy*np.cos(q[2])*np.sin(q[1])*dq[1])/2 - (I2yy*np.cos(q[1])*np.sin(q[2])*dq[2])/2 + (I2zz*np.cos(q[2])*np.sin(q[1])*dq[1])/2 - (I2zz*np.cos(q[1])*np.sin(q[2])*dq[2])/2 + (Lc2**2*M2*np.sin(2*q[3])*dq[0])/2 - I2xx*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] + I2zz*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] + 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - Lc2**2*M2*np.cos(q[2])*np.sin(q[1])*dq[1] - L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[3])*dq[0] + 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] - 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] + I2xx*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[2])*dq[2] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[3])*dq[3] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1]
+            C_mat[1, 0] = (I1xx*np.sin(2*q[1])*dq[0])/2 - (I2xx*np.sin(2*q[1])*dq[0])/2 - (I1zz*np.sin(2*q[1])*dq[0])/2 + (I2zz*np.sin(2*q[1])*dq[0])/2 - (I1xx*np.cos(q[1])*dq[2])/2 + (I2xx*np.cos(q[1])*dq[2])/2 + (I1yy*np.cos(q[1])*dq[2])/2 + (I2yy*np.cos(q[1])*dq[2])/2 + (I1zz*np.cos(q[1])*dq[2])/2 - (I2zz*np.cos(q[1])*dq[2])/2 - (I2xx*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + (I2yy*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + (I2zz*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I2xx*np.cos(q[1])*np.cos(q[3])**2*dq[2] - I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[2] + I2zz*np.cos(q[1])*np.cos(q[3])**2*dq[2] + Lc2**2*M2*np.cos(q[1])*dq[2] + (L1**2*M2*np.sin(2*q[1])*dq[0])/2 + (Lc1**2*M1*np.sin(2*q[1])*dq[0])/2 - (Lc2**2*M2*np.sin(2*q[1])*dq[0])/2 + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[2] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*dq[2] + I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - I1xx*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] + I1yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + I2yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] - 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] + L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[0] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[2] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[2] + 2*L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*dq[0] + L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*dq[3] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] - L1*Lc2*M2*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[2] - 2*L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[2] - 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3]
+            C_mat[1, 1] = - np.sin(q[3])*dq[3]*(L1*Lc2*M2 + I2xx*np.cos(q[2])**2*np.cos(q[3]) - I2zz*np.cos(q[2])**2*np.cos(q[3]) + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])) - np.cos(q[2])*np.sin(q[2])*dq[2]*(I1xx + I2xx/2 - I1yy - I2yy + I2zz/2 + (I2xx*(2*np.cos(q[3])**2 - 1))/2 - (I2zz*(2*np.cos(q[3])**2 - 1))/2 - (Lc2**2*M2)/2 + (Lc2**2*M2*(2*np.cos(q[3])**2 - 1))/2)
+            C_mat[1, 2] = (I1yy*np.sin(2*q[2])*dq[1])/2 - (I1xx*np.sin(2*q[2])*dq[1])/2 + (I2yy*np.sin(2*q[2])*dq[1])/2 - (I2zz*np.sin(2*q[2])*dq[1])/2 - (I1xx*np.cos(q[1])*dq[0])/2 + (I2xx*np.cos(q[1])*dq[0])/2 + (I2xx*np.cos(q[2])*dq[3])/2 + (I1yy*np.cos(q[1])*dq[0])/2 + (I2yy*np.cos(q[1])*dq[0])/2 - (I2yy*np.cos(q[2])*dq[3])/2 + (I1zz*np.cos(q[1])*dq[0])/2 - (I2zz*np.cos(q[1])*dq[0])/2 - (I2zz*np.cos(q[2])*dq[3])/2 + I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[0] - I2xx*np.cos(q[1])*np.cos(q[3])**2*dq[0] - I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[3] - I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[0] - I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[0] + I2zz*np.cos(q[1])*np.cos(q[3])**2*dq[0] + I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[3] + Lc2**2*M2*np.cos(q[1])*dq[0] + (Lc2**2*M2*np.sin(2*q[2])*dq[1])/2 + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*dq[0] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[3] + I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[2] - I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[2] - I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] + I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] + Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[2] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] - L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] + L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[2] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] - L1*Lc2*M2*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0]
+            C_mat[1, 3] = (I2xx*np.cos(q[2])*dq[2])/2 - (I2yy*np.cos(q[2])*dq[2])/2 - (I2zz*np.cos(q[2])*dq[2])/2 - (I2xx*np.cos(q[2])*np.sin(q[1])*dq[0])/2 + (I2yy*np.cos(q[2])*np.sin(q[1])*dq[0])/2 + (I2zz*np.cos(q[2])*np.sin(q[1])*dq[0])/2 - I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[2] + I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[2] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[2] - L1*Lc2*M2*np.sin(q[3])*dq[1] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2xx*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2zz*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] - L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*dq[2] + L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[3] + L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0]
+            C_mat[2, 0] = (I1xx*np.cos(q[1])*dq[1])/2 - (I2xx*np.cos(q[1])*dq[1])/2 - (I1yy*np.cos(q[1])*dq[1])/2 - (I2yy*np.cos(q[1])*dq[1])/2 - (I1zz*np.cos(q[1])*dq[1])/2 + (I2zz*np.cos(q[1])*dq[1])/2 + (I2xx*np.cos(q[1])*np.sin(q[2])*dq[3])/2 + (I2yy*np.cos(q[1])*np.sin(q[2])*dq[3])/2 - (I2zz*np.cos(q[1])*np.sin(q[2])*dq[3])/2 - I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[1] + I2xx*np.cos(q[1])*np.cos(q[3])**2*dq[1] + I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[1] + I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[1] - I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[1] - I2zz*np.cos(q[1])*np.cos(q[3])**2*dq[1] - Lc2**2*M2*np.cos(q[1])*dq[1] - I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[1] + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*dq[1] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] - I1xx*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] + I1yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] + I2yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - I2zz*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.sin(q[2])*dq[3] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[3] - I2xx*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] + I2zz*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[3] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[1] + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[1] - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[1] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[0] + L1*Lc2*M2*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[1] + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[1] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[1])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0]
+            C_mat[2, 1] = (I1xx*np.sin(2*q[2])*dq[1])/2 - (I1yy*np.sin(2*q[2])*dq[1])/2 - (I2yy*np.sin(2*q[2])*dq[1])/2 + (I2zz*np.sin(2*q[2])*dq[1])/2 + (I1xx*np.cos(q[1])*dq[0])/2 - (I2xx*np.cos(q[1])*dq[0])/2 + (I2xx*np.cos(q[2])*dq[3])/2 - (I1yy*np.cos(q[1])*dq[0])/2 - (I2yy*np.cos(q[1])*dq[0])/2 + (I2yy*np.cos(q[2])*dq[3])/2 - (I1zz*np.cos(q[1])*dq[0])/2 + (I2zz*np.cos(q[1])*dq[0])/2 - (I2zz*np.cos(q[2])*dq[3])/2 - I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[0] + I2xx*np.cos(q[1])*np.cos(q[3])**2*dq[0] - I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[3] + I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[0] + I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[0] - I2zz*np.cos(q[1])*np.cos(q[3])**2*dq[0] + I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[3] - Lc2**2*M2*np.cos(q[1])*dq[0] + Lc2**2*M2*np.cos(q[2])*dq[3] - (Lc2**2*M2*np.sin(2*q[2])*dq[1])/2 - I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*dq[0] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[3] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[1] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[0] + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] + L1*Lc2*M2*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*np.sin(q[3])*dq[0]
+            C_mat[2, 2] = np.sin(2*q[3])*dq[3]*(I2xx/2 - I2zz/2 + (Lc2**2*M2)/2)
+            C_mat[2, 3] = (I2xx*np.sin(2*q[3])*dq[2])/2 - (I2zz*np.sin(2*q[3])*dq[2])/2 + (I2xx*np.cos(q[2])*dq[1])/2 + (I2yy*np.cos(q[2])*dq[1])/2 - (I2zz*np.cos(q[2])*dq[1])/2 + (I2xx*np.cos(q[1])*np.sin(q[2])*dq[0])/2 + (I2yy*np.cos(q[1])*np.sin(q[2])*dq[0])/2 - (I2zz*np.cos(q[1])*np.sin(q[2])*dq[0])/2 - I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[1] + I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[1] + Lc2**2*M2*np.cos(q[2])*dq[1] + (Lc2**2*M2*np.sin(2*q[3])*dq[2])/2 - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[1] - I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] - I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0]
+            C_mat[3, 0] = (I2zz*np.sin(2*q[3])*dq[0])/2 - (I2xx*np.sin(2*q[3])*dq[0])/2 + (I2xx*np.cos(q[2])*np.sin(q[1])*dq[1])/2 - (I2xx*np.cos(q[1])*np.sin(q[2])*dq[2])/2 - (I2yy*np.cos(q[2])*np.sin(q[1])*dq[1])/2 - (I2yy*np.cos(q[1])*np.sin(q[2])*dq[2])/2 - (I2zz*np.cos(q[2])*np.sin(q[1])*dq[1])/2 + (I2zz*np.cos(q[1])*np.sin(q[2])*dq[2])/2 - (Lc2**2*M2*np.sin(2*q[3])*dq[0])/2 + I2xx*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] - I2zz*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] - I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] + 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] + I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - Lc2**2*M2*np.cos(q[1])*np.sin(q[2])*dq[2] + L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[3])*dq[0] - 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] + 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] - I2xx*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[1] + 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[0] - 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[0] - L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1]
+            C_mat[3, 1] = (I2zz*np.cos(q[2])*dq[2])/2 - (I2yy*np.cos(q[2])*dq[2])/2 - (I2xx*np.cos(q[2])*dq[2])/2 + (I2xx*np.cos(q[2])*np.sin(q[1])*dq[0])/2 - (I2yy*np.cos(q[2])*np.sin(q[1])*dq[0])/2 - (I2zz*np.cos(q[2])*np.sin(q[1])*dq[0])/2 + I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[2] - I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[2] - Lc2**2*M2*np.cos(q[2])*dq[2] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[2] + L1*Lc2*M2*np.sin(q[3])*dq[1] - I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2xx*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] + I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[1] - L1*Lc2*M2*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*dq[0] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0]
+            C_mat[3, 2] = (I2zz*np.sin(2*q[3])*dq[2])/2 - (I2xx*np.sin(2*q[3])*dq[2])/2 - (I2xx*np.cos(q[2])*dq[1])/2 - (I2yy*np.cos(q[2])*dq[1])/2 + (I2zz*np.cos(q[2])*dq[1])/2 - (I2xx*np.cos(q[1])*np.sin(q[2])*dq[0])/2 - (I2yy*np.cos(q[1])*np.sin(q[2])*dq[0])/2 + (I2zz*np.cos(q[1])*np.sin(q[2])*dq[0])/2 + I2xx*np.cos(q[2])*np.cos(q[3])**2*dq[1] - I2zz*np.cos(q[2])*np.cos(q[3])**2*dq[1] - Lc2**2*M2*np.cos(q[2])*dq[1] - (Lc2**2*M2*np.sin(2*q[3])*dq[2])/2 + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*dq[1] + I2xx*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] - I2zz*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] + I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.sin(q[2])*dq[0] + Lc2**2*M2*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[2])*dq[0]
+            C_mat[3, 3] = 0
+
+        return C_mat
+
 
 class JointSlidingController( SlidingController ):
 
@@ -340,11 +389,11 @@ class JointSlidingController( SlidingController ):
 
     def set_traj( self ):
 
-        pi = np.array( self.mov_parameters[ 0          :     self.n_act ] )
-        pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
-        D  = self.mov_parameters[ -1 ]
+        self.pi = np.array( self.mov_parameters[ 0          :     self.n_act ] )
+        self.pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
+        self.D  = self.mov_parameters[ -1 ]
 
-        self.func_pos = min_jerk_traj( self.t_sym, pi, pf, D )
+        self.func_pos = min_jerk_traj( self.t_sym, self.pi, self.pf, self.D )
         self.func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_pos ]
         self.func_acc = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_vel ]
 
@@ -354,23 +403,19 @@ class JointSlidingController( SlidingController ):
         self.func_vel = lambdify( self.t_sym, self.func_vel )
         self.func_acc = lambdify( self.t_sym, self.func_acc )
 
-    def input_calc( self, start_time, current_time ):
+
+    def input_calc( self, time ):
 
         q    = self.mjData.qpos[ 0 : self.n_act ]
         dq   = self.mjData.qvel[ 0 : self.n_act ]
 
-        if   current_time >= start_time and current_time <= start_time + self.mov_parameters[ -1 ]:   # If time greater than startTime
-            qd   = self.func_pos( current_time - start_time )
-            dqd  = self.func_vel( current_time - start_time )
-            ddqd = self.func_acc( current_time - start_time )
-
-        elif current_time >= start_time + self.mov_parameters[ -1 ]:            # If time greater than startTime
-            qd   = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
-            dqd  = np.zeros( self.n_act )
-            ddqd = np.zeros( self.n_act )
+        if   time <= self.D:
+            qd   = self.func_pos( time )
+            dqd  = self.func_vel( time )
+            ddqd = self.func_acc( time )
 
         else:
-            qd   = np.array( self.mov_parameters[ 0 :  self.n_act ] )
+            qd   = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
             dqd  = np.zeros( self.n_act )
             ddqd = np.zeros( self.n_act )
 
@@ -378,14 +423,12 @@ class JointSlidingController( SlidingController ):
         ddqr = ddqd - self.Kl.dot( dq - dqd  )
         s    = dq - dqr
 
-        Mmat = self.upperlimb_model.get_M( q     )
-        Cmat = self.upperlimb_model.get_C( q, dq )
-        Gmat = self.upperlimb_model.get_G(       )
-
-        if "_w_" in self.mjArgs[ 'modelName' ]: # If a Whip (or some object) is attached to the object
-            Gmat += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"  ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, -0.3 * self.g  )
+        Mmat = self.get_M( q     )
+        Cmat = self.get_C( q, dq )
+        Gmat = self.get_G(       )
 
         tau = Mmat.dot( ddqr ) + Cmat.dot( dqr ) + Gmat - self.Kd.dot( s )
+
         return self.mjData.ctrl, self.idx_act, tau
 
 
@@ -452,26 +495,6 @@ class CartesianImpedanceController( ImpedanceController ):
 
 
 
-    def get_G( self ):
-
-        if   self.n_limbs == 2:
-
-            # Torque for Gravity compensation is simply tau = J^TF
-            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
-
-            # The mass of the whip is the other masses summed up
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
-
-            # If no whip is attached, then the mass will be zero.
-            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
-
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
-
-
-        return G
 
 
     def set_ZFT( self, mov_parameters = None ):

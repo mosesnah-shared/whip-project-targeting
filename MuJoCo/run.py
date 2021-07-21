@@ -143,8 +143,8 @@ from modules.simulation   import Simulation
 from modules.controllers  import ( ImpedanceController, CartesianImpedanceController,JointImpedanceController, JointSlidingController )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
-from modules.models       import UpperLimbModelPlanar, UpperLimbModelSpatial
-from modules.obj_funcs    import dist_from_tip2target
+from modules.objectives   import DistFromTip2Target
+from modules.traj_funcs   import MinJerkTrajectory
 from modules.constants    import Constants
 
 # ============================================================================= #
@@ -205,24 +205,26 @@ def main( ):
         # 1_2D_model_w_N15.xml:  mov_parameters = [ -1.39303, 0.35122, 1.56649, 0.01508, 0.79451 ] ), min_val = 0.05939
         # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.56748, 0.09553, 1.57128, 0.05834, 0.80366 ] ), min_val = 0.08106
         # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] ), min_val = 0.02032
-        obj_func = None
+        objective = None
 
     elif "1" == args[ 'modelName' ][ 0 ] and "3D" in args[ 'modelName' ]:
 
-        # upper_limb        = UpperLimbModelSpatial(    mySim.mjModel, mySim.mjData, args )
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
 
         ctrl.set_ctrl_par(  K  = ( ctrl.K + np.transpose( ctrl.K ) ) / 2,
                             B  = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
+        # [TODO] [2021.07.20] [Moses C. Nah]
+        # Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
+        mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
+        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
+
+
         # [NOTE] [2021.07.20] [Moses C. Nah]
         # Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [TODO] [2021.07.20] [Moses C. Nah]
         # Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
-
-        ctrl.set_traj( mov_pars = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
-
-        obj_func = dist_from_tip2target if "_w_" in args[ 'modelName' ] else None
 
         # [BACKUP] [Moses Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
@@ -248,17 +250,17 @@ def main( ):
 
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
         ctrl.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 1   ],
-                                                     Kl = 20 * np.identity( controller_object.n_act ) , Kd = 7 * np.identity( controller_object.n_act )  )
-        obj_func = None
+                            Kl = 20 * np.identity( controller_object.n_act ) , Kd = 7 * np.identity( controller_object.n_act )  )
+        objective = None
 
     else:   # If simply dummy, example model for quick debugging
         # ctrl = NullController( mySim.mjModel, mySim.mjData )
         ctrl     = None
-        obj_func = None
+        objective = None
 
 
     mySim.attach_controller( ctrl )
-    mySim.attach_obj_function( obj_func  )
+    mySim.attach_objective( objective  )
 
     if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
 
