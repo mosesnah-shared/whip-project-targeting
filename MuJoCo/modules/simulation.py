@@ -123,17 +123,17 @@ class Simulation( ):
 
         self.ctrl = ctrl
 
-    def attach_obj_function( self, obj_func, weights = 1):
+    def attach_objective( self, objective, weights = 1):
         """
             Attaching the objective function to be optimization
 
-            The "obj_func" must have a form of following
+            The "objective" must have a form of following
 
             [SYNTAX]
-                scalar_output = obj_func( mjModel, mjData )
+                scalar_output = objective( mjModel, mjData )
         """
 
-        self.obj_func = obj_func
+        self.objective = objective
 
 
     def run_nlopt_optimization( self, input_pars = "mov_pars", idx = 1, lb = None, ub = None, max_iter = 600 ):
@@ -144,7 +144,7 @@ class Simulation( ):
         tmp_file = open( self.args[ 'saveDir' ] + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
 
         # First check if there exist an output function
-        if self.obj_func is None:
+        if self.objective is None:
             raise ValueError( "Optimization cannot be executed due to the vacancy of output scalar function" )
 
         # Find the input parameters (input_pars) that are aimed to be optimized
@@ -171,7 +171,7 @@ class Simulation( ):
         self.opt.set_initial_step( init )
 
 
-        def nlopt_obj_func( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
+        def nlopt_objective( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
 
             setattr( self.ctrl, input_pars, pars )                        # Setting the input parameters directory
             val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
@@ -184,7 +184,7 @@ class Simulation( ):
             return val
 
 
-        self.opt.set_min_objective( nlopt_obj_func )
+        self.opt.set_min_objective( nlopt_objective )
         self.xopt = self.opt.optimize( ( ub + lb ) * 0.5 )                      # Start at the mid-point of the lower and upper bound
 
         my_print(  optimalInput = self.xopt[ : ],
@@ -219,7 +219,7 @@ class Simulation( ):
         # Warn the user if input and output function is empty
         if self.ctrl is None:
             raise ValueError( "CONTROLLER NOT ATTACHED TO SIMULATION. \
-                               PLEASE REFER TO METHOD 'attach_obj_function' and 'attach_controller' " )
+                               PLEASE REFER TO METHOD 'attach_objectivetion' and 'attach_controller' " )
 
 
         if self.args[ 'recordVideo' ]:
@@ -284,8 +284,8 @@ class Simulation( ):
 
 
             # Calculate objective value based on mujoco Data
-            if self.obj_func is not None:
-                self.min_val = min( self.min_val, self.obj_func( self.mjModel, self.mjData )  )
+            if self.objective is not None:
+                self.min_val = min( self.min_val, self.objective.output_calc( )  )
 
             if self.sim_step % self.update_rate == 0:
 
@@ -304,12 +304,12 @@ class Simulation( ):
                             ZFTPositions = self.ctrl.x0,
                                 forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
                                torqueVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 3 : 6 ] ),
-                                  minVal = self.obj_func( self.mjModel, self.mjData ) ,
+                                  minVal = self.objective( self.mjModel, self.mjData ) ,
                                     file = file         )
 
 
                 else:
-                    my_print( dist = self.obj_func( self.mjModel, self.mjData ) )
+                    my_print( dist = self.objective.output_calc(  ) )
 
 
             self.sim_step += 1
@@ -320,6 +320,7 @@ class Simulation( ):
         if self.args[ 'saveData' ]:
             file.close()
 
+
         return self.min_val                                                     # Returning the minimum value achieved with the defined objective function
 
     def set_initial_condition( self ):
@@ -327,14 +328,14 @@ class Simulation( ):
             Manually setting the initial condition of the system.
         """
 
-        ctrl_name = self.ctrl.__class__.__name__.lower()                  # Getting the name of the controller. The controller names are indicated in "input_ctrls.py"
+        ctrl_name = self.ctrl.__class__.__name__.lower()                        # Getting the name of the controller. The controller names are indicated in "input_ctrls.py"
 
-        nJ = self.ctrl.n_act                                              # Getting the number of active joints
+        nJ = self.ctrl.n_act                                                    # Getting the number of active joints
 
 
         if nJ != 0 and "2D" not in self.model_name:
-            self.mjData.qpos[ 0 : nJ ] = self.ctrl.mov_pars[ 0 : nJ ]   # Setting the initial posture of the upper-limb as the movement parameters
-            self.mjSim.forward()                                                    # Update Needed for setting the posture of the upper limb by "forward" method.
+            self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
+            self.mjSim.forward()                                                # Update Needed for setting the posture of the upper limb by "forward" method.
 
 
         # The whip should face downward, complying to gravity at rest.
