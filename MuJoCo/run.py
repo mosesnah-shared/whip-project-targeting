@@ -216,7 +216,7 @@ def main( ):
 
         # [TODO] [2021.07.20] [Moses C. Nah]
         # Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
-        mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
+        mov_pars  = np.array( [-0.94248, 0.     , 0.     , 1.41372, 1.72788, 0.     , 0.     , 1.41372, 0.95   ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
 
@@ -249,37 +249,35 @@ def main( ):
     elif "2" == args[ 'modelName' ][ 0 ]:
 
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
-        ctrl.set_ctrl_par(  mov_parameters = [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 1   ],
-                            Kl = 20 * np.identity( controller_object.n_act ) , Kd = 7 * np.identity( controller_object.n_act )  )
-        objective = None
+        ctrl.set_ctrl_par(  Kl = 20 * np.identity( ctrl.n_act ) , Kd = 7 * np.identity( ctrl.n_act )  )
+
+        mov_pars  = np.array( [-1.36136, 0.     , 0.     , 0.47124, 1.72788, 0.     , 0.     , 1.41372, 0.95   ])
+        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
+
 
     else:   # If simply dummy, example model for quick debugging
         # ctrl = NullController( mySim.mjModel, mySim.mjData )
-        ctrl     = None
+        ctrl      = None
         objective = None
 
-
-    mySim.attach_controller( ctrl )
+    mySim.attach_controller( ctrl      )
     mySim.attach_objective( objective  )
 
     if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
-
-        mySim.mjData.qpos[ 0 ] = 0.01
-        mySim.mjData.qpos[ 1 ] = 0.01
-        mySim.mjSim.forward( )
-
 
         val = mySim.run( )                # Getting the minimum distance between tip and target
 
 
     else:                                 # If running nlopt optimiation
 
-        if   mySim.controller.n_mov_pars == 5:
+        # For optimizing the trajectory of the movement.
+        if   mySim.ctrl.traj.n_pars == 5:
 
             lb = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )             # Defining the bound. with np array.
             ub = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )             # Defining the bound. with np array.
 
-        elif mySim.controller.n_mov_pars == 9:
+        elif mySim.ctrl.traj.n_pars == 9:
 
             lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
             ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.

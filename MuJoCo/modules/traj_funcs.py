@@ -98,10 +98,12 @@ class MinJerkTrajectory( Trajectory ):
         # Quick check whether the input was given correctly.
         self.check_pars( traj_pars )
 
+        self.pars = traj_pars
         pi = traj_pars[ "pi" ]
         pf = traj_pars[ "pf" ]
         D  = traj_pars[ "D"  ]
         t  = self.t_sym
+
 
         self.func_pos = pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) )
         self.func_vel = [ sp.diff( tmp, t ) for tmp in self.func_pos ]

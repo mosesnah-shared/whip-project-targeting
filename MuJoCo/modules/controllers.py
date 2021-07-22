@@ -180,13 +180,6 @@ class ImpedanceController( Controller ):
         self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
         self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
 
-    def set_traj( self ):
-        """
-            Calculating the torque input
-        """
-        raise NotImplementedError                                               # Adding this NotImplementedError will force the child class to override parent's methods.
-
-
 class JointImpedanceController( ImpedanceController ):
 
     """
@@ -232,20 +225,6 @@ class JointImpedanceController( ImpedanceController ):
         self.ctrl_par_names = [  "K", "B" ]                                     # Useful for self.set_ctrl_par method
 
 
-    def set_traj( self, traj = None ):
-        """
-            Description:
-            ----------
-                Setting the trajectory, which is the ZTT (Zero-torque trajectory)
-                For setting the mov_parameters, we need to call this function separately.
-
-        """
-        if traj is None:
-            raise ValueError( "trajectory class should be inputted!")
-
-        self.traj = traj
-
-
     def input_calc( self, time ):
 
         q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
@@ -284,9 +263,9 @@ class SlidingController( Controller ):
 
     def get_M( self, q ):
 
-        M_mat = np.zeros( ( self.n_acts, self.n_acts ) )
+        M_mat = np.zeros( ( self.n_act, self.n_act ) )
 
-        if  self.n_acts == 2:
+        if  self.n_act == 2:
             # Get the q position, putting the whole
             M1,   M2 = self.M
             Lc1, Lc2 = self.Lc
@@ -299,7 +278,7 @@ class SlidingController( Controller ):
             M_mat[ 1, 0 ] = I2yy + Lc2*M2*(Lc2 + L1*np.cos(q[1]))
             M_mat[ 1, 1 ] = I2yy + Lc2**2*M2
 
-        elif self.n_acts == 4:
+        elif self.n_act == 4:
 
             # Get the q position, putting the whole
             M1,   M2 = self.M
@@ -330,12 +309,12 @@ class SlidingController( Controller ):
             M_mat[ 3, 3 ] = I2yy + Lc2**2*M2
 
 
-        return Mmat
+        return M_mat
 
 
     def get_C( self, q, dq):
 
-        C_mat = np.zeros( ( self.n_acts, self.n_acts ) )
+        C_mat = np.zeros( ( self.n_act, self.n_act ) )
 
         M1,   M2 = self.M
         Lc1, Lc2 = self.Lc
@@ -343,14 +322,14 @@ class SlidingController( Controller ):
         I1xx, I1yy, I1zz = self.I[ 0 ]
         I2xx, I2yy, I2zz = self.I[ 1 ]
 
-        if   self.n_acts == 2:
+        if   self.n_act == 2:
 
             C_mat[ 0, 0 ] = -L1*Lc2*M2*np.sin(q[1])*dq[1]
             C_mat[ 0, 1 ] = -L1*Lc2*M2*np.sin(q[1])*(dq[0] + dq[1])
             C_mat[ 1, 0 ] = L1*Lc2*M2*np.sin(q[1])*dq[0]
             C_mat[ 1, 1 ] = 0
 
-        elif self.n_acts == 4:
+        elif self.n_act == 4:
 
             C_mat[0, 0] = (I2xx*np.sin(2*q[1])*dq[1])/2 - (I1xx*np.sin(2*q[1])*dq[1])/2 + (I2xx*np.sin(2*q[3])*dq[3])/2 + (I1zz*np.sin(2*q[1])*dq[1])/2 - (I2zz*np.sin(2*q[1])*dq[1])/2 - (I2zz*np.sin(2*q[3])*dq[3])/2 - (L1**2*M2*np.sin(2*q[1])*dq[1])/2 - (Lc1**2*M1*np.sin(2*q[1])*dq[1])/2 + (Lc2**2*M2*np.sin(2*q[1])*dq[1])/2 + (Lc2**2*M2*np.sin(2*q[3])*dq[3])/2 - I2xx*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] - I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I2zz*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] + I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I1xx*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] + I1xx*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - I1yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - I2yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - I1yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - I2yy*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] + 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] + I2zz*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] + 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[3])*dq[3] + 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] + 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] - 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] - Lc2**2*M2*np.cos(q[1])*np.sin(q[1])*np.sin(q[2])*dq[3] - Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] + I2xx*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] + I2xx*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] - I2zz*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] - I2zz*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[1] - 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[1] - Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.sin(q[2])*dq[2] - 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[3])*dq[3] - L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[1] - 2*L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*dq[1] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[1] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[2])*dq[2] + Lc2**2*M2*np.cos(q[1])**2*np.cos(q[2])**2*np.cos(q[3])*np.sin(q[3])*dq[3] + 2*L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[2])*np.sin(q[3])*dq[1] + 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[3] + 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[1] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[1])*np.sin(q[3])*dq[2] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*np.sin(q[2])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[1])*np.sin(q[3])*dq[2]
             C_mat[0, 1] = (I2xx*np.sin(2*q[1])*dq[0])/2 - (I1xx*np.sin(2*q[1])*dq[0])/2 + (I1zz*np.sin(2*q[1])*dq[0])/2 - (I2zz*np.sin(2*q[1])*dq[0])/2 - (I1xx*np.cos(q[1])*dq[2])/2 - (I2xx*np.cos(q[1])*dq[2])/2 + (I1yy*np.cos(q[1])*dq[2])/2 + (I2yy*np.cos(q[1])*dq[2])/2 - (I1zz*np.cos(q[1])*dq[2])/2 - (I2zz*np.cos(q[1])*dq[2])/2 - (I2xx*np.cos(q[2])*np.sin(q[1])*dq[3])/2 - (I2yy*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + (I2zz*np.cos(q[2])*np.sin(q[1])*dq[3])/2 + I1xx*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I1yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I2yy*np.cos(q[1])*np.cos(q[2])**2*dq[2] + I2zz*np.cos(q[1])*np.cos(q[2])**2*dq[2] - (L1**2*M2*np.sin(2*q[1])*dq[0])/2 - (Lc1**2*M1*np.sin(2*q[1])*dq[0])/2 + (Lc2**2*M2*np.sin(2*q[1])*dq[0])/2 + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*dq[2] - I1xx*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - I2xx*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I1yy*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] + I2yy*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - I2zz*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] + I2zz*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I1xx*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - 2*I2xx*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] - I1yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - I2yy*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + I2zz*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] + 2*I2zz*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] - Lc2**2*M2*np.cos(q[2])*np.sin(q[1])*dq[3] - I2xx*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] + 2*I2xx*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2zz*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] - 2*I2zz*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.sin(q[1])*np.sin(q[2])*dq[1] - Lc2**2*M2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] + I2xx*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] - I2zz*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.sin(q[1])*dq[0] - 2*Lc2**2*M2*np.cos(q[1])*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*dq[3] + I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] - I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*dq[2] - L1*Lc2*M2*np.sin(q[2])*np.sin(q[3])*dq[0] - 2*L1*Lc2*M2*np.cos(q[1])*np.cos(q[3])*np.sin(q[1])*dq[0] + L1*Lc2*M2*np.cos(q[1])*np.cos(q[2])*np.sin(q[3])*dq[1] - I2xx*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] + I2zz*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])**2*np.cos(q[3])**2*np.sin(q[1])*dq[0] + Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[3])*dq[1] + 2*L1*Lc2*M2*np.cos(q[1])**2*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[2])*np.cos(q[3])**2*np.sin(q[1])*np.sin(q[2])*dq[1] + 2*Lc2**2*M2*np.cos(q[1])**2*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[0] - Lc2**2*M2*np.cos(q[1])*np.cos(q[2])*np.cos(q[3])*np.sin(q[2])*np.sin(q[3])*dq[3]
@@ -378,30 +357,9 @@ class JointSlidingController( SlidingController ):
 
         super().__init__( mjModel, mjData, mjArgs )
 
-        self.n_mov_pars     = self.n_act * 2 + 1                                # Starting point (2), ending point (2) and the duration (1) between the two.
-        self.n_ctrl_pars    = [ self.n_mov_pars, self.n_act ** 2, self.n_act ** 2 ]  # The number of ctrl parameters. This definition would be useful for the optimization process.
-                                                                                # K and B has 2^2 elements, hence 4
-
-        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
-
-        self.ctrl_par_names = [ "mov_parameters", "Kd", "Kl" ]                  # Kl: s = q' + Kl q
+        self.n_ctrl_pars    = [ self.n_act ** 2, self.n_act ** 2 ]              # The number of ctrl parameters.
+        self.ctrl_par_names = [ "Kd", "Kl" ]                                    # Kl: s = q' + Kl q
                                                                                 # Kd: tau = M(q)qr'' + C(q,q')qr' + G(q) - Kds
-
-    def set_traj( self ):
-
-        self.pi = np.array( self.mov_parameters[ 0          :     self.n_act ] )
-        self.pf = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
-        self.D  = self.mov_parameters[ -1 ]
-
-        self.func_pos = min_jerk_traj( self.t_sym, self.pi, self.pf, self.D )
-        self.func_vel = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_pos ]
-        self.func_acc = [ sp.diff( tmp, self.t_sym ) for tmp in self.func_vel ]
-
-        # Lambdify the functions
-        # [TIP] This is necessary for computation Speed!
-        self.func_pos = lambdify( self.t_sym, self.func_pos )
-        self.func_vel = lambdify( self.t_sym, self.func_vel )
-        self.func_acc = lambdify( self.t_sym, self.func_acc )
 
 
     def input_calc( self, time ):
@@ -409,25 +367,25 @@ class JointSlidingController( SlidingController ):
         q    = self.mjData.qpos[ 0 : self.n_act ]
         dq   = self.mjData.qvel[ 0 : self.n_act ]
 
-        if   time <= self.D:
-            qd   = self.func_pos( time )
-            dqd  = self.func_vel( time )
-            ddqd = self.func_acc( time )
+        if   time <= self.traj.pars[ "D" ]:
+            self.qd   = self.traj.func_pos( time )
+            self.dqd  = self.traj.func_vel( time )
+            self.ddqd = self.traj.func_acc( time )
 
         else:
-            qd   = np.array( self.mov_parameters[ self.n_act : 2 * self.n_act ] )
-            dqd  = np.zeros( self.n_act )
-            ddqd = np.zeros( self.n_act )
+            self.qd   = np.array( self.traj.pars[ "pf" ] )
+            self.dqd  = np.zeros( self.n_act )
+            self.ddqd = np.zeros( self.n_act )
 
-        dqr  =  dqd - self.Kl.dot(  q - qd   )
-        ddqr = ddqd - self.Kl.dot( dq - dqd  )
-        s    = dq - dqr
+        dqr    =  self.dqd - self.Kl.dot(  q - self.qd   )
+        ddqr   = self.ddqd - self.Kl.dot( dq - self.dqd  )
+        self.s = dq - dqr
 
         Mmat = self.get_M( q     )
         Cmat = self.get_C( q, dq )
         Gmat = self.get_G(       )
 
-        tau = Mmat.dot( ddqr ) + Cmat.dot( dqr ) + Gmat - self.Kd.dot( s )
+        tau = Mmat.dot( ddqr ) + Cmat.dot( dqr ) + Gmat - self.Kd.dot( self.s )
 
         return self.mjData.ctrl, self.idx_act, tau
 

@@ -153,13 +153,8 @@ class Simulation( ):
         idx_opt = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
         self.algorithm = idx_opt[ idx ]                                             # Selecting the algorithm to be executed
 
-        if input_pars not in self.ctrl.ctrl_par_names:
-            raise ValueError( "The input parameters {0:s} is not defined or found in the ctrl parameter names in the controller. \
-                               Possible options are '{1:s}'".format( input_pars, ", ".join( self.ctrl_input.ctrl_par_names )  ) )
 
-        idx = [ i for i, elem in enumerate( self.ctrl.ctrl_par_names ) if input_pars == elem ][ 0 ]
-
-        self.n_opt = self.ctrl.n_ctrl_pars[ idx ]                         # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
+        self.n_opt = self.ctrl.traj.n_pars                                      # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
         self.opt   = nlopt.opt( self.algorithm, self.n_opt )                    # Defining the class for optimization
 
         self.opt.set_lower_bounds( lb )                                         # Setting the upper/lower bound of the optimization
@@ -173,7 +168,8 @@ class Simulation( ):
 
         def nlopt_objective( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
 
-            setattr( self.ctrl, input_pars, pars )                        # Setting the input parameters directory
+            # pars for this case is the number of movement parameters
+            self.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
             val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
 
             self.reset( )
@@ -185,7 +181,9 @@ class Simulation( ):
 
 
         self.opt.set_min_objective( nlopt_objective )
-        self.xopt = self.opt.optimize( ( ub + lb ) * 0.5 )                      # Start at the mid-point of the lower and upper bound
+        self.opt.set_stopval( 1e-8 )                                               # If value is 0 then target is hit!
+
+        self.xopt = self.opt.optimize( ( lb + ub ) * 0.5 )                      # Start at the mid-point of the lower and upper bound
 
         my_print(  optimalInput = self.xopt[ : ],
                   optimalOutput = self.opt.last_optimum_value( ) )              # At end, printing out the optimal values and its corresponding movement parameters
@@ -299,17 +297,15 @@ class Simulation( ):
 
                     my_print(   inputVal = input,
                                     qPos = self.mjData.qpos[ : ],
+                                      qd = self.ctrl.qd[ : ],
+                                      s  = self.ctrl.s[ : ],
                         geomXYZPositions = self.mjData.geom_xpos[  self.idx_geom_names ],
-                       geomXYZVelocities = self.mjData.geom_xvelp[ self.idx_geom_names ],
-                            ZFTPositions = self.ctrl.x0,
-                                forceVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 0 : 3 ] ),
-                               torqueVec = np.dot( self.mjData.get_body_xmat( "body_node1" ), self.mjData.sensordata[ 3 : 6 ] ),
-                                  minVal = self.objective( self.mjModel, self.mjData ) ,
+                                    dist = self.objective.output_calc( ) ,
                                     file = file         )
 
 
                 else:
-                    my_print( dist = self.objective.output_calc(  ) )
+                    pass
 
 
             self.sim_step += 1
