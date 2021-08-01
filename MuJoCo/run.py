@@ -57,13 +57,6 @@ import pickle
 # [3rd party modules] #
 # ------------------- #
 import numpy       as np
-import cv2
-try:
-    import mujoco_py as mjPy
-except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
-                                             and also perform the setup instructions here: \
-                                             https://github.com/openai/mujoco-py/.)".format( e ) )
 
 
 import matplotlib.pyplot as plt
@@ -100,24 +93,17 @@ parser.add_argument( '--version'    , action = 'version'     , version = Constan
 parser.add_argument( '--run_time'   , action = 'store'       , type = float,  default = 4.0, help = 'Total run time of the simulation'                              )
 parser.add_argument( '--start_time' , action = 'store'       , type = float,  default = 0.0, help = 'Start time of the controller'                                  )
 parser.add_argument( '--model_name' , action = 'store'       , type = str  ,                 help = 'Model name for the simulation'                                 )
-parser.add_argument( '--save_data'  , action = 'store'       , default = np.nan,             help = 'Save data log of the simulation, with the specified frequency' )
-parser.add_argument( '--record_vid' , action = 'store'       , default = np.nan,             help = 'Record video of the simulation,  with the specified speed'     )
+parser.add_argument( '--cam_pos'    , action = 'store'       , type = str  ,                 help = 'Get the whole list of the camera position'                     )
+parser.add_argument( '--print_mode' , action = 'store'       , default = 'normal',           help = 'Print mode, [short] [normal] [verbose]'                        )
+parser.add_argument( '--save_data'  , action = 'store'       , default = np.nan  ,           help = 'Save data log of the simulation, with the specified frequency' )
+parser.add_argument( '--record_vid' , action = 'store'       , default = np.nan  ,           help = 'Record video of the simulation,  with the specified speed'     )
+parser.add_argument( '--vid_off'    , action = 'store_true'  ,                               help = 'Turn off the video'                                            )
 parser.add_argument( '--run_opt'    , action = 'store_true'  ,                               help = 'Run optimization of the simulation'                            )
+
+
 args = parser.parse_args()
 
-
-
-# [TODO] [Moses]
-# It might be beneficial, if we have some sort of "parser function", which gets the input args, and save it as the corresponding specific type.
-# If video needs to be recorded or data should be saved, then append 'saveDir' element to args dictionary
-
-args.save_dir = my_mkdir( ) if not np.isnan( args.save_data )
-print( args )
-exit()
-args[ 'saveDir' ] = my_mkdir( ) if args[ 'recordVideo' ] or args[ 'saveData' ] or args[ 'runOptimization' ] else None
-
-
-my_print( saveDir = args[ 'saveDir' ] )
+args.save_dir = my_mkdir( )                                                     # Doesn't hurt to save the name directory in case
 
 # ============================================================================= #
 
@@ -126,23 +112,11 @@ my_print( saveDir = args[ 'saveDir' ] )
 
 def main( ):
     # ============================================================================= #
-    # (1A) [GENERATE MODEL]
+    # (1A) [RUN SIMULATION]
+    VISUALIZE = False if args.run_opt  else True                                # Turn-off visualization if optimization is turned on
 
-    model_name = args[ 'modelName' ]
-    my_print( modelName = model_name )
-
-    # ============================================================================= #
-
-    # ============================================================================= #
-    # (1C) [RUN SIMULATION]
-
-    # [TEMP] [2021.07.22]
-    VISUALIZE = False if args[ 'runOptimization' ] or args[ 'videoOFF' ] else True                    # Turn-off visualization if runOptimization
-
-
-    mySim = Simulation(   model_name = model_name,
-                        is_visualize = VISUALIZE,
-                           arg_parse = args )
+    # Tossing the argument as input to contruct simulation.
+    mySim = Simulation( args )
 
 
     if  "1" == args[ 'modelName' ][ 0 ] and "2D" in args[ 'modelName' ]:
