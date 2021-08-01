@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 
 # ============================================================================= #
@@ -34,73 +35,6 @@
 |       GLOBAL_CONSTANT_NAME, global_var_name, instance_var_name, function_parameter_name, local_var_name.
 # ============================================================================= #
 
-# ============================================================================= #
-| (0D) [DOCOPT PARSE]
-|      From now on, the written comments are specifically for "docopt" function.
-|      [REF] http://docopt.org/
-# ============================================================================= #
-
-Usage:
-    run.py [options]
-    run.py -h | --help
-    run.py -d | --debugMode
-
-Arguments:
-
-Options:
-    -h --help                  Showing the usage and options
-    --version                  Show version
-    -s --saveData              Saving the neccessary data from MuJoCo simulation as a txt file in the current directory
-                               [default: False]
-    -r --recordVideo           Record simulation video as a .mp4 file in the current directory
-                               [default: False]
-    --vidRate=RATE             The rate of how fast the video runs. If 1.0, then normal speed, if 0.5, then 2 times slower.
-                               [default: 1.0]
-    --runTime=TIME             The total time of the simulation
-                               [default: 5.0]
-    --startTime=TIME           The start time of the movement, or controller
-                               [default: 0.0]
-    --runOptimization          Run the optimization of the simulation
-                               [default: False]
-    --modelName=NAME           Setting the xml model file name which will be used for the simulation.
-                               The starting number of the xml model file indicates the type of simulation, hence the --modelName
-                               already contains the simulation typep information.
-                               List of models.
-                                 - 1_2D_model_w_N10.xml    : Short  whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                 - 1_2D_model_w_N15.xml    : Medium whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                 - 1_2D_model_w_N20.xml    : Long   whip model                 [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                 - 1_2D_model_w_N25.xml    : Experimentally-fitted whip model  [REF] [Moses C. Nah] [2020 BIOROB]: "Dynamic Primitives Facilitate Manipulating a Whip", [Table 2]
-                                 - 1_3D_model_w_N25_T1.xml : 3D w target 1                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                 - 1_3D_model_w_N25_T2.xml : 3D w target 2                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                 - 1_3D_model_w_N25_T3.xml : 3D w target 3                     [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", Chapter 8
-                                 - 1_2D_model              : The template 2D 2-DOF upper-limb model
-                                 - 1_3D_model              : The template 3D 4-DOF upper-limb model
-                               [default: 1_2D_model_w_N10.xml]
-    --videoOFF                 Turning off the video
-                               This is useful for cases when you want to make the computation of the simulation faster
-                               [default: False]
-    --camPos=STRING            Setting the Camera Position of the simulation.
-                               default is None
-    --movPar=STRING            Setting the movementParameters
-                               default is None
-    --verbose                  Print more text
-                               [default: False]
-    --attachWhipModel=STRING   Auto generating the xml model file used for the simulation.
-                               The input string must contain N, M, L, k and b value.
-                               For more detailed information, please see myMethods.py module's generateWhipModel function.
-                               default is None
-
-Examples, try:
-      python3 run.py --help
-      python3 run.py --version
-      python3 run.py --modelName="1_2D_model_w_N10.xml" --runTime=6
-      python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=1   --runTime=6
-      python3 run.py --modelName="1_2D_model_w_N15.xml" --startTime=0.1 --runTime=6 --saveData
-      python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF
-      python3 run.py --modelName="1_2D_model_w_N20.xml" --startTime=0.1 --runTime=6 --videoOFF --saveData
-      python3 run.py --modelName="1_2D_model_w_N10.xml" --startTime=0.1 --runTime=3 --runOptimization
-      python3 run.py --modelName="1_3D_model_w_N25_T1.xml" --startTime=0.1 --runTime=3 --runOptimization
-      python3 run.py --modelName="1_3D_model_w_N25_T2.xml" --startTime=0.1 --runTime=3 --recordVideo --vidRate=0.5
 
 """
 
@@ -108,9 +42,9 @@ Examples, try:
 
 # ============================================================================= #
 # (0A) [IMPORT MODULES]
-# Importing necessary modules + declaring basic configurations for running the whole mujoco simulator.
-
-# [Built-in modules]
+# ------------------ #
+# [Built-in modules] #
+# ------------------ #
 import sys
 import os
 import re
@@ -119,7 +53,9 @@ import datetime
 import shutil
 import pickle
 
-# [3rd party modules]
+# ------------------- #
+# [3rd party modules] #
+# ------------------- #
 import numpy       as np
 import cv2
 try:
@@ -129,18 +65,19 @@ except ImportError as e:
                                              and also perform the setup instructions here: \
                                              https://github.com/openai/mujoco-py/.)".format( e ) )
 
-from docopt  import docopt
 
-# [3rd party modules] - For Optimization
 import matplotlib.pyplot as plt
-# import nevergrad   as ng  # [BACKUP] Needed for Optimization
 
+# import nevergrad   as ng                                                      # [BACKUP] Needed for Optimization
 import sympy as sp
 from sympy.utilities.lambdify import lambdify, implemented_function
 
-# [Local modules]
+# --------------- #
+# [Local modules] #
+# --------------- #
+# See modules directory for more details
 from modules.simulation   import Simulation
-from modules.controllers  import ( ImpedanceController, CartesianImpedanceController,JointImpedanceController, JointSlidingController )
+from modules.controllers  import ( ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.objectives   import DistFromTip2Target
@@ -150,23 +87,35 @@ from modules.constants    import Constants
 # ============================================================================= #
 
 # ============================================================================= #
-# (0B) [SYSTEM SETTINGS]
-
-if sys.version_info[ : 3 ] < ( 3, 0, 0 ):                                       # Simple version check of the python version. python3+ is recommended for this file.
-    my_print( NOTIFICATION = " PYTHON3+ is recommended for this script " )
-
+# (0B) [SYSTEM SETTINGS] + [ARGUMENT PARSER]
 
                                                                                 # [Printing Format]
-np.set_printoptions( linewidth = 8000, suppress = True, precision = 4 )         # Setting the numpy print options, useful for printing out data with consistent pattern.
+np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       # Setting the numpy print options, useful for printing out data with consistent pattern.
                                                                                 # precision: float precision for print/number comparison.
 
-args = docopt( __doc__, version = Constants.VERSION )                           # Parsing the Argument
-args = args_cleanup( args, '--' )                                               # Cleaning up the dictionary, discard prefix string '--' for the variables
+# [Argument parser]
+# [REF] https://docs.python.org/3/library/argparse.html
+parser = argparse.ArgumentParser( description = 'Parsing the arguments for running the simulation' )
+parser.add_argument( '--version'    , action = 'version'     , version = Constants.VERSION )
+parser.add_argument( '--run_time'   , action = 'store'       , type = float,  default = 4.0, help = 'Total run time of the simulation'                              )
+parser.add_argument( '--start_time' , action = 'store'       , type = float,  default = 0.0, help = 'Start time of the controller'                                  )
+parser.add_argument( '--model_name' , action = 'store'       , type = str  ,                 help = 'Model name for the simulation'                                 )
+parser.add_argument( '--save_data'  , action = 'store'       , default = np.nan,             help = 'Save data log of the simulation, with the specified frequency' )
+parser.add_argument( '--record_vid' , action = 'store'       , default = np.nan,             help = 'Record video of the simulation,  with the specified speed'     )
+parser.add_argument( '--run_opt'    , action = 'store_true'  ,                               help = 'Run optimization of the simulation'                            )
+args = parser.parse_args()
+
+
 
 # [TODO] [Moses]
 # It might be beneficial, if we have some sort of "parser function", which gets the input args, and save it as the corresponding specific type.
 # If video needs to be recorded or data should be saved, then append 'saveDir' element to args dictionary
+
+args.save_dir = my_mkdir( ) if not np.isnan( args.save_data )
+print( args )
+exit()
 args[ 'saveDir' ] = my_mkdir( ) if args[ 'recordVideo' ] or args[ 'saveData' ] or args[ 'runOptimization' ] else None
+
 
 my_print( saveDir = args[ 'saveDir' ] )
 
@@ -187,6 +136,7 @@ def main( ):
     # ============================================================================= #
     # (1C) [RUN SIMULATION]
 
+    # [TEMP] [2021.07.22]
     VISUALIZE = False if args[ 'runOptimization' ] or args[ 'videoOFF' ] else True                    # Turn-off visualization if runOptimization
 
 
@@ -251,9 +201,14 @@ def main( ):
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
         ctrl.set_ctrl_par(  Kl = 20 * np.identity( ctrl.n_act ) , Kd = 7 * np.identity( ctrl.n_act )  )
 
-        mov_pars  = np.array( [-1.36136, 0.     , 0.     , 0.47124, 1.72788, 0.     , 0.     , 1.41372, 0.95   ])
+        # 1.72788, 0.     , 0.     , 1.41372 is the initial condition for the optimization
+        mov_pars  = np.array( [1.72788, 0.     , 0.     , 1.41372,1.72788,-0.2, 0, 0.1, 0.12037  ])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
+
+        # [TEMP] [TODO] Setting the Initial condition for the optimization
+        # It might be great to have a separete function to set the controller.
+        # The initial condition is extracted from [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MuJoCo/results/Modularity Tasks/primitive1/data_log.txt
 
 
     else:   # If simply dummy, example model for quick debugging
@@ -279,11 +234,15 @@ def main( ):
 
         elif mySim.ctrl.traj.n_pars == 9:
 
-            lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-            ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+            # lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+            # ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+
+            # [TEMP] [2021.07.22]
+            lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+            ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
         # Note that this is for "Minimizing the objective function"
-        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 400 )
+        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 100 )
 
     if args[ 'saveDir' ] is not None:
         mySim.save_simulation_data( args[ 'saveDir' ]  )

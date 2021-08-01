@@ -1,6 +1,7 @@
 class Constants:
     PROJECT_NAME            = '[M3X] Whip Project'
-    VERSION                 = '1.0.0'
+    VERSION                 = '1.0.1'
+    UPDATE_DATE             = '2021.07.31'
     AUTHOR_GITHUB           = 'mosesnah-shared'
     AUTHOR_FULL_NAME        = 'Moses C. Nah'
     DESCRIPTION             = "mujoco-py scripts for running a whip-targeting simuation"

@@ -154,7 +154,8 @@ class Simulation( ):
         self.algorithm = idx_opt[ idx ]                                             # Selecting the algorithm to be executed
 
 
-        self.n_opt = self.ctrl.traj.n_pars                                      # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
+        # self.n_opt = self.ctrl.traj.n_pars                                      # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
+        self.n_opt = 5
         self.opt   = nlopt.opt( self.algorithm, self.n_opt )                    # Defining the class for optimization
 
         self.opt.set_lower_bounds( lb )                                         # Setting the upper/lower bound of the optimization
@@ -169,7 +170,7 @@ class Simulation( ):
         def nlopt_objective( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters
-            self.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
+            self.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
             val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
 
             self.reset( )
@@ -232,6 +233,11 @@ class Simulation( ):
 
         if self.args[ 'camPos' ] is not None:
             self.set_cam_pos( self.args[ 'camPos' ] )
+
+        # [TEMP] [2021.07.22] -1.86358
+        self.mjData.qpos[ : ] = np.array( [ 1.71907, 0.     , 0.     , 1.40283, 0.     ,-0.7, 0.     , 0.0069 , 0.     , 0.00867, 0.     , 0.00746, 0.     , 0.00527, 0.     , 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146])
+        self.mjData.qvel[ : ] = np.array( [-0.07107, 0.     , 0.     ,-0.0762 , 0.     ,-2.92087, 0.     ,-0.05708, 0.     ,-0.10891, 0.     ,-0.11822, 0.     ,-0.0725 , 0.     , 0.02682, 0.     , 0.17135, 0.     , 0.34963, 0.     , 0.54902, 0.     , 0.75647, 0.     , 0.95885, 0.     , 1.14317, 0.     , 1.29701, 0.     , 1.40942, 0.     , 1.47229, 0.     , 1.48203, 0.     , 1.44063, 0.     , 1.35522, 0.     , 1.2356 , 0.     , 1.09041, 0.     , 0.92418, 0.     , 0.73758, 0.     , 0.53229, 0.     , 0.31926, 0.     , 0.12636] )
+        self.mjSim.forward()       # Update
 
         while self.current_time <= self.run_time:
 
@@ -297,6 +303,7 @@ class Simulation( ):
 
                     my_print(   inputVal = input,
                                     qPos = self.mjData.qpos[ : ],
+                                    qVel = self.mjData.qvel[ : ],
                                       qd = self.ctrl.qd[ : ],
                                       s  = self.ctrl.s[ : ],
                         geomXYZPositions = self.mjData.geom_xpos[  self.idx_geom_names ],
