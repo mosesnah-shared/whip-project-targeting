@@ -16,3 +16,6 @@ class Constants:
 
     # The directory which saves all the simulation results
     SAVE_DIR      = "results/"
+
+    # The directory which saves all the temporary data
+    TMP_DIR       = "tmp/"

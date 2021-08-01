@@ -248,16 +248,14 @@ def str2float( s ):
 
     return [ float( i ) for i in re.findall( r"[-+]?\d*\.\d+|[-+]?\d+", s ) ]
 
-def my_mkdir( dir = './results/' ):
+def my_mkdir(  ):
 
-    if dir is not None and dir[ -1 ] != "/":                                    # Quick Check of whether result_dir has backslash "/" at the end
-        dir += "/"                                                              # Append the backslash
-
-    dir  += datetime.datetime.now().strftime( "%Y%m%d_%H%M%S" )                 # Appending the date when this directory is called.
+    dir = './tmp/'                                                              # Temporarily saving at tmp
+    dir += datetime.datetime.now().strftime( "%Y%m%d_%H%M%S/" )                 # Appending the date when this directory is called.
     if not os.path.exists( dir ):                                               # If directory not exist
         os.makedirs( dir )                                                      # Make the directory
 
-    return dir + "/"
+    return dir 
 
 def my_rmdir( dir ):
 
