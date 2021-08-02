@@ -106,16 +106,20 @@ class Controller( ):
         """
             Calculating the torque input
         """
-        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )
 
     def append_ctrl( self, ctrl1 ):
         """
             Append the current controller to ctrl1
             Usually we append the controller with convex combinations
         """
-        raise NotImplementedError( )                                            # Adding this NotImplementedError will force the child class to override parent's methods.
+        raise NotImplementedError( )
 
-
+    def print_vals( self, list ):
+        """
+            print out the list of variables
+        """
+        raise NotImplementedError( )       
 
     def get_G( self ):
 

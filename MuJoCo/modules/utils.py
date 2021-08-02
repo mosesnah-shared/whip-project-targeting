@@ -5,6 +5,7 @@ import sys
 import shutil
 import time, datetime
 import math  as myMath
+import glob
 
 # [3rd party modules]
 import cv2
@@ -100,6 +101,11 @@ def camel2snake( s ):
         [REF] https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
     """
     re.sub( r'(?<!^)(?=[A-Z])', '_', s ).lower()
+
+def clear_dir( dir ):
+    """ Cleaning up the contents in the directory """
+
+
 
 def args_cleanup( args, s ):
     """
@@ -250,12 +256,16 @@ def str2float( s ):
 
 def my_mkdir(  ):
 
-    dir = './tmp/'                                                              # Temporarily saving at tmp
+    dir = Constants.TMP_DIR                                                     # Temporarily saving at tmp
     dir += datetime.datetime.now().strftime( "%Y%m%d_%H%M%S/" )                 # Appending the date when this directory is called.
     if not os.path.exists( dir ):                                               # If directory not exist
-        os.makedirs( dir )                                                      # Make the directory
+        os.makedirs( dir, exist_ok = True )                                     # mkdir -p functionality via exist_ok
 
-    return dir 
+    return dir
+
+def my_mvdir( from_dir, to_dir ):
+    shutil.move( from_dir , to_dir ) 
+
 
 def my_rmdir( dir ):
 
