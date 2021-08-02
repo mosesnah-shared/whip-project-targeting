@@ -12,10 +12,10 @@ class Constants:
     # Constant variables for running the simulation
 
     # The model directory which contains all the xml model files.
-    MODEL_DIR     = "models/"
+    MODEL_DIR     = "./models/"
 
     # The directory which saves all the simulation results
-    SAVE_DIR      = "results/"
+    SAVE_DIR      = "./results/"
 
     # The directory which saves all the temporary data
-    TMP_DIR       = "tmp/"
+    TMP_DIR       = "./tmp/"

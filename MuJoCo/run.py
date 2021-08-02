@@ -90,15 +90,15 @@ np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
 # [REF] https://docs.python.org/3/library/argparse.html
 parser = argparse.ArgumentParser( description = 'Parsing the arguments for running the simulation' )
 parser.add_argument( '--version'    , action = 'version'     , version = Constants.VERSION )
-parser.add_argument( '--run_time'   , action = 'store'       , type = float,  default = 4.0, help = 'Total run time of the simulation'                              )
-parser.add_argument( '--start_time' , action = 'store'       , type = float,  default = 0.0, help = 'Start time of the controller'                                  )
-parser.add_argument( '--model_name' , action = 'store'       , type = str  ,                 help = 'Model name for the simulation'                                 )
-parser.add_argument( '--cam_pos'    , action = 'store'       , type = str  ,                 help = 'Get the whole list of the camera position'                     )
-parser.add_argument( '--print_mode' , action = 'store'       , default = 'normal',           help = 'Print mode, [short] [normal] [verbose]'                        )
-parser.add_argument( '--save_data'  , action = 'store'       , default = np.nan  ,           help = 'Save data log of the simulation, with the specified frequency' )
-parser.add_argument( '--record_vid' , action = 'store'       , default = np.nan  ,           help = 'Record video of the simulation,  with the specified speed'     )
-parser.add_argument( '--vid_off'    , action = 'store_true'  ,                               help = 'Turn off the video'                                            )
-parser.add_argument( '--run_opt'    , action = 'store_true'  ,                               help = 'Run optimization of the simulation'                            )
+parser.add_argument( '--run_time'   , action = 'store'       , type = float ,  default = 4.0, help = 'Total run time of the simulation'                              )
+parser.add_argument( '--start_time' , action = 'store'       , type = float ,  default = 0.0, help = 'Start time of the controller'                                  )
+parser.add_argument( '--model_name' , action = 'store'       , type = str   ,                 help = 'Model name for the simulation'                                 )
+parser.add_argument( '--save_data'  , action = 'store'       , type = int   ,                 help = 'Save data log of the simulation, with the specified frequency' )
+parser.add_argument( '--record_vid' , action = 'store'       , type = float ,                 help = 'Record video of the simulation,  with the specified speed'     )
+parser.add_argument( '--cam_pos'    , action = 'store'       , type = str   ,                 help = 'Get the whole list of the camera position'                     )
+parser.add_argument( '--print_mode' , action = 'store'       , default = 'normal',            help = 'Print mode, [short] [normal] [verbose]'                        )
+parser.add_argument( '--vid_off'    , action = 'store_true'  ,                                help = 'Turn off the video'                                            )
+parser.add_argument( '--run_opt'    , action = 'store_true'  ,                                help = 'Run optimization of the simulation'                            )
 
 
 args = parser.parse_args()
@@ -113,13 +113,10 @@ args.save_dir = my_mkdir( )                                                     
 def main( ):
     # ============================================================================= #
     # (1A) [RUN SIMULATION]
-    VISUALIZE = False if args.run_opt  else True                                # Turn-off visualization if optimization is turned on
-
     # Tossing the argument as input to contruct simulation.
     mySim = Simulation( args )
 
-
-    if  "1" == args[ 'modelName' ][ 0 ] and "2D" in args[ 'modelName' ]:
+    if  "1" == args.model_name[ 0 ] and "2D" in args.model_name:
 
         controller_object = CartesianImpedanceController( mySim.mjModel, mySim.mjData, args )
         controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.6, 0, 1.5] )
@@ -130,8 +127,9 @@ def main( ):
         # 1_2D_model_w_N20.xml:  mov_parameters = [ -1.56748, 0.09553, 1.57128, 0.05834, 0.80366 ] ), min_val = 0.08106
         # 1_2D_model_w_N25.xml:  mov_parameters = [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] ), min_val = 0.02032
         objective = None
+        init_cond = None
 
-    elif "1" == args[ 'modelName' ][ 0 ] and "3D" in args[ 'modelName' ]:
+    elif "1" == args.model_name[ 0 ] and "3D" in args.model_name:
 
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
 
@@ -140,17 +138,15 @@ def main( ):
 
         # [TODO] [2021.07.20] [Moses C. Nah]
         # Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
-        mov_pars  = np.array( [-0.94248, 0.     , 0.     , 1.41372, 1.72788, 0.     , 0.     , 1.41372, 0.95   ] )
-        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
-        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
-
-
         # [NOTE] [2021.07.20] [Moses C. Nah]
         # Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [TODO] [2021.07.20] [Moses C. Nah]
         # Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
-
-        # [BACKUP] [Moses Nah]
+        mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
+        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args.model_name else None
+        init_cond = None
+        # [BACKUP] [Moses C. Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
         #                                              K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
@@ -169,20 +165,22 @@ def main( ):
         # [Target 4] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
         # [Target 5] camera position array [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6  ]
 
-
-    elif "2" == args[ 'modelName' ][ 0 ]:
+    elif "2" == args.model_name[ 0 ]:
 
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
         ctrl.set_ctrl_par(  Kl = 20 * np.identity( ctrl.n_act ) , Kd = 7 * np.identity( ctrl.n_act )  )
 
-        # 1.72788, 0.     , 0.     , 1.41372 is the initial condition for the optimization
         mov_pars  = np.array( [1.72788, 0.     , 0.     , 1.41372,1.72788,-0.2, 0, 0.1, 0.12037  ])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+        
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
+        init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-0.7, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
+                      'qvel': np.array( [-0.07107, 0., 0.,-0.0762 , 0.,-2.92087, 0.,-0.05708, 0.,-0.10891, 0. ,-0.11822, 0.,-0.0725 , 0., 0.02682, 0.     , 0.17135, 0.     , 0.34963, 0.     , 0.54902, 0.     , 0.75647, 0.     , 0.95885, 0.     , 1.14317, 0.     , 1.29701, 0.     , 1.40942, 0.     , 1.47229, 0.     , 1.48203, 0.     , 1.44063, 0.     , 1.35522, 0.     , 1.2356 , 0.     , 1.09041, 0.     , 0.92418, 0.     , 0.73758, 0.     , 0.53229, 0.     , 0.31926, 0.     , 0.12636] ) }
 
         # [TEMP] [TODO] Setting the Initial condition for the optimization
         # It might be great to have a separete function to set the controller.
         # The initial condition is extracted from [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MuJoCo/results/Modularity Tasks/primitive1/data_log.txt
+
 
 
     else:   # If simply dummy, example model for quick debugging
@@ -190,13 +188,12 @@ def main( ):
         ctrl      = None
         objective = None
 
-    mySim.attach_controller( ctrl      )
+    mySim.attach_ctrl( ctrl )
     mySim.attach_objective( objective  )
 
-    if  not args[ 'runOptimization' ]:    # If simply running a single simulation without optimization
+    if  not args.run_opt:                                                       # If simply running a single simulation without optimization
 
-        val = mySim.run( )                # Getting the minimum distance between tip and target
-
+        val = mySim.run( init_cond )                                            # Getting the objective value
 
     else:                                 # If running nlopt optimiation
 
@@ -218,14 +215,6 @@ def main( ):
         # Note that this is for "Minimizing the objective function"
         mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 100 )
 
-    if args[ 'saveDir' ] is not None:
-        mySim.save_simulation_data( args[ 'saveDir' ]  )
-        shutil.copyfile( Constants.MODEL_DIR + model_name,
-                         args[ 'saveDir' ] + model_name )
-
-
-    mySim.reset( )
-
     # ============================================================================= #
 
 if __name__ == "__main__":
@@ -234,7 +223,6 @@ if __name__ == "__main__":
         main( )
 
     except KeyboardInterrupt:
-        print( "Ctrl-C was inputted. Halting the program. ", end = ' ' )
 
-        if args[ 'saveDir' ] is not None:
-            my_rmdir( args[ 'saveDir' ] )
+        print( "Ctrl-C was inputted. Halting the program. ", end = ' ' )
+        my_rmdir( Constants.TMP_DIR )                                           # Cleaning up the tmp folder
