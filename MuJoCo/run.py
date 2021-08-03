@@ -57,7 +57,7 @@ import pickle
 # [3rd party modules] #
 # ------------------- #
 import numpy       as np
-
+import nlopt
 
 import matplotlib.pyplot as plt
 
@@ -145,7 +145,8 @@ def main( ):
         mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args.model_name else None
-        init_cond = None
+        init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
+                      'qvel': np.zeros( 54 )  }
         # [BACKUP] [Moses C. Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
@@ -170,12 +171,12 @@ def main( ):
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
         ctrl.set_ctrl_par(  Kl = 20 * np.identity( ctrl.n_act ) , Kd = 7 * np.identity( ctrl.n_act )  )
 
-        mov_pars  = np.array( [1.72788, 0.     , 0.     , 1.41372,1.72788,-0.2, 0, 0.1, 0.12037  ])
+        mov_pars  = np.array( [1.72788, 0.     , 0.     , 1.41372,0.5,-0.3, 0, 0.1, 0.3  ])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
-        
-        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args[ 'modelName' ] else None
-        init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-0.7, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
-                      'qvel': np.array( [-0.07107, 0., 0.,-0.0762 , 0.,-2.92087, 0.,-0.05708, 0.,-0.10891, 0. ,-0.11822, 0.,-0.0725 , 0., 0.02682, 0.     , 0.17135, 0.     , 0.34963, 0.     , 0.54902, 0.     , 0.75647, 0.     , 0.95885, 0.     , 1.14317, 0.     , 1.29701, 0.     , 1.40942, 0.     , 1.47229, 0.     , 1.48203, 0.     , 1.44063, 0.     , 1.35522, 0.     , 1.2356 , 0.     , 1.09041, 0.     , 0.92418, 0.     , 0.73758, 0.     , 0.53229, 0.     , 0.31926, 0.     , 0.12636] ) }
+
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args.model_name else None
+        init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1.7, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
+                      'qvel': np.array( [-0.0513 , 0.     , 0.     ,-0.02115, 0.     ,-3.82701, 0.     , 0.0422 , 0.     , 0.07551, 0.     , 0.12526, 0.     , 0.19845, 0.     , 0.29355, 0.     , 0.40586, 0.     , 0.52993, 0.     , 0.66022, 0.     , 0.79109, 0.     , 0.91651, 0.     , 1.02989, 0.     , 1.12425, 0.     , 1.19281, 0.     , 1.23003, 0.     , 1.23287, 0.     , 1.20168, 0.     , 1.14003, 0.     , 1.05305, 0.     , 0.9447 , 0.     , 0.81579, 0.     , 0.66434, 0.     , 0.48977, 0. , 0.30046, 0.     , 0.12179] )   }
 
         # [TEMP] [TODO] Setting the Initial condition for the optimization
         # It might be great to have a separete function to set the controller.
@@ -195,25 +196,66 @@ def main( ):
 
         val = mySim.run( init_cond )                                            # Getting the objective value
 
-    else:                                 # If running nlopt optimiation
-
+    else:
+        # If running nlopt optimization
         # For optimizing the trajectory of the movement.
-        if   mySim.ctrl.traj.n_pars == 5:
 
-            lb = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )             # Defining the bound. with np array.
-            ub = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )             # Defining the bound. with np array.
+        # First check if there exist an output function
+        if objective is None:
+            raise ValueError( "Optimization cannot be executed due to the vacancy of output scalar function" )
 
-        elif mySim.ctrl.traj.n_pars == 9:
+        # Find the input parameters (input_pars) that are aimed to be optimized
+        # Possible options (written in integer values) are as follows
+        # [REF] https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/
+        idx       = 1
+        idx_opt   = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
+        algorithm = idx_opt[ idx ]                                              # Selecting the algorithm to be executed
 
-            # lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-            # ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        tmp_file = open( args.save_dir + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
 
-            # [TEMP] [2021.07.22]
-            lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-            ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        # [BACKUP] [Moses C. Nah] [2021.08.03]
+        # For upper/lower bounds for a 2D robot (5 movement parameters)
+        # lb = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
+        # ub = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )
+        # For 3D case (9 movement parameters)
+        # lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        # ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
-        # Note that this is for "Minimizing the objective function"
-        mySim.run_nlopt_optimization( idx = 0, input_pars = "mov_parameters", lb = lb, ub = ub, max_iter = 100 )
+        # [TEMP] [2021.07.22]
+        lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+
+        n_opt = 5                                                               # The number of parameters that are aimed to be optimized
+        opt   = nlopt.opt( algorithm, n_opt )                                   # Defining the class for optimization
+
+        opt.set_lower_bounds( lb )
+        opt.set_upper_bounds( ub )
+        opt.set_maxeval( 100 )
+
+        init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
+
+        def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
+
+            # pars for this case is the number of movement parameters
+            mySim.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
+            val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
+
+            my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
+            my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val, file = tmp_file )    # Printing the values onto the txt file
+
+            mySim.reset( )
+
+            return val
+
+        opt.set_min_objective( nlopt_objective )
+        opt.set_stopval( 1e-8 )                                                     # If value is 0 then target is hit!
+
+        xopt = opt.optimize( ( lb + ub ) * 0.5 )                                    # Start at the mid-point of the lower and upper bound
+
+        my_print(  optimalInput = xopt[ : ],
+                  optimalOutput = opt.last_optimum_value( ) )                       # At end, printing out the optimal values and its corresponding movement parameters
+
+        tmp_file.close()
 
     # ============================================================================= #
 

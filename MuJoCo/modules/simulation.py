@@ -15,7 +15,6 @@ import pprint
 import shutil
 import numpy as np
 import time, datetime
-import nlopt
 # import glfw
 
 from modules.utils        import ( my_print, quaternion2euler, camel2snake, snake2camel,
@@ -77,6 +76,7 @@ class Simulation( ):
         self.step         = 0                                                   # Number of steps of the simulation, in integer [-]
         self.t            = 0
         self.g            = self.mjModel.opt.gravity                            # Calling the gravity vector of the simulation environment
+        self.init_cond    = None
 
         # Steps for updating the record or data save
         self.vid_step     = round( 1 / self.dt / self.fps          )            # The very basic update rate.
@@ -113,8 +113,16 @@ class Simulation( ):
 
             # [NOTE] [2021.08.01] [Moses C. Nah]
             # To use this, you need to modify "mjviewer.py" file under "mujoco_py"
-            if self.mjViewer.paused:
+
+            if self.mjViewer is not None and self.mjViewer.is_reset:
+                self._back_to_init( )
+                self.mjViewer.is_reset = False
                 continue
+
+            if self.mjViewer is not None and self.mjViewer.is_paused:
+                continue
+
+
 
             # [Calculate Input]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
@@ -174,59 +182,12 @@ class Simulation( ):
 
         return self.obj_val                                                     # Returning the minimum value achieved with the defined objective function
 
-
-    def run_nlopt_optimization( self, input_pars = "mov_pars", idx = 1, lb = None, ub = None, max_iter = 600 ):
-        """ Running the optimization, using the nlopt library """
-
-        tmp_file = open( self.args[ 'saveDir' ] + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
-
-        # First check if there exist an output function
-        if self.objective is None:
-            raise ValueError( "Optimization cannot be executed due to the vacancy of output scalar function" )
-
-        # Find the input parameters (input_pars) that are aimed to be optimized
-        # Possible options (written in integer values) are as follows
-        # [REF] https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/
-        idx_opt = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
-        self.algorithm = idx_opt[ idx ]                                             # Selecting the algorithm to be executed
-
-
-        # self.n_opt = self.ctrl.traj.n_pars                                      # Getting the dimension of the input vector, i.e.,  the number of parameters that are aimed to be optimized
-        self.n_opt = 5
-        self.opt   = nlopt.opt( self.algorithm, self.n_opt )                    # Defining the class for optimization
-
-        self.opt.set_lower_bounds( lb )                                         # Setting the upper/lower bound of the optimization
-        self.opt.set_upper_bounds( ub )                                         # Setting the upper/lower bound of the optimization
-        self.opt.set_maxeval( max_iter )                                        # Running 600 (N) iterations for the simulation.
-
-        init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
-
-        self.opt.set_initial_step( init )
-
-
-        def nlopt_objective( pars, grad ):                                       # Defining the objective function that we are aimed to optimize.
-
-            # pars for this case is the number of movement parameters
-            self.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
-            val = self.run( )                                                   # Running a single simulation and get the minimum distance achieved
-
-            self.reset( )
-
-            my_print( Iter = self.opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
-            my_print( Iter = self.opt.get_numevals( ) + 1, inputPars = pars, output = val, file = tmp_file )    # Printing the values onto the txt file
-
-            return val
-
-
-        self.opt.set_min_objective( nlopt_objective )
-        self.opt.set_stopval( 1e-8 )                                               # If value is 0 then target is hit!
-
-        self.xopt = self.opt.optimize( ( lb + ub ) * 0.5 )                      # Start at the mid-point of the lower and upper bound
-
-        my_print(  optimalInput = self.xopt[ : ],
-                  optimalOutput = self.opt.last_optimum_value( ) )              # At end, printing out the optimal values and its corresponding movement parameters
-
-        tmp_file.close()
+    def reset( self ):
+        """ Reseting the mujoco simulation without changing the model/controller etc. """
+        self.t            = 0
+        self.sim_step     = 0
+        self.obj_val      = np.inf
+        self.mjSim.reset( )
 
 
     # ======================================================================== #
@@ -235,7 +196,9 @@ class Simulation( ):
     def _set_init_cond( self, init_cond = None ):
         """ Manually setting the initial condition of the system. """
 
-        if init_cond is None:
+        self.init_cond = init_cond
+
+        if self.init_cond is None:
 
             nJ = self.ctrl.n_act                                                # Getting the number of active joints
 
@@ -249,10 +212,18 @@ class Simulation( ):
                 self._set_whip_downward(  )
 
         else:
-            self.mjData.qpos = init_cond[ "qpos" ]
-            self.mjData.qvel = init_cond[ "qvel" ]
+            self.mjData.qpos[ : ] = self.init_cond[ "qpos" ]
+            self.mjData.qvel[ : ] = self.init_cond[ "qvel" ]
             self.mjSim.forward()                                                # Again, updating the posture after setting the "qpos" value.
 
+    # [TODO] [Moses C. Nah] [2021.08.03]
+    # Just simply merging this function to reset
+    def _back_to_init( self ):
+        """ Going back to the initial condition of the simulation"""
+        self._set_init_cond( self.init_cond )
+        self.t            = 0
+        self.sim_step     = 0
+        self.obj_val      = np.inf
 
     def _init_sim( self ):
 
@@ -261,7 +232,6 @@ class Simulation( ):
             raise ValueError( "CONTROLLER NOT ATTACHED TO SIMULATION. Please attach Ctrl object via 'attach_ctrl' " )
 
         if self.is_vid_rec:
-            print( "HO", self.fps * self.args.record_vid )
             self.vid = MyVideo( fps = self.fps * self.args.record_vid ,
                             vid_dir = self.args.save_dir )
 
@@ -323,12 +293,3 @@ class Simulation( ):
             my_mvdir( self.args.save_dir, self.SAVE_DIR  )                      # Move to the save reposito
 
         my_rmdir( Constants.TMP_DIR )                                           # Cleaning up the tmp folder
-
-        self._reset( )
-
-    def _reset( self ):
-        """ Reseting the mujoco simulation without changing the model/controller etc. """
-        self.t            = 0
-        self.sim_step     = 0
-        self.obj_val      = np.inf
-        self.mjSim.reset( )
