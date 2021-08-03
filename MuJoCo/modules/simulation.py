@@ -176,9 +176,7 @@ class Simulation( ):
 
 
     def run_nlopt_optimization( self, input_pars = "mov_pars", idx = 1, lb = None, ub = None, max_iter = 600 ):
-        """
-            Running the optimization, using the nlopt library
-        """
+        """ Running the optimization, using the nlopt library """
 
         tmp_file = open( self.args[ 'saveDir' ] + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
 

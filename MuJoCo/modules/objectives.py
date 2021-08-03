@@ -32,7 +32,7 @@ class DistFromTip2Target( ):
         self.mjData      = mjData
         self.tol         = tol
 
-        self.tip_name    = self.find_tip(  )                                    # Number of sub-models of the whip
+        self.tip_name    = self._find_tip(  )                                    # Number of sub-models of the whip
         self.target_name = "geom_target"
         self.target_idx  = self.mjModel.geom_name2id( self.target_name )
         self.target_size = max( self.mjModel.geom_size[ self.target_idx ] )     # Get the size number of the target
@@ -42,15 +42,6 @@ class DistFromTip2Target( ):
         # The list of geometry that we are extracting for the targeting task
         self.geom_list   = [ "geom_" + str( self.N - self.tol + i + 1 )  for i in range( self.tol - 1 )  ]
         self.geom_list.append( self.tip_name )
-
-
-    def find_tip( self ):
-
-        for name in self.mjModel.geom_names:
-            if "tip" in name:
-                return name
-
-        raise ValueError( "No word with tip on the model, to use class DistFromTip2Target we need to have a geom with name tip"           )
 
     def output_calc( self ):
         """
@@ -67,6 +58,14 @@ class DistFromTip2Target( ):
             self.mjModel.geom_rgba[ self.target_idx ] = [0, 1, 0, 1]
 
         return output
+
+    def _find_tip( self ):
+
+        for name in self.mjModel.geom_names:
+            if "tip" in name:
+                return name
+
+        raise ValueError( "No word with tip on the model, to use class DistFromTip2Target we need to have a geom with name tip"           )
 
 
 if __name__ == "__main__":
