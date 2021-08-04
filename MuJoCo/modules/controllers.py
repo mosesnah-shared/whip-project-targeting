@@ -66,6 +66,11 @@ class Controller( ):
         # Trajectory is defined under "modules.traj_funcs"
         self.traj = None
 
+    def __str__( self ):
+        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
+        return str( vars( self ) )
+
+
     def parse_model( self ):
         # [Basic Parameters of the model]
         # The number of actuators, number of limbs should be calculated.
@@ -119,26 +124,37 @@ class Controller( ):
         """
             print out the list of variables
         """
-        raise NotImplementedError( )       
+        raise NotImplementedError( )
 
     def get_G( self ):
+        """ Gravity Compensation Torque """
 
-        if   self.n_limbs == 2:
+        # There exists some models which doesn't require gravity compensation torque.
+        # Hence, handling this might be required.
+        # [TODO] [Moses C. Nah]
+        # It might be great if the model name itself has some sort of "class" structure
+        # So that it doesn't need to calculate the G value.
+        # For now, we use the trick using the model_name itself, but a much sophisticated method seems favorable
 
-            # Torque for Gravity compensation is simply tau = J^TF
-            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-            G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+        if "cart" and "pole" in self.mjArgs.model_name:
+            G = np.zeros( self.n_act )
 
-            # The mass of the whip is the other masses summed up
-            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
+        else:
+            if   self.n_limbs == 2:
 
-            # If no whip is attached, then the mass will be zero.
-            G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+                # Torque for Gravity compensation is simply tau = J^TF
+                # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
+                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
 
-        elif self.n_limbs == 3:
-            raise NotImplementedError( )
+                # The mass of the whip is the other masses summed up
+                self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
 
+                # If no whip is attached, then the mass will be zero.
+                G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+            elif self.n_limbs == 3:
+                raise NotImplementedError( )
 
         return G
 
@@ -238,10 +254,18 @@ class JointImpedanceController( ImpedanceController ):
         if   time <= D:                                                         # If time greater than startTime
             self.x0, self.dx0 = self.traj.func_pos( time ), self.traj.func_vel( time  )  # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
         else:
-            self.x0, self.dx0 = self.traj.pars[ "pf" ], np.zeros( ( 4 ) )       # Before start time, the posture should be remained at ZFT's initial posture
+            self.x0, self.dx0 = self.traj.pars[ "pf" ], np.zeros( ( self.n_act ) )       # Before start time, the posture should be remained at ZFT's initial posture
 
-        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq ) # Calculating the torque due to impedance
+        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq )
         tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
+
+        # # [TMP] The result of lqr
+        tmp_eq = np.array( [ -1.44857,   np.pi,   0.0, 0.0000 ])
+        tmp_K  = np.array( [ -10.0000, -77.3637,-16.0164,-21.3814])   # [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MATLAB/LQR_calc.m
+        tau_imp = np.dot( tmp_K, tmp_eq - np.append( self.mjData.qpos, self.mjData.qvel ) )
+        # # # print( tau_imp )
+        # # + np.dot( 2, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.8, self.mjData.qvel[ -1 ] )# Calculating the torque due to impedance
+        # # tau_imp = np.dot( 1, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.4, self.mjData.qvel[ -1 ] )
 
         return self.mjData.ctrl, self.idx_act, tau_imp + tau_g
 

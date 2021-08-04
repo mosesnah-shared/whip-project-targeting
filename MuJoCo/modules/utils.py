@@ -62,7 +62,7 @@ def length_elem2elem( mjModel, mjData, elem_name1, elem_name2 ):
 
     # The euclidean distance between two elements, calling using "get_geom_xpos" or "get_site_xpos" or "get_body_xpos" methods
     return np.linalg.norm( getattr( mjData, "get_" + type1 + "_" + "xpos" )( elem_name1 )
-                         - getattr( mjData, "get_" + type2 + "_" + "xpos" )( elem_name2 ) , ord = 1  )
+                         - getattr( mjData, "get_" + type2 + "_" + "xpos" )( elem_name2 ) , ord = 2  )
 
 
 def get_elem_type( mjModel, elem_name ):
@@ -264,7 +264,7 @@ def my_mkdir(  ):
     return dir
 
 def my_mvdir( from_dir, to_dir ):
-    shutil.move( from_dir , to_dir ) 
+    shutil.move( from_dir , to_dir )
 
 
 def my_rmdir( dir ):

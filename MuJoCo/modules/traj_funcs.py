@@ -52,7 +52,12 @@ class Trajectory( ):
         self.func_vel = None
         self.func_acc = None
 
-    def check_pars( self, pars ):
+    def __str__( self ):
+        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
+        return str( vars( self ) )
+
+
+    def _check_pars( self, pars ):
         """
             Internal function which checks whether the input is properly given to the function
         """
@@ -90,13 +95,13 @@ class MinJerkTrajectory( Trajectory ):
         self.n_pars     = sum( lst.size for lst in traj_pars.values() )
         self.pars_names = [ "pi", "pf", "D" ]
 
-        self.check_pars( traj_pars )
-        self.set_traj(   traj_pars )
+        self._check_pars( traj_pars )
+        self.set_traj(    traj_pars )
 
     def set_traj( self, traj_pars ):
 
         # Quick check whether the input was given correctly.
-        self.check_pars( traj_pars )
+        self._check_pars( traj_pars )
 
         self.pars = traj_pars
         pi = traj_pars[ "pi" ]
@@ -104,8 +109,14 @@ class MinJerkTrajectory( Trajectory ):
         D  = traj_pars[ "D"  ]
         t  = self.t_sym
 
+        # In case pi and pf are scalars (i.e., size 1), then func_pos is type of "sympy.core.add.Add" rather than "numpy.ndarray"
+        # Hence, handling this case, since "Add" doesn't have an iterative nature
+        # Imposing self.func_pos to be a 1-size nd.array will be the solution.
+        if isinstance( pi, int ) or isinstance( pi, float ):
+            self.func_pos = np.array( [ pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) ) ] )
+        else:
+            self.func_pos = pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) )
 
-        self.func_pos = pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) )
         self.func_vel = [ sp.diff( tmp, t ) for tmp in self.func_pos ]
         self.func_acc = [ sp.diff( tmp, t ) for tmp in self.func_vel ]
 

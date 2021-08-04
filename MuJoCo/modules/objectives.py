@@ -1,5 +1,7 @@
 import re
 import numpy as np
+import pprint
+
 from modules.utils import length_elem2elem
 
 try:
@@ -9,7 +11,65 @@ except ImportError as e:
                                              and also perform the setup instructions here: \
                                              https://github.com/openai/mujoco-py/.)".format( e ) )
 
-class DistFromTip2Target( ):
+class Objective( ):
+    """ Mother class of all objective functions """
+    def __init__( self, mjModel, mjData, mjArgs ):
+        self.mjModel     = mjModel
+        self.mjData      = mjData
+        self.mjArgs      = mjArgs
+
+    # [TODO] [Moses C. Nah]
+    # Making this to do things as 0.3 + 0.5 obj1
+    # The reason why we've used class is because of static variables.
+    # def __add__( self, other ):
+    #     """ Modifying the __add__ function will help us use syntax like func1 + func2 """
+    #     return self.output_calc( ) + other.output_calc( )
+    #
+    # def __mul__( self, other ):
+    #     """ Modifying the __mul__ function will help us use syntax like 0.3 * func1 """
+    #     return self.output_calc( ) * other if isinstance( other, int ) or isinstance( other, float ) else self.output_calc( ) * other.output_calc( )
+
+    def __str__( self ):
+        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
+        return str( vars( self ) )
+
+    def output_calc( self ):
+        NotImplementedError( )  # Imposing the child class to implement this function
+
+class TargetState( Objective ):
+    """ Trying to reach some target State  """
+
+    def __init__( self, mjModel, mjData, mjArgs ):
+        super().__init__( mjModel, mjData, mjArgs )
+
+        self.targets = []
+
+    def set_target( self, boundary ):
+        # There will be a variable in focus, we need to "probe" that variable.
+        # The boundary dictionary consists as follows:
+        # [1] Which variable, is it the qpos or the qvel?
+        # [2] For the variable defined in [1], which specific index?
+        # [3] target value for that value
+        # [4] And tolerance for that, +- [3]'s value
+        self.targets.append( boundary )
+
+    def output_calc( self ):
+
+        # Iterating through the targets
+        val = 0.0
+        for target in self.targets:
+            tmp = getattr( self.mjData, target[ "which_var"  ] )                # which_var is either "qpos" or "qvel"
+            tmp = tmp[ target[ "idx" ]  ]                                       # Getting the value with corresponding index, idx is either list or scalar
+
+            tmp_v = np.sqrt( np.sum( np.square( tmp - target[ "target_val" ] ) ) )
+            if tmp_v <= target[ "tolerance" ]:
+                tmp_v = 0.0
+
+            val += tmp_v
+
+        return val
+
+class DistFromTip2Target( Objective ):
     """
         Getting the distance between the tip of the whip and target.
 
@@ -19,7 +79,7 @@ class DistFromTip2Target( ):
         Retriving the distance between the tip of the whip and target.
 
     """
-    def __init__( self, mjModel, mjData, tol = 5 ):
+    def __init__( self, mjModel, mjData, mjArgs, tol = 5 ):
         """
             Arguments
             ---------
@@ -28,8 +88,7 @@ class DistFromTip2Target( ):
 
         """
 
-        self.mjModel     = mjModel
-        self.mjData      = mjData
+        super().__init__( mjModel, mjData, mjArgs )
         self.tol         = tol
 
         self.tip_name    = self._find_tip(  )                                    # Number of sub-models of the whip
@@ -43,11 +102,9 @@ class DistFromTip2Target( ):
         self.geom_list   = [ "geom_" + str( self.N - self.tol + i + 1 )  for i in range( self.tol - 1 )  ]
         self.geom_list.append( self.tip_name )
 
-    def output_calc( self ):
-        """
-            Calculate the objective function, which is the minimum distance between parts of the whip (ref. tol variable) and target.
 
-        """
+    def output_calc( self ):
+        """ Calculate the objective function, which is the minimum distance between parts of the whip (ref. tol variable) and target. """
         lens = [ length_elem2elem( self.mjModel, self.mjData, geom, self.target_name ) for geom in self.geom_list  ]
 
         output = min( lens )
@@ -55,7 +112,7 @@ class DistFromTip2Target( ):
         # if target is hit by the whip, set output as output and change to green light!
         if output <= self.target_size:
             output = 0.0  # For tolerance.
-            self.mjModel.geom_rgba[ self.target_idx ] = [0, 1, 0, 1]
+            self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
 
         return output
 

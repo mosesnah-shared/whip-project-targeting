@@ -73,7 +73,7 @@ from modules.simulation   import Simulation
 from modules.controllers  import ( ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
-from modules.objectives   import DistFromTip2Target
+from modules.objectives   import DistFromTip2Target, TargetState
 from modules.traj_funcs   import MinJerkTrajectory
 from modules.constants    import Constants
 
@@ -144,7 +144,7 @@ def main( ):
         # Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
-        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args.model_name else None
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
         init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
                       'qvel': np.zeros( 54 )  }
         # [BACKUP] [Moses C. Nah]
@@ -166,6 +166,13 @@ def main( ):
         # [Target 4] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
         # [Target 5] camera position array [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6  ]
 
+        # ================================================= #
+        # =============== For optimization ================ #
+        # ================================================= #
+        lb    = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
+        ub    = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )
+        n_opt = 5
+
     elif "2" == args.model_name[ 0 ]:
 
         ctrl = JointSlidingController(  mySim.mjModel, mySim.mjData, args )
@@ -174,15 +181,75 @@ def main( ):
         mov_pars  = np.array( [1.72788, 0.     , 0.     , 1.41372,0.5,-0.3, 0, 0.1, 0.3  ])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
-        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData ) if "_w_" in args.model_name else None
+        obj1 = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
         init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1.7, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
                       'qvel': np.array( [-0.0513 , 0.     , 0.     ,-0.02115, 0.     ,-3.82701, 0.     , 0.0422 , 0.     , 0.07551, 0.     , 0.12526, 0.     , 0.19845, 0.     , 0.29355, 0.     , 0.40586, 0.     , 0.52993, 0.     , 0.66022, 0.     , 0.79109, 0.     , 0.91651, 0.     , 1.02989, 0.     , 1.12425, 0.     , 1.19281, 0.     , 1.23003, 0.     , 1.23287, 0.     , 1.20168, 0.     , 1.14003, 0.     , 1.05305, 0.     , 0.9447 , 0.     , 0.81579, 0.     , 0.66434, 0.     , 0.48977, 0. , 0.30046, 0.     , 0.12179] )   }
+
+        objective = lambda : obj1.output_calc( )
+
+        # ================================================= #
+        # =============== For optimization ================ #
+        # ================================================= #
+
+        # For 3D case (9 movement parameters)
+        lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        n_opt = 9                                                               # The number of parameters that are aimed to be optimized
 
         # [TEMP] [TODO] Setting the Initial condition for the optimization
         # It might be great to have a separete function to set the controller.
         # The initial condition is extracted from [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MuJoCo/results/Modularity Tasks/primitive1/data_log.txt
 
+        # [BACKUP] [Moses C. Nah] [2021.08.03]
+        # For upper/lower bounds for a 2D robot (5 movement parameters)
+        # [TEMP] [2021.07.22]
+        # lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        # ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
 
+
+    elif "cart" and "pole" in args.model_name:
+
+        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+        ctrl.set_ctrl_par(  K = 10, B = 5 )
+
+        mov_pars  = np.array( [ -1.44865, -1.44865, 0.2037] )
+        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 ], "pf" : mov_pars[ 1 ], "D" : mov_pars[ 2 ] } )
+
+        obj1      = TargetState( mySim.mjModel, mySim.mjData, args )
+        # Boundary needs to be defined as follows
+        # [1] Which variable, is it the qpos or the qvel?
+        # [2] For the variable defined in [1], which specific index?
+        # [3] target value for that value
+        # [4] And tolerance for that, +- [3]'s value
+        target1 = { "which_var" : "qpos", "idx" : 1, "target_val": -0.25 * np.pi,  "tolerance": 0.01 }
+        target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,          "tolerance": 0.01 }
+        obj1.set_target( target1 )
+        obj1.set_target( target2 )
+
+        objective = lambda : obj1.output_calc( )
+        init_cond = { 'qpos': np.array( [  0., 0. ] ),
+                      'qvel': np.array( [  0., 0. ] )   }
+        # [BACKUP]
+        # [qPos       ]: [ 0.0, 0.0 ]
+        # [qVel       ]: [ 0.0, 0.0 ]
+        # target1 = { "which_var" : "qpos", "idx" : 1, "target_val": -0.25*np.pi,  "tolerance": 0.01 }
+        # target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,  "tolerance": 0.01 }
+        # The final condition of primitive 1/initial condition of primitive 2
+        # mov_pars  = np.array( [ 0.0, 0.57407, 0.46708 ] )
+        # [qPos       ]: [ 0.57956,-0.78857]
+        # [qVel       ]: [0.01872,0.0042 ]
+        # target1 = { "which_var" : "qpos", "idx" : 1, "target_val": np.pi,  "tolerance": 0.01 }
+        # target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,  "tolerance": 0.01 }
+        # The final condition of primitive 2/initial condition of primitive 3
+        # [qPos       ]: [-1.44865, 3.13649]
+        # [qVel       ]: [ 0.00047, 0.00555]
+
+        # ================================================= #
+        # =============== For optimization ================ #
+        # ================================================= #
+        lb    = np.array( [  0.0, 0.0 ] )
+        ub    = np.array( [  3.0, 1.0 ] )
+        n_opt = 2
 
     else:   # If simply dummy, example model for quick debugging
         # ctrl = NullController( mySim.mjModel, mySim.mjData )
@@ -195,6 +262,7 @@ def main( ):
     if  not args.run_opt:                                                       # If simply running a single simulation without optimization
 
         val = mySim.run( init_cond )                                            # Getting the objective value
+        mySim.close( )
 
     else:
         # If running nlopt optimization
@@ -213,31 +281,20 @@ def main( ):
 
         tmp_file = open( args.save_dir + "optimization_log.txt", "w+" )    # The txt file for saving all the iteration information
 
-        # [BACKUP] [Moses C. Nah] [2021.08.03]
-        # For upper/lower bounds for a 2D robot (5 movement parameters)
-        # lb = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
-        # ub = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )
-        # For 3D case (9 movement parameters)
-        # lb = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        # ub = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-
-        # [TEMP] [2021.07.22]
-        lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-
-        n_opt = 5                                                               # The number of parameters that are aimed to be optimized
         opt   = nlopt.opt( algorithm, n_opt )                                   # Defining the class for optimization
 
         opt.set_lower_bounds( lb )
         opt.set_upper_bounds( ub )
-        opt.set_maxeval( 100 )
+        opt.set_maxeval( 500 )
 
         init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
 
         def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters
-            mySim.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
+            # mySim.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
+            # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
+            mySim.ctrl.traj.set_traj(  { "pi" : 0.0, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
             val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
 
             my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
@@ -248,15 +305,15 @@ def main( ):
             return val
 
         opt.set_min_objective( nlopt_objective )
-        opt.set_stopval( 1e-8 )                                                     # If value is 0 then target is hit!
+        opt.set_stopval( 1e-8 )                                                 # If value is 0 then target is hit!
 
-        xopt = opt.optimize( ( lb + ub ) * 0.5 )                                    # Start at the mid-point of the lower and upper bound
+        xopt = opt.optimize( init )                                             # Start at the mid-point of the lower and upper bound
 
         my_print(  optimalInput = xopt[ : ],
                   optimalOutput = opt.last_optimum_value( ) )                       # At end, printing out the optimal values and its corresponding movement parameters
 
         tmp_file.close()
-
+        mySim.close( )
     # ============================================================================= #
 
 if __name__ == "__main__":

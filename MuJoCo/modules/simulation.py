@@ -15,7 +15,6 @@ import pprint
 import shutil
 import numpy as np
 import time, datetime
-# import glfw
 
 from modules.utils        import ( my_print, quaternion2euler, camel2snake, snake2camel,
                                    MyVideo, str2float, my_mvdir, my_rmdir )
@@ -122,8 +121,6 @@ class Simulation( ):
             if self.mjViewer is not None and self.mjViewer.is_paused:
                 continue
 
-
-
             # [Calculate Input]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
@@ -137,10 +134,9 @@ class Simulation( ):
             if input_ref is not None:
                 input_ref[ input_idx ] = input
 
-
             # [Calculate objective Value]
             if self.objective is not None:
-                self.obj_val = min( self.obj_val, self.objective.output_calc( )  )
+                self.obj_val = min( self.obj_val, self.objective( )  )
 
             if self.is_vid_rec and self.step % self.rec_step == 0 :
                 self.vid.write( self.mjViewer )
@@ -149,7 +145,7 @@ class Simulation( ):
             # [TODO] [Moses C. Nah] [2021.08.01] Making this code much cleaner
             if self.step % self.vid_step == 0:
                 if not self.args.run_opt and self.args.print_mode == "normal" :
-                    my_print( currentTime = self.t  )
+                    my_print( currentTime = self.t, output = self.obj_val, qPos = self.mjData.qpos[ : ]  )
 
                 if self.args.print_mode == "verbose":
                     my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
@@ -157,7 +153,7 @@ class Simulation( ):
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,
-                             inputVal = input,
+                            outputVal = self.objective( ),
                                  qPos = self.mjData.qpos[ : ],
                                  qVel = self.mjData.qvel[ : ], file = self.file )
                      #               qd = self.ctrl.qd[ : ],
@@ -178,8 +174,6 @@ class Simulation( ):
                 print( "[WARNING] UNSTABLE SIMULATION, HALTED AT {0:f} for at {1:f}".format( self.t, self.run_time )  )
                 break
 
-        self._close( )
-
         return self.obj_val                                                     # Returning the minimum value achieved with the defined objective function
 
     def reset( self ):
@@ -189,9 +183,26 @@ class Simulation( ):
         self.obj_val      = np.inf
         self.mjSim.reset( )
 
+    def close( self ):
+        """ Wrapping up the simulation"""
+        if self.is_vid_rec:
+            self.vid.release( )
+
+        if self.is_save_data:
+            self.file.close(  )
+
+        if self.is_vid_rec or self.is_save_data or self.is_run_opt:
+            self._save_sim_details(  )
+            shutil.copyfile( Constants.MODEL_DIR + self.args.model_name,
+                              self.args.save_dir + self.args.model_name )
+
+            my_mvdir( self.args.save_dir, self.SAVE_DIR  )
+            my_rmdir( Constants.TMP_DIR )
+
+
 
     # ======================================================================== #
-    # INTERNAL FUNCTIONS
+    # INTERNAL METHODS
     # ======================================================================== #
     def _set_init_cond( self, init_cond = None ):
         """ Manually setting the initial condition of the system. """
@@ -251,8 +262,10 @@ class Simulation( ):
     def _save_sim_details( self  ):
 
         with open( self.args.save_dir + "sim_details.txt", "w+" ) as f:
-            pprint.pprint( self.ctrl.__dict__, f )                              # Using pretty-print (pprint) to flush out the data in a much readable format
-            print( self.args    , file = f )                                    # Flushing out all the arguments detail.
+            print( self           , file = f )
+            print( self.ctrl      , file = f )
+            print( self.args      , file = f )
+
 
 
     def _is_sim_unstable( self ):
@@ -276,20 +289,9 @@ class Simulation( ):
 
         self.mjSim.forward()
 
-
-    def _close( self ):
-        """ Wrapping up the simulation"""
-        if self.is_vid_rec:
-            self.vid.release( )
-
-        if self.is_save_data:
-            self.file.close(  )
-
-        if self.is_vid_rec or self.is_save_data or self.is_run_opt:
-            self._save_sim_details(  )
-            shutil.copyfile( Constants.MODEL_DIR + self.args.model_name,
-                              self.args.save_dir + self.args.model_name )
-
-            my_mvdir( self.args.save_dir, self.SAVE_DIR  )                      # Move to the save reposito
-
-        my_rmdir( Constants.TMP_DIR )                                           # Cleaning up the tmp folder
+    # ======================================================================== #
+    # MAGIC METHODS
+    # ======================================================================== #
+    def __str__( self ):
+        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
+        return str( vars( self ) )
