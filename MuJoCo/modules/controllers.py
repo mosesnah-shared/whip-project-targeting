@@ -51,9 +51,6 @@ class Controller( ):
 
 
     def __init__( self, mjModel, mjData, mjArgs ):
-        """
-
-        """
         self.mjModel        = mjModel
         self.mjData         = mjData
         self.mjArgs         = mjArgs
@@ -70,17 +67,21 @@ class Controller( ):
         """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
         return str( vars( self ) )
 
-
     def parse_model( self ):
-        # [Basic Parameters of the model]
-        # The number of actuators, number of limbs should be calculated.
-        # Mostly the upper-limb model parameters
+        """
+            # [Basic Parameters of the model]
+            # The number of actuators, number of limbs should be calculated.
+            # Mostly the upper-limb model parameters
+        """
         self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
         self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
         self.n_limbs        = '-'.join( self.mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
 
         self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
         self.g              = self.mjModel.opt.gravity                          # The gravity vector of the simulation
+
+        self.geom_names     = self.mjModel.geom_names
+        self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.geom_names  ]
 
         if   self.n_limbs == 2:
             self.M  = [ get_property( self.mjModel, 'body_upper_arm', 'mass'    ), get_property( self.mjModel, 'body_fore_arm', 'mass'    ) ]
@@ -158,6 +159,108 @@ class Controller( ):
 
         return G
 
+class ControllerBinder( Controller ):
+    """
+        Special Class for binding the controller
+    """
+    def __init__( self, mjModel, mjData, mjArgs ):
+
+        super().__init__( mjModel, mjData, mjArgs )
+
+        self.ctrls     = []                                                     # Empty list to be appended
+        self.n_ctrls   = 0
+        self.t_end     = None                                                   # Saving the end of the time of the movement.
+        self.alphas    = []                                                     # The alpha (i.e., the activation functions) for the controller
+
+        self.t_offsets = []
+        self.t_starts  = []
+        self.widths    = []
+
+    def add_ctrl( self, ctrl, *, t_offset = 0.1, width = 1.0 ):                 # Asterisks impose the coder to write down their input
+        """
+            Add controller to binder, and if there already exists a controller, then smoothly connect between the two.
+
+            This makes us smoothly connect the two controllers smoothly
+
+            [Arguments]
+            -----------
+            t_offset (sec) (float) (+, 0, -)
+                Assume between controller i and i + 1
+                t_offset is the time when the transtion starts from i to i+1's controller
+                if t_offset is positive, the transition function will start after       the end of the ith controller
+                if t_offset is     zero, the transition function will start right after the end of the ith controller
+                if t_offset is negative, the transition function will start before      the end of the ith controller
+
+            width (sec) (float) (+, 0)
+            The transition function is as follows:
+            sigmoid( x ) = 1 / ( 1 + exp(  -( x-x0 ) / a )  )
+             a: determines the width of the transition. If a is large then transition width is also large (i.e., slow),
+                a is determined such that once the width is reached the transition is almost 0
+            x0: the mid-point of the transition, if x = x0 then the value is the half.
+                x0 = self.t_end + t_offset + 0.5 * width
+
+        """
+
+        if not width >= 0.0:    # Check if width is positive
+            raise ValueError( "width input must to positive, currently it is {}".format( width ) )
+
+        self.t_offsets.append( t_offset )
+        self.widths.append( width )
+        self.ctrls.append( ctrl )
+
+        self.n_ctrls += 1
+
+        if   self.n_ctrls == 1:                                                 # If this is the first controller, just return since we don't need to do anything
+            x  = sp.Symbol('x')
+            tmp1 = sp.Piecewise( ( 1, True ) )
+
+            self.alphas = lambdify( x, tmp1, "numpy")
+            self.t_end    = self.ctrls[ 0 ].traj.pars[ "D" ]
+            self.t_starts.append( 0 )
+
+        elif self.n_ctrls == 2:
+            ts = self.t_end + t_offset
+            tf = ts + width
+            x0 = ts + 0.5 * width
+
+            x  = sp.Symbol('x')
+
+            tmpl = [ None ] * 2
+
+            if width != 0:
+                tmp1 = sp.Piecewise( ( 1, x < ts ), ( 1 - 1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ), ts <= x <= tf ), ( 0, x > tf ) )
+                tmp2 = sp.Piecewise( ( 0, x < ts ), (     1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ), ts <= x <= tf ), ( 1, x > tf ) )
+            else:
+                tmp1 = sp.Piecewise( ( 1, x < ts ), ( 0, x > tf ) )
+                tmp2 = sp.Piecewise( ( 0, x < ts ), ( 1, x > tf ) )
+
+            tmpl[ 0 ] = lambdify( x, tmp1, "numpy")
+            tmpl[ 1 ] = lambdify( x, tmp2, "numpy")
+
+            self.alphas = tmpl
+
+            self.t_starts.append( tf )
+
+        self.alpha_vals = np.zeros( self.n_ctrls )
+
+    def input_calc( self, time ):
+
+        tau           = np.zeros( self.ctrls[ 0 ].n_act )
+        self.tau_vals = np.zeros( self.n_ctrls )
+
+        for i in range( self.n_ctrls ):
+            _, _, val = self.ctrls[ i ].input_calc( time - self.t_starts[ i ] )
+            tau += self.alphas[ i ]( time ) * val
+            self.alpha_vals[ i ] = self.alphas[ i ]( time )
+            self.tau_vals[ i ]   = val
+
+        if time >= 2.72:
+            tmp_eq = np.array( [ -1.32937,   np.pi,   0.0, 0.0000 ])
+            tmp_K  = np.array( [ -10.0000, -77.3637,-16.0164,-21.3814])   # [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MATLAB/LQR_calc.m
+            tau = np.dot( tmp_K, tmp_eq - np.append( self.mjData.qpos, self.mjData.qvel ) )
+
+        return self.mjData.ctrl, self.idx_act, tau
+
 class DebugController( Controller ):
     """
         Description:
@@ -205,7 +308,7 @@ class JointImpedanceController( ImpedanceController ):
     """
         Description:
         ----------
-            Class for a Joint Impedance Controller
+            Class for a Joint (i.e., Generalized coordinate) Impedance Controller
             First order impedance controller with gravity compenation
 
     """
@@ -235,7 +338,7 @@ class JointImpedanceController( ImpedanceController ):
 
 
         # [2DOF Robot] 5 movement parameters in total - Intial posture (2), Final posture (2) and duration (1)
-        # [4DOF RObot] 9 movement parameters in total - Intial posture (4), Final posture (4) and duration (1)
+        # [4DOF Robot] 9 movement parameters in total - Intial posture (4), Final posture (4) and duration (1)
         # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.3.] Implementation
         # [REF] [Moses C. Nah] Ibid.        ,                                                              [Section 8.2.2.] Zero-Torque Trajectory
 
@@ -246,6 +349,10 @@ class JointImpedanceController( ImpedanceController ):
 
 
     def input_calc( self, time ):
+
+        if time <= 0:
+            # For negative time, just set time as zero
+            time = 0
 
         q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
         dq = self.mjData.qvel[ 0 : self.n_act ]
@@ -260,12 +367,10 @@ class JointImpedanceController( ImpedanceController ):
         tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
 
         # # [TMP] The result of lqr
-        tmp_eq = np.array( [ -1.44857,   np.pi,   0.0, 0.0000 ])
-        tmp_K  = np.array( [ -10.0000, -77.3637,-16.0164,-21.3814])   # [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MATLAB/LQR_calc.m
-        tau_imp = np.dot( tmp_K, tmp_eq - np.append( self.mjData.qpos, self.mjData.qvel ) )
         # # # print( tau_imp )
         # # + np.dot( 2, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.8, self.mjData.qvel[ -1 ] )# Calculating the torque due to impedance
         # # tau_imp = np.dot( 1, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.4, self.mjData.qvel[ -1 ] )
+
 
         return self.mjData.ctrl, self.idx_act, tau_imp + tau_g
 
@@ -388,7 +493,6 @@ class JointSlidingController( SlidingController ):
         self.n_ctrl_pars    = [ self.n_act ** 2, self.n_act ** 2 ]              # The number of ctrl parameters.
         self.ctrl_par_names = [ "Kd", "Kl" ]                                    # Kl: s = q' + Kl q
                                                                                 # Kd: tau = M(q)qr'' + C(q,q')qr' + G(q) - Kds
-
 
     def input_calc( self, time ):
 

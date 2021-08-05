@@ -1,5 +1,6 @@
-% [REF1] https://www.ashwinnarayan.com/post/cartpole-dynamics/
+% [REF1] https://www.ashwinnarayan.com/post/cartpole-dynamics/ <-- The equation's signs are WRONG!!!!!
 % [REF2] https://www.mathworks.com/help/control/ref/lqr.html
+% [REF3] https://metr4202.uqcloud.net/tpl/t8-Week13-pendulum.pdf
 mc = 0.03;
 mp = 0.03;
 l  = 0.60; 

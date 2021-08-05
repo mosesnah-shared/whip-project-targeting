@@ -35,12 +35,29 @@
 |       GLOBAL_CONSTANT_NAME, global_var_name, instance_var_name, function_parameter_name, local_var_name.
 # ============================================================================= #
 
+# ============================================================================= #
+| (0C) [PYTHON NAMING CONVENTION - MINE]
+|      The naming convention, especially for my coding
+|      [Variables] [Prefix]
+|           -    n: number of ...., e.g., n_act (number of actuators) n_geom (number of geoms)
+|           -  idx:  index of ...., e.g., idx_act (index of actuators)
+|      [Variables] [Suffix]
+|           - list:   list of ...., e.g., act_list (actuator's list)
+|
+|      [Comments] [Class]
+|           - To explain the class, must define as follows
+|           - [Descriptions]
+|                 - EXPLANATION
+|           - [Arguments]
+|                 - EXPLANATION
+# ============================================================================= #
+
 
 """
 
 
 
-# ============================================================================= #
+# ================================================================================== #
 # (0A) [IMPORT MODULES]
 # ------------------ #
 # [Built-in modules] #
@@ -70,16 +87,17 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 # --------------- #
 # See modules directory for more details
 from modules.simulation   import Simulation
-from modules.controllers  import ( ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController )
+from modules.controllers  import ( ImpedanceController, CartesianImpedanceController,
+                                   JointImpedanceController, JointSlidingController, ControllerBinder )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
                                    my_rmdir, str2float, camel2snake, snake2camel )
 from modules.objectives   import DistFromTip2Target, TargetState
 from modules.traj_funcs   import MinJerkTrajectory
 from modules.constants    import Constants
 
-# ============================================================================= #
+# ================================================================================== #
 
-# ============================================================================= #
+# ================================================================================== #
 # (0B) [SYSTEM SETTINGS] + [ARGUMENT PARSER]
 
                                                                                 # [Printing Format]
@@ -102,13 +120,12 @@ parser.add_argument( '--run_opt'    , action = 'store_true'  ,                  
 
 
 args = parser.parse_args()
-
 args.save_dir = my_mkdir( )                                                     # Doesn't hurt to save the name directory in case
 
-# ============================================================================= #
+# ================================================================================= #
 
 
-# ============================================================================= #
+# ================================================================================= #
 
 def main( ):
     # ============================================================================= #
@@ -131,19 +148,16 @@ def main( ):
 
     elif "1" == args.model_name[ 0 ] and "3D" in args.model_name:
 
+        # [TODO] [2021.07.20] [Moses C. Nah]
+        # [1] Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
+        # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
+        # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+        ctrl.set_ctrl_par(  K  = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B  = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
-        ctrl.set_ctrl_par(  K  = ( ctrl.K + np.transpose( ctrl.K ) ) / 2,
-                            B  = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-
-        # [TODO] [2021.07.20] [Moses C. Nah]
-        # Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
-        # [NOTE] [2021.07.20] [Moses C. Nah]
-        # Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
-        # [TODO] [2021.07.20] [Moses C. Nah]
-        # Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
         init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
                       'qvel': np.zeros( 54 )  }
@@ -169,9 +183,15 @@ def main( ):
         # ================================================= #
         # =============== For optimization ================ #
         # ================================================= #
-        lb    = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
-        ub    = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )
-        n_opt = 5
+
+        lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        n_opt = 9
+
+        # [TODO] This is for fixing the initial condition of the system
+        # lb    = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
+        # ub    = np.array( [        0, np.pi, np.pi, np.pi, 1.2 ] )
+        # n_opt = 5
 
     elif "2" == args.model_name[ 0 ]:
 
@@ -209,11 +229,20 @@ def main( ):
 
     elif "cart" and "pole" in args.model_name:
 
-        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
-        ctrl.set_ctrl_par(  K = 10, B = 5 )
+        ctrl1 = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+        ctrl1.set_ctrl_par(  K = 10, B = 5 )
+        mov_pars  = np.array( [ 0.0, 0.57407, 0.64815 ] )
+        ctrl1.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 ], "pf" : mov_pars[ 1 ], "D" : mov_pars[ 2 ] } )
 
-        mov_pars  = np.array( [ -1.44865, -1.44865, 0.2037] )
-        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 ], "pf" : mov_pars[ 1 ], "D" : mov_pars[ 2 ] } )
+        ctrl2 = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
+        ctrl2.set_ctrl_par(  K = 10, B = 5 )
+        mov_pars  = np.array( [ 0.57407, -1.32937, 0.72403] )
+        ctrl2.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 ], "pf" : mov_pars[ 1 ], "D" : mov_pars[ 2 ] } )
+
+        ctrl = ControllerBinder( mySim.mjModel, mySim.mjData, args )
+        ctrl.add_ctrl( ctrl1 )
+        ctrl.add_ctrl( ctrl2, t_offset = 0.51185, width = 0.0 )
+
 
         obj1      = TargetState( mySim.mjModel, mySim.mjData, args )
         # Boundary needs to be defined as follows
@@ -221,34 +250,37 @@ def main( ):
         # [2] For the variable defined in [1], which specific index?
         # [3] target value for that value
         # [4] And tolerance for that, +- [3]'s value
-        target1 = { "which_var" : "qpos", "idx" : 1, "target_val": -0.25 * np.pi,  "tolerance": 0.01 }
-        target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,          "tolerance": 0.01 }
+        target1 = { "which_var" : "qpos", "idx" : 1, "target_val": np.pi,  "tolerance": 0.01 }
+        target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,  "tolerance": 0.01 }
         obj1.set_target( target1 )
         obj1.set_target( target2 )
 
         objective = lambda : obj1.output_calc( )
-        init_cond = { 'qpos': np.array( [  0., 0. ] ),
-                      'qvel': np.array( [  0., 0. ] )   }
-        # [BACKUP]
+        init_cond = { 'qpos': np.array( [ 0.0, 0.0 ] ),
+                      'qvel': np.array( [ 0.0, 0.0 ] )   }
+
+        # [BACKUP][-1.83887, 0.94443]
         # [qPos       ]: [ 0.0, 0.0 ]
         # [qVel       ]: [ 0.0, 0.0 ]
         # target1 = { "which_var" : "qpos", "idx" : 1, "target_val": -0.25*np.pi,  "tolerance": 0.01 }
         # target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,  "tolerance": 0.01 }
         # The final condition of primitive 1/initial condition of primitive 2
-        # mov_pars  = np.array( [ 0.0, 0.57407, 0.46708 ] )
-        # [qPos       ]: [ 0.57956,-0.78857]
-        # [qVel       ]: [0.01872,0.0042 ]
+        # mov_pars  = np.array( [ 0.0, 0.57407, 0.64815 ] )
+        # [qPos       ]: [ 0.58041,-0.77884]
+        # [qVel       ]: [ 0.01703,-0.01894]
         # target1 = { "which_var" : "qpos", "idx" : 1, "target_val": np.pi,  "tolerance": 0.01 }
         # target2 = { "which_var" : "qvel", "idx" : 1, "target_val": 0    ,  "tolerance": 0.01 }
         # The final condition of primitive 2/initial condition of primitive 3
-        # [qPos       ]: [-1.44865, 3.13649]
-        # [qVel       ]: [ 0.00047, 0.00555]
+        # [qPos       ]: [-1.32983, 3.12693]
+        # [qVel       ]: [0.00182,0.00945]
+        # [optimalInput ]: [-1.32937, 0.72403]
+        # LQR On!
 
         # ================================================= #
         # =============== For optimization ================ #
         # ================================================= #
-        lb    = np.array( [  0.0, 0.0 ] )
-        ub    = np.array( [  3.0, 1.0 ] )
+        lb    = np.array( [ -3.0, 0.0 ] )
+        ub    = np.array( [  0.0, 1.0 ] )
         n_opt = 2
 
     else:   # If simply dummy, example model for quick debugging
@@ -285,7 +317,7 @@ def main( ):
 
         opt.set_lower_bounds( lb )
         opt.set_upper_bounds( ub )
-        opt.set_maxeval( 500 )
+        opt.set_maxeval( 300 )
 
         init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
 
@@ -294,7 +326,7 @@ def main( ):
             # pars for this case is the number of movement parameters
             # mySim.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
             # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
-            mySim.ctrl.traj.set_traj(  { "pi" : 0.0, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
+            mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
             val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
 
             my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
