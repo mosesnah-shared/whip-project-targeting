@@ -365,7 +365,7 @@ set( ani.hAxes{1},'LineWidth',3.5 ); set(ani.hAxes{1}, 'TickLength',[0.04 0.04])
 tmp = myMarker( 'XData', data.currentTime , 'YData', pIn , 'ZData', zeros( 1, length( data.currentTime ) ), ...
                  'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  [0, 0.4470, 0.7410]  ); 
 ani.addTrackingPlots( 2, tmp );
-
+    
 
 tmp = myMarker( 'XData', data.currentTime , 'YData', data.minVal , 'ZData', zeros( 1, length( data.currentTime ) ), ...
                  'SizeData',  400, 'LineWidth', 6 , 'MarkerEdgeColor',  [0.8500, 0.3250, 0.0980]  ); 
