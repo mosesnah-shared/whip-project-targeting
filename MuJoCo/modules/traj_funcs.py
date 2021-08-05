@@ -112,7 +112,7 @@ class MinJerkTrajectory( Trajectory ):
         # In case pi and pf are scalars (i.e., size 1), then func_pos is type of "sympy.core.add.Add" rather than "numpy.ndarray"
         # Hence, handling this case, since "Add" doesn't have an iterative nature
         # Imposing self.func_pos to be a 1-size nd.array will be the solution.
-        if isinstance( pi, int ) or isinstance( pi, float ):
+        if isinstance( pi, ( int, float ) ) :
             self.func_pos = np.array( [ pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) ) ] )
         else:
             self.func_pos = pi + ( pf - pi ) * ( 10 * np.power( t ,3 ) / ( D ** 3 ) - 15 * np.power( t , 4 ) / ( D ** 4 ) +  6 * np.power( t, 5 ) / ( D ** 5 ) )

@@ -227,9 +227,10 @@ class ControllerBinder( Controller ):
 
             tmpl = [ None ] * 2
 
+            # [REF] https://stackoverflow.com/questions/36870858/how-to-define-a-piecewise-function-without-typeerror-cannot-determine-truth-va
             if width != 0:
-                tmp1 = sp.Piecewise( ( 1, x < ts ), ( 1 - 1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ), ts <= x <= tf ), ( 0, x > tf ) )
-                tmp2 = sp.Piecewise( ( 0, x < ts ), (     1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ), ts <= x <= tf ), ( 1, x > tf ) )
+                tmp1 = sp.Piecewise( ( 1, x < ts ), ( 1 - 1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ) , x <= tf  ), ( 0, x > tf ) )
+                tmp2 = sp.Piecewise( ( 0, x < ts ), (     1 / ( 1 + sp.exp( - 8 * ( x - x0 ) / width ) ) , x <= tf  ), ( 1, x > tf ) )
             else:
                 tmp1 = sp.Piecewise( ( 1, x < ts ), ( 0, x > tf ) )
                 tmp2 = sp.Piecewise( ( 0, x < ts ), ( 1, x > tf ) )

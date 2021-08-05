@@ -145,7 +145,7 @@ class Simulation( ):
             # [TODO] [Moses C. Nah] [2021.08.01] Making this code much cleaner
             if self.step % self.vid_step == 0:
                 if not self.args.run_opt and self.args.print_mode == "normal" :
-                    my_print( currentTime = self.t, output = self.obj_val, qPos = self.mjData.qpos[ : ]  )
+                    my_print( currentTime = self.t, output = self.obj_val  )
 
                 if self.args.print_mode == "verbose":
                     my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
