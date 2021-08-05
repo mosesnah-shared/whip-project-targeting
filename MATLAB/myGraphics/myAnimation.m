@@ -221,6 +221,7 @@ classdef myAnimation < handle
                 fps = 30 * vidRate; 
             end
 
+            
             if isVidRecord                                                 % If video record is ON
                 
                 writerObj = VideoWriter( videoName, 'MPEG-4' );            % Saving the video as "videoName" 

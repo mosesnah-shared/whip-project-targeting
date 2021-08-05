@@ -78,7 +78,7 @@ class Simulation( ):
         self.init_cond    = None
 
         # Steps for updating the record or data save
-        self.vid_step     = round( 1 / self.dt / self.fps          )            # The very basic update rate.
+        self.vid_step         = round( 1 / self.dt / self.fps          )            # The very basic update rate.
 
         # If record is on, then calculate rec_step
         if self.is_vid_rec:
@@ -153,9 +153,13 @@ class Simulation( ):
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,
-                            outputVal = self.objective( ),
                                  qPos = self.mjData.qpos[ : ],
-                                 qVel = self.mjData.qvel[ : ], file = self.file )
+                                 qVel = self.mjData.qvel[ : ],
+                     geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
+                               alphas = self.ctrl.alpha_vals,
+                               x0_1   = self.ctrl.ctrls[ 0 ].x0,
+                               x0_2   = self.ctrl.ctrls[ 1 ].x0,
+                               taus   = self.ctrl.tau_vals, file = self.file )
                      #               qd = self.ctrl.qd[ : ],
                      #               s  = self.ctrl.s[ : ],
                      # geomXYZPositions = self.mjData.geom_xpos[ self.idx_geom_names ],
