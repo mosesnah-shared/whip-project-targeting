@@ -362,7 +362,7 @@ exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
 %% -- (3C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 1;
+idx = 3;
 
 switch idx 
    
@@ -449,9 +449,9 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
           'view',   viewArr( idx, : )   )  
       
       
-set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-2", "\fontsize{50}X (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
-set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
-set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.6", "\fontsize{50}X (m)", "+0.6"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.6", "\fontsize{50}Y (m)", "+0.6"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.6", "\fontsize{50}Z (m)", "+0.6"] ); % ["-2", "X[m]", "+2"] )
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 exportgraphics( f,['F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','vector');
