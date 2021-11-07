@@ -269,38 +269,37 @@ box off
 ntol = 40; % If iteration higher than tol, then halt
 % tol  = 0.02;
 
-cnt = 0;
-oldval = 10000;
 
-j = 3;
-data = datalist{ j };
+tmpi    = zeros( 1, 3);
+optvals = zeros( 1, 3);
 
-for i = 1 : length( data.Iter )
-%    newval = min( oldval, data1.output( i ) );   % Get the minimum value
-    newval = min( oldval, data.output( i ) );   % Get the minimum value
-%     newval = min( oldval, data3.output( i ) );   % Get the minimum value
+for j = 1:3
+
+    cnt = 0;
+    oldval = 10000;
+    data = datalist{ j };
     
-   if oldval == newval               % If the output wasn't the minimum value
-      cnt = cnt + 1;                 % Increase the number of cound
-%    elseif abs( oldval - newval ) <= tol
-%       cnt = cnt + 1;
-   else
-      cnt = 0;
-       
-   end
+    for i = 1 : length( data.Iter )
    
-   oldval = newval 
-   
-%    disp( cnt )
-    
-   if cnt >= ntol 
-      disp( cnt) 
-      tmpi( j ) = i 
-      optvals( j )  = oldval
-      break
-   end
+       newval = min( oldval, data.output( i ) );   % Get the minimum value
+  
+       if oldval == newval               % If the output wasn't the minimum value
+          cnt = cnt + 1;                 % Increase the number of cound
+       else
+          cnt = 0;
+       end
+
+       oldval = newval ;
+
+       if cnt >= ntol 
+          disp( cnt) 
+          tmpi( j )    = i;
+          optvals( j ) = oldval;
+          break
+       end
+    end
+
 end
-
 
 plot(  datalist{ 1 }.Iter( 1 : tmpi( 1 ) ), datalist{ 1 }.output( 1: tmpi( 1 ) ), 'linewidth', 2.5 )
 hold on
@@ -316,6 +315,7 @@ ht = findobj(hobj,'type','line');
 set(ht,'Linewidth',12);
 
 set( gca, 'xlim', [0,max( tmpi )] )
+set( gca, 'ylim', [0, 3.5] )
 exportgraphics( f,'fig2.eps')%,'ContentType','vector')
 
 %%
@@ -341,7 +341,7 @@ exportgraphics( f,'fig2.eps')%,'ContentType','vector')
 
 for i = 1 : 3
     
-   rawData{ i } = myTxtParse( ['myData/simulation_log/data_log_T', num2str( i ), '.txt']  );
+   rawData{ i } = myTxtParse( ['myData/simulation_log_new/data_log_T', num2str( i ), '.txt']  );
 %     rawData{ i } = myTxtParse( ['data_log_dense_T', num2str( i ), '.txt']  );
    
    rawData{ i }.geomXPositions = rawData{ i }.geomXYZPositions( 1 : 3 : end , : );
@@ -453,9 +453,9 @@ switch idx
     case 1
         tStart = 0.1; D = 0.950; % tStart = 0.3 if not Dense!
     case 2
-        tStart = 0.1; D = 0.579;
-    case 3
         tStart = 0.1; D = 0.950;
+    case 3
+        tStart = 0.1; D = 0.583;
 end
 
 idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tStart + D );	
@@ -567,19 +567,19 @@ exportgraphics( f,['F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','ve
 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx  = 2;
+idx  = 3;
 idx2 = 2;       % 1: EL, 2: EE 
 
 switch idx 
    
     case 1
-        tStart = 0.3; D = 0.950; % tStart = 0.3 if not Dense!
+        tStart = 0.0; D = 0.950; % tStart = 0.3 if not Dense!
         color = [1,0,0];
     case 2
-        tStart = 0.3; D = 0.579;
+        tStart = 0.0; D = 0.950;
         color = [0,0.5,0];
     case 3
-        tStart = 0.3; D = 0.950;
+        tStart = 0.0; D = 0.583;
         color = [0,0,1];
 end
 
@@ -721,16 +721,16 @@ v2 = V( :,2 );
 v3 = V( :,3 );
 v4 = V( :,4 );      % Ordered in ascending order of the size of eigenvalues. 
 
-idx = 1;
+idx = 3;
 
 switch idx 
    
     case 1
-        tStart = 0.3; D = 0.950; % tStart = 0.3 if not Dense!
+        tStart = 0.0; D = 0.950; % tStart = 0.3 if not Dense!
     case 2
-        tStart = 0.3; D = 0.579;
+        tStart = 0.0; D = 0.950;
     case 3
-        tStart = 0.3; D = 0.950;
+        tStart = 0.0; D = 0.583;
 end
 
 idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tStart + D );	
@@ -739,18 +739,18 @@ idxStart = min( idxS ); idxEnd = max( idxS );
 clear c1 c2 c3 c4
 
     
-dp = rawData{ idx }.jointAngleActual( 1:4, : ) - rawData{ idx }.pZFT;
-dv =   rawData{ idx }.jointVelActual( 1:4, : ) - rawData{ idx }.vZFT;
+dp = rawData{ idx }.qPos( 1:4, : ) - rawData{ idx }.qPos0(2:end, : );
+% dv =   rawData{ idx }.jointVelActual( 1:4, : ) - rawData{ idx }.vZFT;
 
 c1_K = dp' * v1;
 c2_K = dp' * v2;
 c3_K = dp' * v3;
 c4_K = dp' * v4;
 
-c1_B = dv' * v1;
-c2_B = dv' * v2;
-c3_B = dv' * v3;
-c4_B = dv' * v4;
+% c1_B = dv' * v1;
+% c2_B = dv' * v2;
+% c3_B = dv' * v3;
+% c4_B = dv' * v4;
 
 
 % norm( c1_K( idxS ), 2 )
@@ -766,7 +766,7 @@ plot( rawData{idx}.currentTime( idxS ) - tStart, c2_K( idxS ), 'linewidth', 4, '
 plot( rawData{idx}.currentTime( idxS ) - tStart, c3_K( idxS ), 'linewidth', 4, 'linestyle', ':'  , 'color', c.black )
 plot( rawData{idx}.currentTime( idxS ) - tStart, c4_K( idxS ), 'linewidth', 4, 'linestyle', '-.' , 'color', c.black )
 
-[hleg1, hobj1] = legend( "c","c","c","c", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
+[hleg1, hobj1] = legend( "c_1","c_2","c_3","c_4", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
    set(hleg1,'position',[0.15 0.70 0.1 0.15])
 
 

@@ -110,7 +110,6 @@ class DistFromTip2Target( Objective ):
     def output_calc( self ):
         """ Calculate the objective function, which is the minimum distance between parts of the whip (ref. tol variable) and target. """
         lens = [ length_elem2elem( self.mjModel, self.mjData, geom, self.target_name ) for geom in self.geom_list  ]
-
         output = min( lens )
 
         # if target is hit by the whip, set output as output and change to green light!
