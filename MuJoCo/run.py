@@ -107,16 +107,16 @@ np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
 # [Argument parser]
 # [REF] https://docs.python.org/3/library/argparse.html
 parser = argparse.ArgumentParser( description = 'Parsing the arguments for running the simulation' )
-parser.add_argument( '--version'    , action = 'version'     , version = Constants.VERSION )
-parser.add_argument( '--run_time'   , action = 'store'       , type = float ,  default = 4.0, help = 'Total run time of the simulation'                              )
-parser.add_argument( '--start_time' , action = 'store'       , type = float ,  default = 0.0, help = 'Start time of the controller'                                  )
-parser.add_argument( '--model_name' , action = 'store'       , type = str   ,                 help = 'Model name for the simulation'                                 )
-parser.add_argument( '--save_data'  , action = 'store'       , type = int   ,                 help = 'Save data log of the simulation, with the specified frequency' )
-parser.add_argument( '--record_vid' , action = 'store'       , type = float ,                 help = 'Record video of the simulation,  with the specified speed'     )
-parser.add_argument( '--cam_pos'    , action = 'store'       , type = str   ,                 help = 'Get the whole list of the camera position'                     )
-parser.add_argument( '--print_mode' , action = 'store'       , default = 'normal',            help = 'Print mode, [short] [normal] [verbose]'                        )
-parser.add_argument( '--vid_off'    , action = 'store_true'  ,                                help = 'Turn off the video'                                            )
-parser.add_argument( '--run_opt'    , action = 'store_true'  ,                                help = 'Run optimization of the simulation'                            )
+parser.add_argument( '--version'     , action = 'version'     , version = Constants.VERSION )
+parser.add_argument( '--run_time'    , action = 'store'       , type = float ,  default = 4.0, help = 'Total run time of the simulation'                              )
+parser.add_argument( '--start_time'  , action = 'store'       , type = float ,  default = 0.0, help = 'Start time of the controller'                                  )
+parser.add_argument( '--model_name'  , action = 'store'       , type = str   ,                 help = 'Model name for the simulation'                                 )
+parser.add_argument( '--save_data'   , action = 'store'       , type = int   ,                 help = 'Save data log of the simulation, with the specified frequency' )
+parser.add_argument( '--record_vid'  , action = 'store'       , type = float ,                 help = 'Record video of the simulation,  with the specified speed'     )
+parser.add_argument( '--cam_pos'     , action = 'store'       , type = str   ,                 help = 'Get the whole list of the camera position'                     )
+parser.add_argument( '--print_mode'  , action = 'store'       , default = 'normal',            help = 'Print mode, [short] [normal] [verbose]'                        )
+parser.add_argument( '--vid_off'     , action = 'store_true'  ,                                help = 'Turn off the video'                                            )
+parser.add_argument( '--run_opt'     , action = 'store_true'  ,                                help = 'Run optimization of the simulation'                            )
 
 
 args = parser.parse_args()
@@ -152,12 +152,10 @@ def main( ):
         # [1] Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
-        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
-        ctrl.set_ctrl_par(  K  = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B  = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = True )
+        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
-        mov_pars  = np.array(   [-0.94248, 0.69813, 0.     , 2.35619, 1.72788,-1.39626,-1.0472 , 0.15708, 0.58333] )
-
-        # [output   ]: 0.65307
+        mov_pars  = np.array( [-1.501  ,      0, -0.34907,  1.4137, 1.7279,       0,        0, 0.47124, 0.95    ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
@@ -169,18 +167,11 @@ def main( ):
         #                                              K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
         #                                              B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
         # [AND THE RESULTS]
-        # [Target 1] [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] idx 592, output 0.05086
-        # [Target 2] [-1.10279, 0.73692,-0.23271, 2.30965, 1.72788,-1.03427,-1.39626, 0.19199, 0.57881] idx 569, output 0.09177
-        # [Target 3] [-0.94248, 0.81449,-1.39626, 1.72788, 2.67035,-0.69813,-1.39626, 0.05236, 0.95   ] idx 583, output 0.12684
-        # [Target 4] [-0.94305, 0.     , 0.93515, 1.41372, 2.70526,-1.0472 ,-0.55688, 0.47124, 0.95   ] idx 599, output 0.01557
-        # [Target 5] [-0.94248,-0.00431, 0.01293, 1.41372, 1.72788, 0.6852 ,-0.10343, 1.2896 , 0.58333] idx 357, output 0.00400
-
-        # [CAMPOS]
-        # [Target 1] camera position array [  0.40343,  0.72967, -0.71018,  3.7052 , -19.8 ,  152.2  ]
-        # [Target 2] camera position array [  0.44317,  0.65556, -0.53888,  4.66869, -22.4 ,-151.8   ]
-        # [Target 3] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
-        # [Target 4] camera position array [  0.98346,  0.72647,  0.87393,  2.17427, -44.8 , -149.2  ]
-        # [Target 5] camera position array [  0.70927, -0.55147,  0.5744 ,  3.77981,-61.4    ,171.6  ]
+        # [Target #1] [-1.501  ,      0, -0.34907,  1.4137, 1.7279,       0,        0, 0.47124, 0.95    ]
+        # [Target #2] [-1.0821 , 1.0472,  1.04720,  0.7854, 1.7279, -1.0472,   1.0472, 0.15708, 0.95    ]
+        # [Target #3] [-0.94248, 1.0472,  0.34907,  1.0996, 1.7279, -1.0472, -0.23271, 1.0996 , 0.58333 ]
+        # [Target #4] [-0.94248,      0,  1.04720,  1.4137, 2.6704, -1.0472, -0.46542, 0.47124, 0.95    ]
+        # [Target #5] [-0.94248,      0, -0.34907,  1.4137, 1.7279,       0,  0.34907, 1.4137 , 0.58333 ]
 
         # ================================================= #
         # =============== For optimization ================ #
@@ -310,7 +301,7 @@ def main( ):
         # Find the input parameters (input_pars) that are aimed to be optimized
         # Possible options (written in integer values) are as follows
         # [REF] https://nlopt.readthedocs.io/en/latest/NLopt_Algorithms/
-        idx       = 1
+        idx       = 0
         idx_opt   = [ nlopt.GN_DIRECT_L, nlopt.GN_DIRECT_L_RAND, nlopt.GN_DIRECT, nlopt.GN_CRS2_LM, nlopt.GN_ESCH  ]
         algorithm = idx_opt[ idx ]                                              # Selecting the algorithm to be executed
 
@@ -324,6 +315,9 @@ def main( ):
 
         init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
 
+        oldval = np.inf
+        newval = oldval
+        cnt    = 0
         def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters

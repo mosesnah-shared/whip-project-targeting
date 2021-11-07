@@ -145,8 +145,8 @@ class Controller( ):
 
                 # Torque for Gravity compensation is simply tau = J^TF
                 # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[0] * self.g  )  \
-                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[1] * self.g  )
+                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 0 ] * self.g  )  \
+                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 1 ] * self.g  )
 
                 # The mass of the whip is the other masses summed up
                 self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
@@ -304,7 +304,7 @@ class ImpedanceController( Controller ):
         self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
         self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
 
-        self.is_noise       = False
+        self.is_noise       = is_noise                                          # Noise model on/off
 
 class JointImpedanceController( ImpedanceController ):
 
@@ -371,9 +371,14 @@ class JointImpedanceController( ImpedanceController ):
 
         # If noise is on
         if self.is_noise:
-            # tau_n =
-            # tau   = tau_imp + tau_g
-            NotImplementedError( )
+            # Noise model is assumed to be white Gaussian Noise with variance proportional mean force / torque
+            # [REF] Enoka, Roger M., and Dario Farina. "Force steadiness: from motor units to voluntary actions." Physiology 36.2 (2021): 114-130.
+            tau   = tau_imp + tau_g
+
+            #                           The mean as zeros,
+            tau_n = np.random.normal( np.zeros( len( tau ) ), 0.3 * np.sqrt( np.abs( tau  ) )   )
+            tau += tau_n 
+            # NotImplementedError( )
         else:
             tau   = tau_imp + tau_g
 
