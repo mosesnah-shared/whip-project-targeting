@@ -155,12 +155,14 @@ def main( ):
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args )
         ctrl.set_ctrl_par(  K  = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B  = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
-        mov_pars  = np.array( [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] )
+        mov_pars  = np.array(   [-0.94248, 0.69813, 0.     , 2.35619, 1.72788,-1.39626,-1.0472 , 0.15708, 0.58333] )
+
+        # [output   ]: 0.65307
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
-        init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
-                      'qvel': np.zeros( 54 )  }
+        # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
+        #               'qvel': np.zeros( 54 )  }
         # [BACKUP] [Moses C. Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
@@ -292,7 +294,9 @@ def main( ):
 
     if  not args.run_opt:                                                       # If simply running a single simulation without optimization
 
-        val = mySim.run( init_cond )                                            # Getting the objective value
+        # val = mySim.run( init_cond )                                            # Getting the objective value
+        val = mySim.run(  )                                            # Getting the objective value
+        print( val )
         mySim.close( )
 
     else:
@@ -316,17 +320,18 @@ def main( ):
 
         opt.set_lower_bounds( lb )
         opt.set_upper_bounds( ub )
-        opt.set_maxeval( 300 )
+        opt.set_maxeval( 600 )
 
         init = ( lb + ub ) * 0.5 + 0.05 * lb                                    # Setting an arbitrary non-zero initial step
 
         def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters
-            # mySim.ctrl.traj.set_traj(  { "pi" : np.array( [1.72788, 0.     , 0.     , 1.41372] ), "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
+            mySim.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
             # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
-            mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
-            val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
+            # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
+            # val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
+            val = mySim.run(  )
 
             my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val )                     # Printing the values onto the screen
             my_print( Iter = opt.get_numevals( ) + 1, inputPars = pars, output = val, file = tmp_file )    # Printing the values onto the txt file

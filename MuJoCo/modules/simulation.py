@@ -136,7 +136,7 @@ class Simulation( ):
 
             # [Calculate objective Value]
             if self.objective is not None:
-                self.obj_val = min( self.obj_val, self.objective( )  )
+                self.obj_val = min( self.obj_val, self.objective.output_calc()  )
 
             if self.is_vid_rec and self.step % self.rec_step == 0 :
                 self.vid.write( self.mjViewer )

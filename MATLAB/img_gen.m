@@ -19,6 +19,19 @@ c  = myColor();
 
 
 %% ==================================================================
+%% (0-) Drawing 
+%% -- (0A) The circles
+
+R = 2.395;
+
+T1 = [2.395,     0,      0];
+T2 = [1.694, 1.694,      0];
+T3 = [1.198, 1.198, 1.6934];
+T4 = 0.5 * T2;
+T5 = [2.395, 0, 0];
+
+
+%% ==================================================================
 %% (1-) The modal analysis of the whip
 %% -- (1A) Calculation of the eigenvalues/eigenvectors, Pole-Zero Plot
 
@@ -52,9 +65,19 @@ else
 end
 
 % Original eigenvalue/eigenvector
-[eigV, eigD]  = eig( [ zeros( N ), eye( N );
-               -inv( M ) * ( K + G ), -inv( M ) * B     ]);                % Calculating the eigenvalues of the statespace matrix
+A = [ zeros( N ), eye( N );
+               -inv( M ) * ( K + G ), -inv( M ) * B     ];
+           
+[eigV, eigD]  = eig( A );                % Calculating the eigenvalues of the statespace matrix
 
+S = [1,zeros( 1, N-1 )]';           
+
+% Input matrix 
+BB = [ zeros( N, 1 ); inv( M )*S ];
+
+C = ctrb( A, BB )
+
+%%
 % Canonical form of the (complex) eigenvalue/eigenvector problem
 [eigV_c, eigD_c] = cdf2rdf( eigV, eigD );
 % The diagonal part is the "dissipative" elements, and the off-diagonal part is the "oscillatory" elements.
@@ -232,7 +255,9 @@ data2 = myTxtParse( './myData/optimization_process/optimization_log_T2.txt');
 data3 = myTxtParse( './myData/optimization_process/optimization_log_T3.txt');
 data4 = myTxtParse( './myData/optimization_process/optimization_log_T4.txt');
 data5 = myTxtParse( './myData/optimization_process/optimization_log_T5.txt');
-data6 = myTxtParse( './myData/optimization_process/optimization_log_T6.txt');
+% data6 = myTxtParse( './myData/optimization_process/optimization_log_T6.txt');
+
+datalist = {data1, data2, data3};
 
 f = figure(  );
 a = axes( 'parent', f );
@@ -240,6 +265,65 @@ a = axes( 'parent', f );
 hold on 
 box off 
 % grid off
+
+ntol = 40; % If iteration higher than tol, then halt
+% tol  = 0.02;
+
+cnt = 0;
+oldval = 10000;
+
+j = 3;
+data = datalist{ j };
+
+for i = 1 : length( data.Iter )
+%    newval = min( oldval, data1.output( i ) );   % Get the minimum value
+    newval = min( oldval, data.output( i ) );   % Get the minimum value
+%     newval = min( oldval, data3.output( i ) );   % Get the minimum value
+    
+   if oldval == newval               % If the output wasn't the minimum value
+      cnt = cnt + 1;                 % Increase the number of cound
+%    elseif abs( oldval - newval ) <= tol
+%       cnt = cnt + 1;
+   else
+      cnt = 0;
+       
+   end
+   
+   oldval = newval 
+   
+%    disp( cnt )
+    
+   if cnt >= ntol 
+      disp( cnt) 
+      tmpi( j ) = i 
+      optvals( j )  = oldval
+      break
+   end
+end
+
+
+plot(  datalist{ 1 }.Iter( 1 : tmpi( 1 ) ), datalist{ 1 }.output( 1: tmpi( 1 ) ), 'linewidth', 2.5 )
+hold on
+plot(  datalist{ 2 }.Iter( 1 : tmpi( 2 ) ), datalist{ 2 }.output( 1: tmpi( 2 ) ), 'linewidth', 2.5 )
+plot(  datalist{ 3 }.Iter( 1 : tmpi( 3 ) ), datalist{ 3 }.output( 1: tmpi( 3 ) ), 'linewidth', 2.5 )
+
+plot(  data4.Iter, data4.output, 'linewidth', 2.5 )
+plot(  data5.Iter, data5.output, 'linewidth', 2.5 )
+disp( oldval )
+xlabel( 'Iteration (-)' );  ylabel( 'L^* (m)' );
+[~, hobj, ~, ~] = legend( 'Target 1', 'Target 2', 'Target 3', 'Target 4', 'Target 5', 'fontsize', 30 );
+ht = findobj(hobj,'type','line');
+set(ht,'Linewidth',12);
+
+set( gca, 'xlim', [0,max( tmpi )] )
+exportgraphics( f,'fig2.eps')%,'ContentType','vector')
+
+%%
+% Add Tolerance!!!
+
+% disp( i )
+
+
 plot( data1.Iter, data1.output, 'linewidth', 2.5, 'color', [1,0,0]  );
 plot( data2.Iter, data2.output, 'linewidth', 2.5, 'color', [0,0.5,0]  );
 plot( data3.Iter, data3.output, 'linewidth', 2.5, 'color', [0,0,1]);
@@ -251,7 +335,7 @@ set( gca, 'xlim', [0,300] )
 exportgraphics( f,'fig2.eps')%,'ContentType','vector')
 
 
-%% ==================================================================
+% ==================================================================
 %% (3-) Miscellaneous Plots
 %% -- (3A) Calling the data + Plot
 
