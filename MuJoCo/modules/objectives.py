@@ -79,7 +79,7 @@ class DistFromTip2Target( Objective ):
         Retriving the distance between the tip of the whip and target.
 
     """
-    def __init__( self, mjModel, mjData, mjArgs, tol = 5 ):
+    def __init__( self, mjModel, mjData, mjArgs, tol = 1 ):
         """
             Arguments
             ---------
@@ -99,7 +99,11 @@ class DistFromTip2Target( Objective ):
         self.N           = int( re.search( r'\d+', self.tip_name ).group() )
 
         # The list of geometry that we are extracting for the targeting task
-        self.geom_list   = [ "geom_" + str( self.N - self.tol + i + 1 )  for i in range( self.tol - 1 )  ]
+        if tol == 1:
+            self.geom_list = list( )
+        else:
+            self.geom_list   = [ "geom_" + str( self.N - self.tol + i + 1 )  for i in range( self.tol - 1 )  ]
+
         self.geom_list.append( self.tip_name )
 
 
@@ -110,7 +114,7 @@ class DistFromTip2Target( Objective ):
         output = min( lens )
 
         # if target is hit by the whip, set output as output and change to green light!
-        if output <= self.target_size:
+        if output <= self.target_size + 0.02:
             output = 0.0  # For tolerance.
             self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
 

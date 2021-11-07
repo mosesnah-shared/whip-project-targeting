@@ -289,7 +289,7 @@ class ImpedanceController( Controller ):
             Inheritance of parent class "Contronller"
 
     """
-    def __init__( self, mjModel, mjData, mjArgs ):
+    def __init__( self, mjModel, mjData, mjArgs, is_noise = False ):
 
         super().__init__( mjModel, mjData, mjArgs )
 
@@ -304,6 +304,8 @@ class ImpedanceController( Controller ):
         self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
         self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
 
+        self.is_noise       = False
+
 class JointImpedanceController( ImpedanceController ):
 
     """
@@ -314,9 +316,9 @@ class JointImpedanceController( ImpedanceController ):
 
     """
 
-    def __init__( self, mjModel, mjData, mjArgs ):
+    def __init__( self, mjModel, mjData, mjArgs, is_noise = False ):
 
-        super().__init__( mjModel, mjData, mjArgs )
+        super().__init__( mjModel, mjData, mjArgs, is_noise )
 
 
         if   self.n_act == 2:   # The default K and B matrices used for the 2-DOF Robot
@@ -367,13 +369,21 @@ class JointImpedanceController( ImpedanceController ):
         tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq )
         tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
 
+        # If noise is on
+        if self.is_noise:
+            # tau_n =
+            # tau   = tau_imp + tau_g
+            NotImplementedError( )
+        else:
+            tau   = tau_imp + tau_g
+
         # # [TMP] The result of lqr
         # # # print( tau_imp )
         # # + np.dot( 2, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.8, self.mjData.qvel[ -1 ] )# Calculating the torque due to impedance
         # # tau_imp = np.dot( 1, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.4, self.mjData.qvel[ -1 ] )
 
 
-        return self.mjData.ctrl, self.idx_act, tau_imp + tau_g
+        return self.mjData.ctrl, self.idx_act, tau
 
 
 class SlidingController( Controller ):
