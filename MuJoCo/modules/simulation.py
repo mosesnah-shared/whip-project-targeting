@@ -97,11 +97,31 @@ class Simulation( ):
         """ Appending objective function with weights as coefficients, refer to 'objectives.py for details' """
         self.objective = objective
 
+    def wait_until( self, time ):
+        """
+            Simply waiting the simulation. This is used BEFORE the controller is activated, i.e., when t <= start_time.
+            This function is handy when we want to wait for the model's residual dynamics to be stopped.
+            [INPUT]
+                [VAR NAME]             [TYPE]     [DESCRIPTION]
+                (1) time               float      The time of how long the simulation will just not run
+        """
+        while self.mjData.time < time:
+
+            input_ref, input_idx, input = self.ctrl.input_calc( 0  )
+            input_ref[ input_idx ]      = input
+            self.mjSim.step( )                                                  # Single step update
+
+        self.run_time   += time
+        self.start_time += time
+        self.t = self.mjData.time
+
     def run( self, init_cond = None ):
         """ Running the simulation """
 
         self._init_sim(  )
         self._set_init_cond( init_cond )
+
+        self.wait_until( 100 )
 
         while self.t <= self.run_time:
 
@@ -143,13 +163,13 @@ class Simulation( ):
 
             # [Printing out the details]
             # [TODO] [Moses C. Nah] [2021.08.01] Making this code much cleaner
-            if self.step % self.vid_step == 0:
-                if not self.args.run_opt and self.args.print_mode == "normal" :
-                    my_print( currentTime = self.t, output = self.obj_val  )
-
-                if self.args.print_mode == "verbose":
-                    my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
-                                                  self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
+            # if self.step % self.vid_step == 0:
+            #     if not self.args.run_opt and self.args.print_mode == "normal" :
+            #         my_print( currentTime = self.t, output = self.obj_val  )
+            #
+            #     if self.args.print_mode == "verbose":
+            #         my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
+            #                                       self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,
@@ -158,7 +178,8 @@ class Simulation( ):
                                 qPos0 = self.ctrl.x0,
                                 qVel0 = self.ctrl.dx0,
                      geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
-                               taus   = input, file = self.file )
+                               taus   = self.ctrl.tau,
+                               tau_n  = self.ctrl.tau_n, file = self.file )
                      #               qd = self.ctrl.qd[ : ],
                      #           alphas = self.ctrl.alpha_vals,
                      #           x0_1   = self.ctrl.ctrls[ 0 ].x0,
@@ -173,6 +194,7 @@ class Simulation( ):
             self.mjSim.step( )
             self.t = self.mjData.time                                           # Update the current time variable of the simulation
             self.step += 1
+
 
             if( self._is_sim_unstable() ):                                      # Check if simulation is stable
 
