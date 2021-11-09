@@ -376,11 +376,13 @@ class JointImpedanceController( ImpedanceController ):
             tau   = tau_imp + tau_g
 
             #                           The mean as zeros,
-            tau_n = np.random.normal( np.zeros( len( tau ) ), 0.3 * np.sqrt( np.abs( tau  ) )   )
-            tau += tau_n 
+            tau_n = np.random.normal( np.zeros( len( tau ) ), 1 * np.sqrt( np.abs( tau  ) )   )
+            tau += tau_n
+            self.tau = tau
+            self.tau_n = tau_n
             # NotImplementedError( )
         else:
-            tau   = tau_imp + tau_g
+            tau   = tau_imp #+ tau_g
 
         # # [TMP] The result of lqr
         # # # print( tau_imp )

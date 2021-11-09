@@ -152,7 +152,7 @@ def main( ):
         # [1] Automating the parsing? Meaning, if the mov_parameters are given simply generate the min-jerk trajectory
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
-        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = True )
+        ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
         ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
         mov_pars  = np.array( [-1.501  ,      0, -0.34907,  1.4137, 1.7279,       0,        0, 0.47124, 0.95    ] )
@@ -286,8 +286,19 @@ def main( ):
     if  not args.run_opt:                                                       # If simply running a single simulation without optimization
 
         # val = mySim.run( init_cond )                                            # Getting the objective value
-        val = mySim.run(  )                                            # Getting the objective value
-        print( val )
+
+        if mySim.ctrl.is_noise:
+            N = 100
+            f = open( "out.txt", "w" )
+
+            for _ in range( N ):
+                val = mySim.run(  )                                            # Getting the objective value
+                print( val )
+                f.write( str( val ) + "\n" )
+                mySim.reset( )
+        else:
+            val = mySim.run(  )                                            # Getting the objective value
+            print( val )
         mySim.close( )
 
     else:

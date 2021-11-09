@@ -1210,3 +1210,35 @@ set( gca, 'xlim', [0, max( data.currentTime( 1: ttmp + st ) ) ] )
 
 xlabel( 'Time (sec)' ); 
  mySaveFig( f, ['output', num2str( idx )] );
+
+%% -- (7A) Noise Data
+
+for i = 1 : 3
+    txtfile = ['myData/noise_data/target_', num2str( i ), '_noise.txt' ];
+    fID = fopen( txtfile );
+
+    j = 1;
+    while ~feof( fID )
+        tline = fgetl( fID );
+        tmp( j ) = str2num( tline  )
+        j = j + 1;
+    end
+
+    mu( i    ) = mean( tmp );
+    sigma( i ) =  std( tmp );
+end
+
+errorbar( [1,2,3], mu, sigma, '-s', 'linewidth', 4, 'CapSize',60, 'markersize', 20)
+
+data1 = 'myData/noise_data/target_5_noise.txt';
+% data1 = 'myData/noise_data/target_5_noise.txt';
+    
+fID = fopen( data1 );
+
+j = 1;
+while ~feof( fID )
+    tline = fgetl( fID );
+    tmp( j ) = str2num( tline  )
+    j = j + 1;
+end
+
