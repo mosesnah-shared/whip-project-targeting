@@ -121,7 +121,7 @@ class Simulation( ):
         self._init_sim(  )
         self._set_init_cond( init_cond )
 
-        self.wait_until( 100 )
+        # self.wait_until( 100 )
 
         while self.t <= self.run_time:
 
@@ -167,9 +167,9 @@ class Simulation( ):
             #     if not self.args.run_opt and self.args.print_mode == "normal" :
             #         my_print( currentTime = self.t, output = self.obj_val  )
             #
-            #     if self.args.print_mode == "verbose":
-            #         my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
-            #                                       self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
+            if self.args.print_mode == "verbose":
+                my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
+                                              self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,

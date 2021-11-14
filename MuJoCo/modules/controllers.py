@@ -382,7 +382,7 @@ class JointImpedanceController( ImpedanceController ):
             self.tau_n = tau_n
             # NotImplementedError( )
         else:
-            tau   = tau_imp #+ tau_g
+            tau   = tau_imp + tau_g
 
         # # [TMP] The result of lqr
         # # # print( tau_imp )
