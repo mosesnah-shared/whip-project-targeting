@@ -91,11 +91,10 @@ class DistFromTip2Target( Objective ):
         super().__init__( mjModel, mjData, mjArgs )
         self.tol         = tol
 
-        self.tip_name    = self._find_tip(  )                                    # Number of sub-models of the whip
+        self.tip_name    = self._find_tip(  )                                   # Number of sub-models of the whip
         self.target_name = "geom_target"
         self.target_idx  = self.mjModel.geom_name2id( self.target_name )
         self.target_size = max( self.mjModel.geom_size[ self.target_idx ] )     # Get the size number of the target
-
         self.N           = int( re.search( r'\d+', self.tip_name ).group() )
 
         # The list of geometry that we are extracting for the targeting task
@@ -113,7 +112,7 @@ class DistFromTip2Target( Objective ):
         output = min( lens )
 
         # if target is hit by the whip, set output as output and change to green light!
-        if output <= self.target_size + 0.02:
+        if output <= self.target_size + 0.012:
             output = 0.0  # For tolerance.
             self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
 
