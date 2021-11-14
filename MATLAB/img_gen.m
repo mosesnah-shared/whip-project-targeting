@@ -17,19 +17,7 @@ myFigureConfig( 'fontsize', 40, ...
 global c                                                                   % Setting color structure 'c' as global variable
 c  = myColor();            
 
-
-%% ==================================================================
-%% (0-) Drawing 
-%% -- (0A) The circles
-
-R = 2.395;
-
-T1 = [2.395,     0,      0];
-T2 = [1.694, 1.694,      0];
-T3 = [1.198, 1.198, 1.6934];
-T4 = 0.5 * T2;
-T5 = [2.395, 0, 0];
-
+fig_dir = './myFigures/';
 
 %% ==================================================================
 %% (1-) The modal analysis of the whip
@@ -74,10 +62,9 @@ S = [1,zeros( 1, N-1 )]';
 
 % Input matrix 
 BB = [ zeros( N, 1 ); inv( M )*S ];
+C = ctrbf( A, BB )
 
-C = ctrb( A, BB )
 
-%%
 % Canonical form of the (complex) eigenvalue/eigenvector problem
 [eigV_c, eigD_c] = cdf2rdf( eigV, eigD );
 % The diagonal part is the "dissipative" elements, and the off-diagonal part is the "oscillatory" elements.
@@ -250,89 +237,84 @@ exportgraphics( f,'S_fig2.eps')
 %% (2-) Plot for iteration vs. Optimization
 %% -- (2A) Calling the data + Plot
 
-data1 = myTxtParse( './myData/optimization_process/optimization_log_T1.txt');
-data2 = myTxtParse( './myData/optimization_process/optimization_log_T2.txt');
-data3 = myTxtParse( './myData/optimization_process/optimization_log_T3.txt');
-data4 = myTxtParse( './myData/optimization_process/optimization_log_T4.txt');
-data5 = myTxtParse( './myData/optimization_process/optimization_log_T5.txt');
-% data6 = myTxtParse( './myData/optimization_process/optimization_log_T6.txt');
+dir_name  = './myData/optimization_process_3_new/';
+N_data    = 5;                                                             % We have 5 targets to analyze.
+data_list = cell( 1, N_data );                                             % The whole collection of data     
 
-datalist = {data1, data2, data3};
-
-f = figure(  );
-a = axes( 'parent', f );
-
-hold on 
-box off 
-% grid off
-
-ntol = 40; % If iteration higher than tol, then halt
-% tol  = 0.02;
-
-
-tmpi    = zeros( 1, 3);
-optvals = zeros( 1, 3);
-
-for j = 1:3
-
-    cnt = 0;
-    oldval = 10000;
-    data = datalist{ j };
+for i = 1 : N_data
+    file_name      = [ dir_name, 'optimization_log_T', num2str( i ), '.txt' ];
+    data_list{ i } = myTxtParse( file_name ); 
     
-    for i = 1 : length( data.Iter )
-   
-       newval = min( oldval, data.output( i ) );   % Get the minimum value
-  
-       if oldval == newval               % If the output wasn't the minimum value
-          cnt = cnt + 1;                 % Increase the number of cound
-       else
-          cnt = 0;
-       end
-
-       oldval = newval ;
-
-       if cnt >= ntol 
-          disp( cnt) 
-          tmpi( j )    = i;
-          optvals( j ) = oldval;
-          break
-       end
-    end
-
+    % Printing out the idx, optimal value output and its input parameter
+    opt_val  = min( data_list{ i }.output );
+    idx      = find( data_list{ i }.output == opt_val );
+    mov_pars = data_list{ i }.inputPars( :, idx )';
+    
+    fprintf( '[Target %d] [Optimal value] [%.5f] [idx] [%d]\n', i, opt_val, idx);
+    fprintf( '[Target %d] [Optimal input pars] [%s] \n', i, join( string( mov_pars ), ', ' ) );
+    
 end
 
-plot(  datalist{ 1 }.Iter( 1 : tmpi( 1 ) ), datalist{ 1 }.output( 1: tmpi( 1 ) ), 'linewidth', 2.5 )
-hold on
-plot(  datalist{ 2 }.Iter( 1 : tmpi( 2 ) ), datalist{ 2 }.output( 1: tmpi( 2 ) ), 'linewidth', 2.5 )
-plot(  datalist{ 3 }.Iter( 1 : tmpi( 3 ) ), datalist{ 3 }.output( 1: tmpi( 3 ) ), 'linewidth', 2.5 )
+%% -- (2B) Parsing the data and retriving the best value
 
-plot(  data4.Iter, data4.output, 'linewidth', 2.5 )
-plot(  data5.Iter, data5.output, 'linewidth', 2.5 )
-disp( oldval )
+% Find and halt if the optimal val has no update 
+opt_idx = zeros( 1, 3 );  % The index where the values stop.
+tol  = 0.1;               % If the vector norm doesn't change that much, then halt the simulation
+ntol = 15;
+
+f = figure( ); a = axes( 'parent', f );
+hold on
+
+for i = 1 : 3   % For target 1, 2 and 3
+
+    data     = data_list{ i };
+    mov_norm = abs( diff( vecnorm( data.inputPars, 2 ) ) ); 
+    
+    tmp      = ( mov_norm <= tol ); % Boolean array which shows if mov_norm is within tol 
+    cnt      = 0;
+    for j = data.Iter  
+        if tmp( j )
+           cnt = cnt + 1; 
+        else
+           cnt = 0;
+        end
+        
+        if cnt>= ntol
+           opt_idx( i ) = j;
+           break 
+        end
+        
+    end
+
+    plot( data.output( 1: opt_idx( i ) ), 'linewidth', 3 )
+    disp( min( data.output( 1 : opt_idx( i ) ) ) )
+end
+
+% For targets that is within reach
+plot( data_list{ 4 }.Iter, data_list{ 4 }.output, 'linewidth', 3 )
+plot( data_list{ 5 }.Iter, data_list{ 5 }.output, 'linewidth', 3 )
+
 xlabel( 'Iteration (-)' );  ylabel( 'L^* (m)' );
 [~, hobj, ~, ~] = legend( 'Target 1', 'Target 2', 'Target 3', 'Target 4', 'Target 5', 'fontsize', 30 );
 ht = findobj(hobj,'type','line');
 set(ht,'Linewidth',12);
 
-set( gca, 'xlim', [0,max( tmpi )] )
+set( gca, 'xlim', [1, max( opt_idx ) ] )
 set( gca, 'ylim', [0, 3.5] )
-exportgraphics( f,'fig2.eps')%,'ContentType','vector')
 
-%%
-% Add Tolerance!!!
-
-% disp( i )
+% For saving the figure of the iteration
+% exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
+% exportgraphics( f, [ fig_dir,'fig2.pdf'] )
 
 
-plot( data1.Iter, data1.output, 'linewidth', 2.5, 'color', [1,0,0]  );
-plot( data2.Iter, data2.output, 'linewidth', 2.5, 'color', [0,0.5,0]  );
-plot( data3.Iter, data3.output, 'linewidth', 2.5, 'color', [0,0,1]);
-
-set( gca,'LineWidth', 2.0 ) 
-xlabel( 'Iteration (-)' ) % ylabel( '$L^*$ [m]' );
-legend( 'Target 1', 'Target 2', 'Target 3', 'fontsize', 30 )
-set( gca, 'xlim', [0,300] )
-exportgraphics( f,'fig2.eps')%,'ContentType','vector')
+% Displaying the best values within the opt_idx 
+for i = 1 : 3 
+    opt_val  = min( data_list{ i }.output( 1 : opt_idx( i ) ) );
+    idx      = find( opt_val == data_list{ i }.output( 1 : opt_idx( i ) ) );
+    mov_pars = data_list{ i }.inputPars( :, idx )';
+    fprintf( '[Target %d] [Optimal value] [%.5f] [idx] [%d]\n', i, opt_val, idx);
+    fprintf( '[Target %d] [Optimal input pars] [%s] \n', i, join( string( mov_pars ), ', ' ) );
+end
 
 
 % ==================================================================

@@ -155,8 +155,9 @@ def main( ):
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
         ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
-        mov_pars  = np.array( [-1.501  ,      0, -0.34907,  1.4137, 1.7279,       0,        0, 0.47124, 0.95    ] )
+        mov_pars  = np.array( [-0.94248,-0.11636, -0.34907, 1.41372, 1.72788, -0.34907,  0.     , 1.09956, 0.58333] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
         # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
@@ -166,12 +167,13 @@ def main( ):
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
         #                                              K  = ( controller_object.K + np.transpose( controller_object.K ) ) / 2,
         #                                              B  = ( controller_object.B + np.transpose( controller_object.B ) ) / 2 )
-        # [AND THE RESULTS]
-        # [Target #1] [-1.501  ,      0, -0.34907,  1.4137, 1.7279,       0,        0, 0.47124, 0.95    ]
-        # [Target #2] [-1.0821 , 1.0472,  1.04720,  0.7854, 1.7279, -1.0472,   1.0472, 0.15708, 0.95    ]
-        # [Target #3] [-0.94248, 1.0472,  0.34907,  1.0996, 1.7279, -1.0472, -0.23271, 1.0996 , 0.58333 ]
-        # [Target #4] [-0.94248,      0,  1.04720,  1.4137, 2.6704, -1.0472, -0.46542, 0.47124, 0.95    ]
-        # [Target #5] [-0.94248,      0, -0.34907,  1.4137, 1.7279,       0,  0.34907, 1.4137 , 0.58333 ]
+        # [AND THE RESULTS] [REF] /Users/mosesnah/Documents/projects/whip-project-targeting/MuJoCo/results/3D_Whip_Task_3_new
+        # Within all 600 iterations
+        # [Target #1] [-1.5113,        0, -0.23271, 1.41370,  1.7279,        0,  0.03879, 0.31610, 0.94547]   idx [560]
+        # [Target #2] [-1.0200,   1.0472,  1.00840, 0.77376,  1.7279, -1.04720,  1.55140, 0.00582, 0.95000]   idx [574]
+        # [Target #3] [-0.94248,  1.0472,  0.29735, 1.0996,   1.7744, -1.03430, -0.38785, 0.94830, 0.52449]   idx [596]
+        # [Target #4] [-0.94248,  0.    ,  1.04720, 1.41372, 2.67035, -1.00841, -0.46542, 0.47124, 0.95   ]
+        # [Target #5] [-0.94248,-0.11636, -0.34907, 1.41372, 1.72788, -0.34907,  0.     , 1.09956, 0.58333]
 
         # ================================================= #
         # =============== For optimization ================ #
