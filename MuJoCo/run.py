@@ -114,6 +114,7 @@ parser.add_argument( '--model_name'  , action = 'store'       , type = str   ,  
 parser.add_argument( '--save_data'   , action = 'store'       , type = int   ,                 help = 'Save data log of the simulation, with the specified frequency' )
 parser.add_argument( '--record_vid'  , action = 'store'       , type = float ,                 help = 'Record video of the simulation,  with the specified speed'     )
 parser.add_argument( '--cam_pos'     , action = 'store'       , type = str   ,                 help = 'Get the whole list of the camera position'                     )
+parser.add_argument( '--mov_pars'    , action = 'store'       , type = str   ,                 help = 'Get the whole list of the movement parameters'                 )
 parser.add_argument( '--print_mode'  , action = 'store'       , default = 'normal',            help = 'Print mode, [short] [normal] [verbose]'                        )
 parser.add_argument( '--vid_off'     , action = 'store_true'  ,                                help = 'Turn off the video'                                            )
 parser.add_argument( '--run_opt'     , action = 'store_true'  ,                                help = 'Run optimization of the simulation'                            )
@@ -153,8 +154,10 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
+        # mov_pars  = np.array( str2float( args.mov_pars )  )
         mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 

@@ -336,7 +336,7 @@ end
 
 idx = 1;        % Choose Target Type
 
-idxS = find( rawData{ idx }.outputVal == min( rawData{ idx }.outputVal )  );
+idxS = find( rawData{ idx }.output == min( rawData{ idx }.output )  );
 
 tIdx = [10, 68, idxS;
         10, 37, idxS; 
@@ -354,19 +354,14 @@ alpha = [0.3, 0.5, 1.0];                                              % The alph
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
 
-switch idx 
-   
-    case 1
-        cTarget = [1,0,0];
-        cTarget = c.pink;
-    case 2
-        cTarget = [0,0.5,0];
-        cTarget = c.blue;
-        
-    case 3
-        cTarget = [0,0,1];
-        cTarget = c.green;
-end
+
+color_arr = [      0, 0.4470, 0.7410; ...
+              0.8500, 0.3250, 0.0980; ...
+              0.9290, 0.6940, 0.1250; ...
+              0.4940, 0.1840, 0.5560; ...
+              0.4660, 0.6740, 0.1880 ];
+          
+cTarget = color_arr( idx, : );
 
 mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
                     rawData{ idx }.geomYPositions( 1, 1 ), ...
@@ -387,8 +382,8 @@ for i = 1 : length( tIdx )
                    rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
                    'parent', a,   'LineWidth',  5, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.orange_milky, ...
-                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i )  );
 
                
 %     p3 = plot3(  rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
@@ -401,7 +396,7 @@ for i = 1 : length( tIdx )
                    rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
                    rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
                    'parent', a,   'LineWidth', 3, ...
-                   'MarkerFaceColor', c.white, 'MarkerEdgeColor',  c.black, ...[0.75, 0, 0.75], ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor',  [0.75, 0, 0.75], ...[0.75, 0, 0.75], ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
                
                
@@ -428,7 +423,7 @@ exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
 %% -- (3C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 3;
+idx = 1;
 
 switch idx 
    
@@ -549,55 +544,42 @@ exportgraphics( f,['F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','ve
 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx  = 3;
-idx2 = 2;       % 1: EL, 2: EE 
+idx  = 5;
 
-switch idx 
-   
-    case 1
-        tStart = 0.0; D = 0.950; % tStart = 0.3 if not Dense!
-        color = [1,0,0];
-    case 2
-        tStart = 0.0; D = 0.950;
-        color = [0,0.5,0];
-    case 3
-        tStart = 0.0; D = 0.583;
-        color = [0,0,1];
-end
+color_arr = [      0, 0.4470, 0.7410; ...
+              0.8500, 0.3250, 0.0980; ...
+              0.9290, 0.6940, 0.1250; ...
+              0.4940, 0.1840, 0.5560; ...
+              0.4660, 0.6740, 0.1880 ];
+t_start   = [     0,     0,     0,     0,    0 ];
+t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.583];
 
 
-
-
-% switch idx2 
-%         
-%     case 1  %% EL
-%           color = c.blue;
-%     case 2  %% EE
-%           color = c.green;
-% end
-
-idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tStart + D );	
+% Find the start and end point of the data
+idxS = find( rawData{ idx }.currentTime >= t_start( idx ) & rawData{ idx }.currentTime <= t_end( idx ) );	
 idxStart = min( idxS ); idxEnd = max( idxS );
-
-
 
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
 
-x = rawData{ idx }.geomXPositions( idx2 + 2, idxS )';
-y = rawData{ idx }.geomYPositions( idx2 + 2, idxS )';
-z = rawData{ idx }.geomZPositions( idx2 + 2, idxS )';
+% The end-effector index is the 4th one, 
+% 1st one is target, 2nd one is shoulder, 3rd one is elbow and 4th the end-effector
+x = rawData{ idx }.geomXPositions( 4, idxS )';
+y = rawData{ idx }.geomYPositions( 4, idxS )';
+z = rawData{ idx }.geomZPositions( 4, idxS )';
 
-p  = [ x, y, z ];
-pC = mean( p );
 
+p  = [ x, y, z ];                                                          % The position of the end-effector, N x 3
+pC = mean( p );                                                            % The mean of the data
 pn = p - pC;                                                               % Centralized data
-[eigvecs, eigvals] = eig(pn' * pn);
+[eigvecs, eigvals] = eig( pn' * pn );
 
-[ eigvecs2, ~, eigvals2 ] = pca( p );                                        % Running the PCA of the data
+% The eigenvalues are ordered from low to high
+% Getting the first eigenvectors and find the vectors that are orthogonal to it.
 
-% The last vector of eigvecs correspond to the normal vector of the plane, which is the smallest pca value of the data matrix
-w = null( eigvecs( : , 1)' );                                              % Find two orthonormal vectors which are orthogonal to v
+w = null( eigvecs( : , 1)' ); 
+pC
+eigvecs( :, 1 )
 
 
 scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
@@ -607,56 +589,61 @@ scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
           'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
 
-plot3( rawData{ idx }.geomXPositions( idx2 + 2, idxStart : idxEnd ), ...
-       rawData{ idx }.geomYPositions( idx2 + 2, idxStart : idxEnd ), ...
-       rawData{ idx }.geomZPositions( idx2 + 2, idxStart : idxEnd ), ... 
-      'parent', a,   'LineWidth', 4, 'color', [color, 0.3] )
+plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
+       rawData{ idx }.geomYPositions( 4, idxStart : idxEnd ), ...
+       rawData{ idx }.geomZPositions( 4, idxStart : idxEnd ), ... 
+      'parent', a,   'LineWidth', 4, 'color', [ color_arr( idx, : ), 0.3] )
 
-scatter3(  rawData{ idx }.geomXPositions( idx2 + 2, idxS ), ...
-           rawData{ idx }.geomYPositions( idx2 + 2, idxS ), ...
-           rawData{ idx }.geomZPositions( idx2 + 2, idxS ), 200, ... 
+scatter3(  rawData{ idx }.geomXPositions( 4, idxS ), ...
+           rawData{ idx }.geomYPositions( 4, idxS ), ...
+           rawData{ idx }.geomZPositions( 4, idxS ), 200, ... 
            'parent', a,   'LineWidth', 4, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_arr( idx, : ), ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
        
 
-tmpLim = 0.45;      
+tmpLim = 0.55;      
 
 tmp = 0;
 for i = 1 : length( idxS )  % Brute force calculation of the distance.
-    ttmp = abs( eigvecs(1,1) * ( x(i) - pC(1) ) + eigvecs(2,1) * ( y(i) - pC(2) ) + eigvecs(3,1) * ( z(i) - pC(3) )  ) ;
-    tmp = tmp + ttmp * ttmp;
+%     ttmp = ( eigvecs(1,1) * ( x(i) - pC(1) ) ) + ( eigvecs(2,1) * ( y(i) - pC(2) ) )^2 + ( eigvecs(3,1) * ( z(i) - pC(3) )  )^2 ;
+    ttmp = abs( ( eigvecs(1,1) * ( x( i ) - pC( 1 ) ) ) + ...
+                ( eigvecs(2,1) * ( y( i ) - pC( 2 ) ) ) + ...
+                ( eigvecs(3,1) * ( z( i ) - pC( 3 ) ) ) );
+    tmp = tmp + ttmp^2;
 end
 
 sqrt( tmp/length( idxS ) )
 
-[P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim );                              % Provide a gridwork (you choose the size)
+% [P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim );                                 % Provide a gridwork (you choose the size)
+% [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);                      % For idx 4
+[P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);                      % For idx 5
 
-XX = pC( 1 ) + w(1,1) * P + w(1,2) * Q;                                    % Compute the corresponding cartesian coordinates
-YY = pC( 2 ) + w(2,1) * P + w(2,2) * Q;                                    %   using the two vectors in w
-ZZ = pC( 3 ) + w(3,1) * P + w(3,2) * Q;
+XX = pC( 1 ) + w( 1, 1 ) * P + w( 1, 2 ) * Q;                              
+YY = pC( 2 ) + w( 2, 1 ) * P + w( 2, 2 ) * Q;                              
+ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
        
-scatter3(  pC( 1 ) , pC(2), pC(3), 400, 'd',... 
+scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
            'parent', a,   'LineWidth', 6, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_arr( idx, : ), ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
 
 if idx == 1       
-    mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.03, 'stemWidth', 0.008 )
+    mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
 else    
-    mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color, 'tipWidth', 0.03, 'stemWidth', 0.008 )
+    mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
 end
 % mArrow3( pC, pC + 0.3 * eigvecs( : , 2 )', 'colorcl', c.green, 'tipWidth', 0.01, 'stemWidth', 0.004 )
 % mArrow3( pC, pC + 0.3 * eigvecs( : , 3 )', 'color', c.green, 'tipWidth', 0.01, 'stemWidth', 0.004 )
 
-surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', color, 'facealpha', 0.3 )
+surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', color_arr( idx, : ), 'facealpha', 0.3 );
 tmpLim2 = 0.7;
 
 viewArr = [97.3451, 5.0653;
           142.4901, 3.2252;
-          133.9720, 3.2252];
-%           133.9720    3.2060];
-%           126.8750, 3.20293];
+          133.9720, 3.2252;
+          69.1394, 8.0028;
+          70.7497, 6.6311];
 
 set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
           'YLim',   [ - tmpLim2, tmpLim2 ] , ...    
@@ -684,7 +671,7 @@ end
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 
-exportgraphics( f,['F4_',num2str(idx),'_best_fit_plane.pdf'],'ContentType','vector' )
+exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'_best_fit_plane.pdf'],'ContentType','vector' )
 
 %% -- (3E) Contribution of each Movements
 
@@ -703,19 +690,12 @@ v2 = V( :,2 );
 v3 = V( :,3 );
 v4 = V( :,4 );      % Ordered in ascending order of the size of eigenvalues. 
 
-idx = 1;
+idx = 5;
 
-switch idx 
-   
-    case 1
-        tStart = 0.0; D = 0.950; % tStart = 0.3 if not Dense!
-    case 2
-        tStart = 0.0; D = 0.950;
-    case 3
-        tStart = 0.0; D = 0.583;
-end
+t_start   = [     0,     0,     0,     0,    0 ];
+t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.583];
 
-idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tStart + D );	
+idxS = find( rawData{ idx }.currentTime >= t_start( idx ) & rawData{ idx }.currentTime <= t_end( idx ) );	
 idxStart = min( idxS ); idxEnd = max( idxS );
 
 clear c1 c2 c3 c4
@@ -734,43 +714,49 @@ c4_K = dp' * v4;
 % c3_B = dv' * v3;
 % c4_B = dv' * v4;
 
-
-% norm( c1_K( idxS ), 2 )
-% norm( c2_K( idxS ), 2 )
-% norm( c3_K( idxS ), 2 )
-% norm( c4_K( idxS ), 2 )
+norm( c1_K( idxS ), 2 )
+norm( c2_K( idxS ), 2 )
+norm( c3_K( idxS ), 2 )
+norm( c4_K( idxS ), 2 )
 
 
 f = figure( ); a = axes( 'parent', f );hold on;
 
-plot( rawData{idx}.currentTime( idxS ) - tStart, c1_K( idxS ), 'linewidth', 4, 'linestyle', '-'  , 'color', c.black )
-plot( rawData{idx}.currentTime( idxS ) - tStart, c2_K( idxS ), 'linewidth', 4, 'linestyle', '--' , 'color', c.black )
-plot( rawData{idx}.currentTime( idxS ) - tStart, c3_K( idxS ), 'linewidth', 4, 'linestyle', ':'  , 'color', c.black )
-plot( rawData{idx}.currentTime( idxS ) - tStart, c4_K( idxS ), 'linewidth', 4, 'linestyle', '-.' , 'color', c.black )
+plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c1_K( idxS ), 'linewidth', 4, 'linestyle', '-'  , 'color', c.black )
+plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c2_K( idxS ), 'linewidth', 4, 'linestyle', '--' , 'color', c.black )
+plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c3_K( idxS ), 'linewidth', 4, 'linestyle', ':'  , 'color', c.black )
+plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c4_K( idxS ), 'linewidth', 4, 'linestyle', '-.' , 'color', c.black )
 
 [hleg1, hobj1] = legend( "c_1","c_2","c_3","c_4", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
    set(hleg1,'position',[0.15 0.70 0.1 0.15])
 
 
-set( a,   'XLim',   [ 0, rawData{idx}.currentTime( idxEnd ) - tStart ], 'fontsize', 35,'fontname', 'myriad pro' )
+set( a,   'XLim',   [ 0, rawData{idx}.currentTime( idxEnd ) - t_start( idx ) ], 'fontsize', 35,'fontname', 'myriad pro' )
 set( a,   'YLim',   [ -1, 1]                                          , 'fontsize', 35,'fontname', 'myriad pro' )
 set( a, 'ytick', [-1, -0.5, 0, 0.5, 1], 'yticklabel', ["-1", "", "0", "", "1"], 'fontname','myriad pro'  )
 
 if idx == 1
     set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
 elseif idx  ==2 
-    set( a, 'xtick', [0, 0.25, 0.5], 'xticklabel', ["0", "0.25", "0.5" ], 'fontname','myriad pro', 'fontsize', 40  )
+    set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
         
 elseif idx ==3 
+    set( a, 'xtick', [0, 0.25, 0.5], 'xticklabel', ["0", "0.25", "0.5" ], 'fontname','myriad pro', 'fontsize', 40  )
+
+elseif idx  == 4
     set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
 
+elseif idx ==5
+    set( a, 'xtick', [0, 0.25, 0.5], 'xticklabel', ["0", "0.25", "0.5" ], 'fontname','myriad pro', 'fontsize', 40  )
+
+    
 end
 
 % xlabel( 'Time (sec)'      , 'fontsize', 50, 'fontname', 'myriad pro' ); 
 % ylabel( 'Coefficients (-)', 'fontsize', 50, 'fontname', 'myriad pro' );
 
 
-exportgraphics( f,['F5_',num2str(idx),'_coefficients.pdf'],'ContentType','vector')
+exportgraphics( f,[ fig_dir, 'F5_',num2str(idx),'_coefficients.pdf'],'ContentType','vector')
 
 
 %% ==================================================================

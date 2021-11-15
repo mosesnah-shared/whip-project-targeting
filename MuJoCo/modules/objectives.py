@@ -112,9 +112,9 @@ class DistFromTip2Target( Objective ):
         output = min( lens )
 
         # if target is hit by the whip, set output as output and change to green light!
-        if output <= self.target_size + 0.012:
-            output = 0.0  # For tolerance.
-            self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
+        # if output <= self.target_size + 0.012:
+        #     output = 0.0  # For tolerance.
+        #     self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
 
         return output
 
