@@ -17,7 +17,7 @@ import numpy as np
 import time, datetime
 
 from modules.utils        import ( my_print, quaternion2euler, camel2snake, snake2camel,
-                                   MyVideo, str2float, my_mvdir, my_rmdir )
+                                   MyVideo, str2float, my_mvdir, my_rmdir, solve_eq_posture )
 from modules.constants    import Constants
 
 try:
@@ -178,7 +178,7 @@ class Simulation( ):
                                 qPos0 = self.ctrl.x0,
                                 qVel0 = self.ctrl.dx0,
                      geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
-                               output = self.objective.output_calc(), 
+                               output = self.objective.output_calc(),
                                taus   = self.ctrl.tau, file = self.file   )
 
 
@@ -232,7 +232,10 @@ class Simulation( ):
 
             nJ = self.ctrl.n_act                                                # Getting the number of active joints
 
-            self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
+            # self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
+
+            tmp = solve_eq_posture( self.ctrl.traj.pars[ "pi" ]  )
+            self.mjData.qpos[ 0 : nJ ] = tmp
             self.mjSim.forward()                                                # Update Needed for setting the posture of the upper limb by "forward" method.
 
             # The whip should face downward, complying to gravity at rest.
