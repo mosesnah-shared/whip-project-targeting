@@ -294,7 +294,7 @@ end
 plot( data_list{ 4 }.Iter, data_list{ 4 }.output, 'linewidth', 3 )
 plot( data_list{ 5 }.Iter, data_list{ 5 }.output, 'linewidth', 3 )
 
-xlabel( 'Iteration (-)' );  ylabel( 'L^* (m)' );
+xlabel( 'Iteration (-)' );  ylabel( '{\it{L^*}}(m)' );
 [~, hobj, ~, ~] = legend( 'Target 1', 'Target 2', 'Target 3', 'Target 4', 'Target 5', 'fontsize', 30 );
 ht = findobj(hobj,'type','line');
 set(ht,'Linewidth',12);
@@ -303,8 +303,8 @@ set( gca, 'xlim', [1, max( opt_idx ) ] )
 set( gca, 'ylim', [0, 3.5] )
 
 % For saving the figure of the iteration
-% exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
-% exportgraphics( f, [ fig_dir,'fig2.pdf'] )
+exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
+exportgraphics( f, [ fig_dir,'fig2.pdf'] )
 
 
 % Displaying the best values within the opt_idx 
@@ -321,9 +321,9 @@ end
 %% (3-) Miscellaneous Plots
 %% -- (3A) Calling the data + Plot
 
-for i = 1 : 3
+for i = 1 : 5
     
-   rawData{ i } = myTxtParse( ['myData/simulation_log_new/data_log_T', num2str( i ), '.txt']  );
+   rawData{ i } = myTxtParse( ['myData/simulation_log_3/data_log_T', num2str( i ), '.txt']  );
 %     rawData{ i } = myTxtParse( ['data_log_dense_T', num2str( i ), '.txt']  );
    
    rawData{ i }.geomXPositions = rawData{ i }.geomXYZPositions( 1 : 3 : end , : );
@@ -703,7 +703,7 @@ v2 = V( :,2 );
 v3 = V( :,3 );
 v4 = V( :,4 );      % Ordered in ascending order of the size of eigenvalues. 
 
-idx = 3;
+idx = 1;
 
 switch idx 
    
@@ -1193,34 +1193,27 @@ set( gca, 'xlim', [0, max( data.currentTime( 1: ttmp + st ) ) ] )
 xlabel( 'Time (sec)' ); 
  mySaveFig( f, ['output', num2str( idx )] );
 
-%% -- (7A) Noise Data
 
+%% ==================================================================
+%% (7-) Robustness Analysis
+%% -- (7A) Data read
+
+dir_name   = './myData/robustness_analysis/';
+file_names = { 'T1_init_noise.txt', 'T1_final_noise.txt', 'T1_D_noise.txt' };
+data_list  = cell( 1, 3 );
+mu         = zeros( 1, 3 );
+sigma      = zeros( 1, 3 );
 for i = 1 : 3
-    txtfile = ['myData/noise_data/target_', num2str( i ), '_noise.txt' ];
-    fID = fopen( txtfile );
-
-    j = 1;
-    while ~feof( fID )
-        tline = fgetl( fID );
-        tmp( j ) = str2num( tline  )
-        j = j + 1;
-    end
-
-    mu( i    ) = mean( tmp );
-    sigma( i ) =  std( tmp );
+    data_list{ i } = myTxtParse( [ dir_name, file_names{ i } ] );
+       mu( i ) = mean( data_list{ i }.output );
+    sigma( i ) =  std( data_list{ i }.output );
 end
 
-errorbar( [1,2,3], mu, sigma, '-s', 'linewidth', 4, 'CapSize',60, 'markersize', 20)
+f = figure( ); a = axes( 'parent', f );
+errorbar( [1,2,3], mu, sigma, '.', 'linewidth', 4, 'CapSize',60, 'markersize', 100)
+hold on
+yline( 0.05071, 'linewidth', 4, 'linestyle', '--' )
+set( a, 'xtick', [1,2,3], 'xticklabel', {'Init.', 'Final', 'Dur.'}, 'xlim', [0, 4], 'ylim', [0, 0.35] )
+ylabel( a, '{\it L^{*}} (m)' )
 
-data1 = 'myData/noise_data/target_5_noise.txt';
-% data1 = 'myData/noise_data/target_5_noise.txt';
-    
-fID = fopen( data1 );
-
-j = 1;
-while ~feof( fID )
-    tline = fgetl( fID );
-    tmp( j ) = str2num( tline  )
-    j = j + 1;
-end
-
+exportgraphics( f, [ fig_dir,'S_fig4.pdf'] )
