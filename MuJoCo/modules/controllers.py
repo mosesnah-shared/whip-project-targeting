@@ -382,7 +382,7 @@ class JointImpedanceController( ImpedanceController ):
             self.tau_n = tau_n
             # NotImplementedError( )
         else:
-            tau   = tau_imp + tau_g
+            self.tau   = tau_imp + tau_g
 
         # # [TMP] The result of lqr
         # # # print( tau_imp )
@@ -390,7 +390,7 @@ class JointImpedanceController( ImpedanceController ):
         # # tau_imp = np.dot( 1, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.4, self.mjData.qvel[ -1 ] )
 
 
-        return self.mjData.ctrl, self.idx_act, tau
+        return self.mjData.ctrl, self.idx_act, self.tau
 
 
 class SlidingController( Controller ):

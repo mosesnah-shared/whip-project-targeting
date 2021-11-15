@@ -178,17 +178,7 @@ class Simulation( ):
                                 qPos0 = self.ctrl.x0,
                                 qVel0 = self.ctrl.dx0,
                      geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
-                               taus   = self.ctrl.tau,
-                               tau_n  = self.ctrl.tau_n, file = self.file )
-                     #               qd = self.ctrl.qd[ : ],
-                     #           alphas = self.ctrl.alpha_vals,
-                     #           x0_1   = self.ctrl.ctrls[ 0 ].x0,
-                     #           x0_2   = self.ctrl.ctrls[ 1 ].x0,
-                     #               s  = self.ctrl.s[ : ],
-                     # geomXYZPositions = self.mjData.geom_xpos[ self.idx_geom_names ],
-                     #             dist = self.objective.output_calc( ) ,
-                     #           objVal = self.obj_val,
-                     #             file = file         )
+                               taus   = self.ctrl.tau, file = self.file   )
 
 
             self.mjSim.step( )

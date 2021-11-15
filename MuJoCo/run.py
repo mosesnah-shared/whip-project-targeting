@@ -155,7 +155,7 @@ def main( ):
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
         ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
 
-        mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
+        mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
 
@@ -184,6 +184,8 @@ def main( ):
         # [Target 2] [Optimal input pars] [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ]
         # [Target 3] [Optimal value] [0.13481] [idx] [238]
         # [Target 3] [Optimal input pars] [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333]
+        # [Target 4] [Optimal input pars] [-0.94248, 0.     , 1.0472 , 1.41372, 2.67035,-1.00841,-0.46542, 0.47124, 0.95   ]
+        # [Target 5] [Optimal input pars] [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333]
         # ================================================= #
         # =============== For optimization ================ #
         # ================================================= #
@@ -298,31 +300,33 @@ def main( ):
 
         # val = mySim.run( init_cond )                                            # Getting the objective value
 
-        if True:
-            N = 200
-            f = open( "out.txt", "w" )
-            std = 0.05
+        # For robustness analysis
+        # if True:
+        #     N = 200
+        #     f = open( "out.txt", "w" )
+        #     std = 0.05
+        #
+        #     mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
+        #
+        #     for _ in range( N ):
+        #
+        #         tmp_random = np.random.normal( 0, std  )
+        #
+        #         mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ] , "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] + tmp_random} ) # Setting the trajectory of the controller, for this case, traj = x0
+        #         val = mySim.run(  )                                            # Getting the objective value
+        #
+        #         print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random)
+        #         print( "[output]", val )
+        #
+        #         f.write( "[input_vals] ")
+        #         f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random ) ), separator=', ') + "\n" )
+        #         f.write( "[output] " )
+        #         f.write( str( val ) + "\n" )
+        #         mySim.reset( )
+        # else:
 
-            mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
-
-            for _ in range( N ):
-
-                tmp_random = np.random.normal( 0, std  )
-
-                mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ] , "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] + tmp_random} ) # Setting the trajectory of the controller, for this case, traj = x0
-                val = mySim.run(  )                                            # Getting the objective value
-
-                print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random)
-                print( "[output]", val )
-
-                f.write( "[input_vals] ")
-                f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random ) ), separator=', ') + "\n" )
-                f.write( "[output] " )
-                f.write( str( val ) + "\n" )
-                mySim.reset( )
-        else:
-            val = mySim.run(  )                                            # Getting the objective value
-            print( val )
+        val = mySim.run(  )                                            # Getting the objective value
+        print( val )
         mySim.close( )
 
     else:
