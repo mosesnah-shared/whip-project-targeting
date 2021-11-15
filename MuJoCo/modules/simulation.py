@@ -178,6 +178,7 @@ class Simulation( ):
                                 qPos0 = self.ctrl.x0,
                                 qVel0 = self.ctrl.dx0,
                      geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
+                               output = self.objective.output_calc(), 
                                taus   = self.ctrl.tau, file = self.file   )
 
 
