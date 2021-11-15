@@ -263,6 +263,7 @@ def my_mkdir(  ):
 
     return dir
 
+
 def my_mvdir( from_dir, to_dir ):
     shutil.move( from_dir , to_dir )
 
@@ -329,6 +330,26 @@ def my_print( **kwargs ):
 
         print( tmpPrint, file = f )
 
+def solve_eq_posture( q0 ):
+
+    q1_0 = q0[ 0 ]
+    q2_0 = q0[ 1 ]
+    q3_0 = q0[ 2 ]
+    q4_0 = q0[ 3 ]
+
+    q1 = sp.Symbol( 'q1' )
+    q2 = sp.Symbol( 'q2' )
+    q3 = sp.Symbol( 'q3' )
+    q4 = sp.Symbol( 'q4' )
+
+    eqn1 = 0.52444712807465876380774716380984*sp.cos(q2)*sp.sin(q1) - 0.12721953522735995889547666592989*sp.cos(q1)*sp.sin(q2) - 0.05501625493258266441642945210333*sp.sin(q4)*(sp.sin(q1)*sp.sin(q3) + sp.cos(q1)*sp.cos(q3)*sp.sin(q2)) - 0.063807174539763700238381716189906*sp.cos(q1)*sp.cos(q2)*sp.sin(q4) - 0.042749427781976545581699156173272*sp.cos(q1)*sp.cos(q4)*sp.sin(q2) + 0.1762293392050615636890142923221*sp.cos(q2)*sp.cos(q4)*sp.sin(q1) + 0.1762293392050615636890142923221*sp.cos(q1)*sp.cos(q3)*sp.sin(q4) - 0.063807174539763700238381716189906*sp.cos(q3)*sp.cos(q4)*sp.sin(q1) + 0.042749427781976545581699156173272*sp.cos(q1)*sp.cos(q2)*sp.sin(q3)*sp.sin(q4) + 0.063807174539763700238381716189906*sp.cos(q1)*sp.cos(q4)*sp.sin(q2)*sp.sin(q3) + 0.1762293392050615636890142923221*sp.sin(q1)*sp.sin(q2)*sp.sin(q3)*sp.sin(q4) + q1 - q1_0
+    eqn2 = 0.1966778910733553153988850681344*sp.cos(q1)*sp.sin(q2) - 0.12721953522735995889547666592989*sp.cos(q2)*sp.sin(q1) + 0.020788410744410568131712579997838*sp.sin(q4)*(sp.sin(q1)*sp.sin(q3) + sp.cos(q1)*sp.cos(q3)*sp.sin(q2)) + 0.015478241093474287559672575298464*sp.cos(q1)*sp.cos(q2)*sp.sin(q4) + 0.066089435759419945526360606891103*sp.cos(q1)*sp.cos(q4)*sp.sin(q2) - 0.042749427781976545581699156173272*sp.cos(q2)*sp.cos(q4)*sp.sin(q1) - 0.042749427781976545581699156173272*sp.cos(q1)*sp.cos(q3)*sp.sin(q4) + 0.015478241093474287559672575298464*sp.cos(q3)*sp.cos(q4)*sp.sin(q1) - 0.066089435759419945526360606891103*sp.cos(q1)*sp.cos(q2)*sp.sin(q3)*sp.sin(q4) - 0.015478241093474287559672575298464*sp.cos(q1)*sp.cos(q4)*sp.sin(q2)*sp.sin(q3) - 0.042749427781976545581699156173272*sp.sin(q1)*sp.sin(q2)*sp.sin(q3)*sp.sin(q4) + q2 - q2_0
+    eqn3 = 0.1637248203220158515591720060911*sp.cos(q2)*sp.sin(q1) - 0.061864967327922570916598488111049*sp.cos(q1)*sp.sin(q2) - 0.083555731966853175052278857037891*sp.sin(q4)*(sp.sin(q1)*sp.sin(q3) + sp.cos(q1)*sp.cos(q3)*sp.sin(q2)) - 0.019919678510073035582195188908372*sp.cos(q1)*sp.cos(q2)*sp.sin(q4) - 0.020788410744410568131712579997838*sp.cos(q1)*sp.cos(q4)*sp.sin(q2) + 0.05501625493258266441642945210333*sp.cos(q2)*sp.cos(q4)*sp.sin(q1) + 0.05501625493258266441642945210333*sp.cos(q1)*sp.cos(q3)*sp.sin(q4) - 0.019919678510073035582195188908372*sp.cos(q3)*sp.cos(q4)*sp.sin(q1) + 0.020788410744410568131712579997838*sp.cos(q1)*sp.cos(q2)*sp.sin(q3)*sp.sin(q4) + 0.019919678510073035582195188908372*sp.cos(q1)*sp.cos(q4)*sp.sin(q2)*sp.sin(q3) + 0.05501625493258266441642945210333*sp.sin(q1)*sp.sin(q2)*sp.sin(q3)*sp.sin(q4) + q3 - q3_0
+    eqn4 = 0.046062245513354471704303705337225*sp.cos(q1)*sp.sin(q2) - 0.18988602913048024944941971625667*sp.cos(q2)*sp.sin(q1) + 0.019919678510073035582195188908372*sp.sin(q4)*(sp.sin(q1)*sp.sin(q3) + sp.cos(q1)*sp.cos(q3)*sp.sin(q2)) + 0.10117159250577656415259752975544*sp.cos(q1)*sp.cos(q2)*sp.sin(q4) + 0.015478241093474287559672575298464*sp.cos(q1)*sp.cos(q4)*sp.sin(q2) - 0.063807174539763700238381716189906*sp.cos(q2)*sp.cos(q4)*sp.sin(q1) - 0.063807174539763700238381716189906*sp.cos(q1)*sp.cos(q3)*sp.sin(q4) + 0.10117159250577656415259752975544*sp.cos(q3)*sp.cos(q4)*sp.sin(q1) - 0.015478241093474287559672575298464*sp.cos(q1)*sp.cos(q2)*sp.sin(q3)*sp.sin(q4) - 0.10117159250577656415259752975544*sp.cos(q1)*sp.cos(q4)*sp.sin(q2)*sp.sin(q3) - 0.063807174539763700238381716189906*sp.sin(q1)*sp.sin(q2)*sp.sin(q3)*sp.sin(q4) + q4 - q4_0
+
+    sol = sp.solvers.nsolve( ( eqn1, eqn2, eqn3, eqn4 ), ( q1, q2, q3, q4 ), q0  )
+    sol = np.array( sol )
+    return np.array( [ sol[ 0 ][ 0 ], sol[ 1 ][ 0 ], sol[ 2 ][ 0 ], sol[ 3 ][ 0 ] ] )
 
 if __name__ == '__main__':
     pass

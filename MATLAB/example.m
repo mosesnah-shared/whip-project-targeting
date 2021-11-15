@@ -29,10 +29,58 @@ robot = my4DOFRobot( );
 
 robot.initialize( );
 [M, C, G] = robot.deriveManipulatorEquation( );
-J         = robot.getEndEffectorJacobian(  );
+JEE       = robot.getEndEffectorJacobian(  );
+JUL       = robot.getUpperLimbJacobian(  );
+JLL       = robot.getLowerLimbJacobian(  );
 
+%% Solving the gravity inverse problem
+L1 = 0.294; L2 = 0.291; Lc1 = 0.129; Lc2 = 0.112;
+m1 = 1.595; m2 = 0.869;
+mw = 0.3;    g = 9.81;
+
+K = [17.4 ,  6.85, -7.75,  8.4 ;
+      6.85, 33.0 ,  3.7 ,  0.  ;
+     -7.75,  3.7 , 27.7 ,  0.  ;
+       8.4,  0.  ,  0.  , 23.2 ];
+   
+JtF = JUL.' * [0;0;m1 *g] + JLL.' * [0;0;m2*g] + JEE.' * [0;0;mw*g];
+tmp = inv( K ) * JtF;
+tmp( 1 ) = subs( tmp( 1 ), {"L1", "L2", "Lc1", "Lc2" }, [L1, L2, Lc1, Lc2] );
+tmp( 2 ) = subs( tmp( 2 ), {"L1", "L2", "Lc1", "Lc2" }, [L1, L2, Lc1, Lc2] );
+tmp( 3 ) = subs( tmp( 3 ), {"L1", "L2", "Lc1", "Lc2" }, [L1, L2, Lc1, Lc2] );
+tmp( 4 ) = subs( tmp( 4 ), {"L1", "L2", "Lc1", "Lc2" }, [L1, L2, Lc1, Lc2] );
+
+syms q1 q2 q3 q4
+old = { "q1(t)", "q2(t)", "q3(t)", "q4(t)" }; new = { q1, q2, q3, q4 };
+tmp( 1 ) = subs( tmp( 1 ), robot.q, new );
+tmp( 2 ) = subs( tmp( 2 ), robot.q, new );
+tmp( 3 ) = subs( tmp( 3 ), robot.q, new );
+tmp( 4 ) = subs( tmp( 4 ), robot.q, new );
+
+tmp( 1 ) = vpa( tmp( 1 ), 7 );
+tmp( 2 ) = vpa( tmp( 2 ), 7 );
+tmp( 3 ) = vpa( tmp( 3 ), 7 );
+tmp( 4 ) = vpa( tmp( 4 ), 7 );
+
+
+q0 = [-1.50098, 0.     ,-0.2715 , 1.41372]';
+
+eq1 = ( tmp( 1 ) == q0( 1 ) - q1 );
+eq2 = ( tmp( 2 ) == q0( 2 ) - q2 );
+eq3 = ( tmp( 3 ) == q0( 3 ) - q3 );
+eq4 = ( tmp( 4 ) == q0( 4 ) - q4 );
+
+eqn = [eq1, eq2, eq3, eq4];
+S = solve( eqn, [ q1, q2, q3, q4] )
+
+q1val = double( S.q1 );
+q2val = double( S.q2 );
+q3val = double( S.q3 );
+q4val = double( S.q4 );
+
+%%
 % [Moses Nah] [Backup] To calculate the time differentiation of the jacobian matrix
-dJ = diff( J, sym( 't' ) );
+% dJ = diff( J, sym( 't' ) );
 dJ = subs( dJ, diff( robot.q, robot.t ), robot.dq );             % Simple substitution
 
 old = [ "q1(t)", "q2(t)", "dq1(t)", "dq2(t)" ]; new = [ "q1", "q2", "dq1", "dq2" ];

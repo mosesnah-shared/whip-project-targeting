@@ -90,7 +90,7 @@ from modules.simulation   import Simulation
 from modules.controllers  import ( ImpedanceController, CartesianImpedanceController,
                                    JointImpedanceController, JointSlidingController, ControllerBinder )
 from modules.utils        import ( my_print, my_mkdir, args_cleanup,
-                                   my_rmdir, str2float, camel2snake, snake2camel )
+                                   my_rmdir, str2float, camel2snake, snake2camel, solve_eq_posture )
 from modules.objectives   import DistFromTip2Target, TargetState
 from modules.traj_funcs   import MinJerkTrajectory
 from modules.constants    import Constants
@@ -154,13 +154,12 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
+        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
         # mov_pars  = np.array( str2float( args.mov_pars )  )
-        mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333] )
+        mov_pars  = np.array( [-1.5165 , 0.     ,-1.5514 , 0.57596, 2.32129, 0.     , 1.20234, 0.01745, 0.89115] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
-
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
         # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
@@ -189,6 +188,12 @@ def main( ):
         # [Target 3] [Optimal input pars] [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333]
         # [Target 4] [Optimal input pars] [-0.94248, 0.     , 1.0472 , 1.41372, 2.67035,-1.00841,-0.46542, 0.47124, 0.95   ]
         # [Target 5] [Optimal input pars] [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333]
+        # =================================================================================================== #
+        # =============================== Gravity Compensation OFf         ================================== #
+        # =================================================================================================== #
+        # [Target 1]
+        # [optimalInput ]: [-1.5165 , 0.     ,-1.5514 , 0.57596, 2.32129, 0.     , 1.20234, 0.01745, 0.89115]
+        # [optimalOutput]: 0.04307
         # ================================================= #
         # =============== For optimization ================ #
         # ================================================= #
@@ -327,6 +332,7 @@ def main( ):
         #         f.write( str( val ) + "\n" )
         #         mySim.reset( )
         # else:
+
 
         val = mySim.run(  )                                            # Getting the objective value
         print( val )
