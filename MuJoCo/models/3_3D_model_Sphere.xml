@@ -1,0 +1,101 @@
+<!-- =========================================================================== #
+# Project:        [M3X] Whip Project
+# Title:          XML Model File for 3D Upper Limb
+# Author:         Moses C. Nah
+# Creation Date:  Monday, July 1st, 2020
+
+# Description: 	  This model file is simply for analyzing the forward kinematics of the upper-limb model.
+#									This 3D_UpperLimb model has 3DOF on the shoulder joint and 1DOF on the elbow joint.
+# =========================================================================== -->
+
+
+<mujoco model="3D_UpperLimb">
+
+  <compiler inertiafromgeom = "auto"
+            angle 					= "radian" />
+
+						<option  timestep  = '0.0001'
+										iterations = '50'
+										integrator = 'Euler'
+										   gravity = "0 0 -9.81"
+									   collision = 'all' >
+
+							<flag energy = 'enable'/>
+
+						</option>
+
+
+  <asset>
+    <!-- Texture of the surrounding sky box
+         setting everything as white-ish color for better visualization -->
+     <!-- <texture type 		= "skybox"
+              builtin = "flat"
+              rgb1 		= "1 1 1"
+              rgb2		= "1 1 1"
+              width 	= "100"
+              height 	= "100"/> -->
+
+     <texture type		= "skybox"
+              builtin = "checker"
+              rgb1 		= ".1 .2 .3"
+              rgb2 		= ".2 .3 .4"
+              width	  = "200"
+             height 	= "200"
+               mark 	= "edge"/>
+
+     <!-- Joint and Limb Color -->
+     <material name = "JointColor"	   rgba = "1.0 1.0 0.0 1"/>
+     <material name = "LimbColor" 	   rgba = "0.7 0.7 0.7 1"/>
+		 <material name = "pointMassColor" rgba = "1.0 1.0 1.0 1.0"/>
+     <material name = "RefMassColor"   rgba = "0.2 0.9 0.1 1.0"/>
+
+  </asset>
+
+
+  <worldbody>
+
+    <body name='cameramover' mocap='true' pos='0 0 0'>
+				<camera name='mycamera' pos='0.0 2.0 2.0' euler='1.5707 0 0'/>
+  	</body>
+
+		<body name="body_upper_arm" pos="0 0 0" euler="0 0 0">
+			<inertial pos="0 0 -0.129" mass="1.595" diaginertia="0.011917 0.011937 0.001325" />
+			 <geom name="geom_shoulder" type="sphere" pos="0 0 0" material="JointColor" size="0.0294" mass="0" />
+			 <joint name="joint_shoulder_flex_ext" ref="0" type="hinge" stiffness="0" pos = "0 0 0" axis = "0 -1 0" />
+			 <joint name='joint_shoulder_add_abd' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis='-1 0 0' />
+			 <joint name='joint_shoulder_med_lat' ref='0'  type='hinge' stiffness='0' pos='0 0 0' axis=' 0 0 1' />
+			 <site name="site_upper_arm_COM" pos="0 0 -0.129" />
+			 <geom type="cylinder" fromto="0 0 0 0 0 -0.294" material="LimbColor" mass="0" size="0.0147" />
+			 <body name="body_fore_arm" pos="0 0 -0.294" euler="0 0 0">
+				 <inertial pos="0 0 -0.112" mass="0.869" diaginertia="0.004765 0.004855 0.000472" />
+					<geom name="geom_elbow" type="sphere" pos="0 0 0" material="JointColor" size="0.0294" mass="0" />
+					<joint name="joint_elbow" ref="0" type="hinge" stiffness="0" pos="0 0 0" axis="0 -1 0" />
+					<geom type="cylinder" fromto="0 0 0 0 0 -0.291" material="LimbColor" mass="0" size="0.0147" />
+					<site name="site_fore_arm_COM" pos="0 0 -0.112" />
+					<geom name="geom_end_effector" type="sphere" pos="0 0 -0.291" material="JointColor" size="0.0294" mass="0" />
+
+					<!-- Can be erased in the future! -->
+					<!-- Just attaching point mass at the end of the upper-limb-->
+					<body name="node1" euler="0 0 0" pos="0 0 -0.291">
+							<inertial pos='0 0 0' mass='0.3' />
+					</body>
+
+			</body>
+			<!-- ============ FORE ARM END   =============== -->
+
+		</body>
+
+	<geom name='target' type='sphere' pos='1.69352 1.69352 0.0' material='LimbColor' mass='0' size='0.03'/>
+
+  </worldbody>
+
+	<actuator>
+
+	      <motor joint="joint_shoulder_flex_ext" name="motor_shoulder_flex_ext" forcelimited="false" />
+	      <motor joint="joint_shoulder_add_abd"  name="motor_shoulder_add_abd"  forcelimited="false" />
+	      <motor joint="joint_shoulder_med_lat"  name="motor_shoulder_med_lat"  forcelimited="false" />
+	      <motor joint="joint_elbow" 						 name="motor_elbow" 						forcelimited="false" />
+
+  </actuator>
+
+</mujoco>

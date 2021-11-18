@@ -232,10 +232,10 @@ class Simulation( ):
 
             nJ = self.ctrl.n_act                                                # Getting the number of active joints
 
-            # self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
+            self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
 
-            tmp = solve_eq_posture( self.ctrl.traj.pars[ "pi" ]  )
-            self.mjData.qpos[ 0 : nJ ] = tmp
+            # tmp = solve_eq_posture( self.ctrl.traj.pars[ "pi" ]  )
+            # self.mjData.qpos[ 0 : nJ ] = tmp
             self.mjSim.forward()                                                # Update Needed for setting the posture of the upper limb by "forward" method.
 
             # The whip should face downward, complying to gravity at rest.

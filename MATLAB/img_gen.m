@@ -394,13 +394,15 @@ end
 
 %% -- (3B) Plot of Movement Snapshots
 
-idx = 1;        % Choose Target Type
+idx = 5;        % Choose Target Type
 
-idxS = find( rawData{ idx }.output == min( rawData{ idx }.output )  );
+idxS = find( rawData{ idx }.output == min( rawData{ idx }.output ), 1, 'first'  );
 
-tIdx = [10, 68, idxS;
-        10, 37, idxS; 
-        10, 61, idxS];
+tIdx = [1, 68, idxS;
+        1, 37, idxS; 
+        1, 24, idxS;
+        1, 44, idxS; 
+        1, 25, idxS];
 
 % viewArr = [ 49.9456, 4.7355;
 %             68.8342, 6.0279;
@@ -408,11 +410,13 @@ tIdx = [10, 68, idxS;
 
 viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
+            49.9456, 4.7355;
+            49.9456, 4.7355;            
             49.9456, 4.7355 ];
 
 alpha = [0.3, 0.5, 1.0];                                              % The alpha values of each screen shot   
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
-axis equal; hold on;
+axis square; hold on;
 
 
 color_arr = [      0, 0.4470, 0.7410; ...
@@ -431,7 +435,7 @@ mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
                    'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha',    1  );
 
       
-for i = 1 : length( tIdx )
+for i = 1 : 3
     p1 = plot3(  rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
                  rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
                  rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
@@ -475,7 +479,7 @@ set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)"
 set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "Z[m]", "+2"] )
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 )
-exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
+exportgraphics( f,[fig_dir, 'F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
 
 
 % mySaveFig( f, ['output', num2str( idx )] );
@@ -483,24 +487,41 @@ exportgraphics( f,['F3_',num2str(idx),'a_timelapse.pdf'],'ContentType','vector')
 %% -- (3C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 1;
+idx = 5;
 
-switch idx 
-   
-    case 1
-        tStart = 0.1; D = 0.950; % tStart = 0.3 if not Dense!
-    case 2
-        tStart = 0.1; D = 0.950;
-    case 3
-        tStart = 0.1; D = 0.583;
-end
+tStarts = [0,0 ,0,0,0];
+tEnds   = [0.95 ,0.95    ,0.58333,0.95   ,0.58333];
 
-idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tStart + D );	
+tStart = tStarts( idx );
+tEnd  = tEnds( idx );
+
+
+idxS = find( rawData{ idx }.currentTime >= tStart & rawData{ idx }.currentTime <= tEnd );	
 % idxS = idxS( 1 : 3 : end);
 idxStart = min( idxS ); idxEnd = max( idxS );
 
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis equal; hold on;
+
+switch idx 
+   
+    case 1
+        idx_list = [1, 25, 35, 43, 57];
+        alpha    = [0.2, 0.4, 0.6, 0.8, 1.0];
+    case 2
+        idx_list = [1, 25, 33, 42, 57];
+        alpha    = [0.2, 0.4, 0.6, 0.8, 1.0];
+    case 3
+        idx_list = [1,  19, 25, 35];
+        alpha    = [0.2, 0.4, 0.7, 1.0];
+    case 4
+        idx_list = [1, 30, 38, 57];
+        alpha    = [0.2, 0.4, 0.7, 1.0];
+    case 5
+        idx_list = [1,  22, 28, 35];
+        alpha    = [0.2, 0.4, 0.7, 1.0];        
+end
+
 
 scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
           rawData{ idx }.geomYPositions( 2, idxStart ), ...
@@ -520,18 +541,6 @@ plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
       'parent', a,   'LineWidth', 3, 'color', c.black );
 
 
-switch idx 
-   
-    case 1
-        idx_list = [1, 25, 35, 43, 57];
-        alpha    = [0.4, 0.7, 0.8, 0.9, 1.0];
-    case 2
-        idx_list = [2, 20, 28, 35];
-        alpha    = [0.4, 0.7, 0.9, 1.0];
-    case 3
-        idx_list = [1, 25, 35, 43, 57];
-        alpha    = [0.4, 0.7, 0.8, 0.9, 1.0];
-end
 
 itmp = 1;
 for i = idx_list
@@ -561,6 +570,8 @@ end
 
 viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
+            49.9456, 4.7355;
+            49.9456, 4.7355;            
             49.9456, 4.7355 ];
 
 tmpLim = 0.6;               
@@ -575,7 +586,7 @@ set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.6", "\fontsize{50}
 set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.6", "\fontsize{50}Z (m)", "+0.6"] ); % ["-2", "X[m]", "+2"] )
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
-exportgraphics( f,['F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','vector');
+exportgraphics( f,[fig_dir, 'F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'ContentType','vector');
 
 % trisurf( kEL, xEL, yEL, zEL, 'Facecolor',  c.blue, 'FaceAlpha', 0.1, 'EdgeColor', 'none' );
 % trisurf( kEE, xEE, yEE, zEE, 'Facecolor', c.green, 'FaceAlpha', 0.1, 'EdgeColor', 'none' );
@@ -675,22 +686,30 @@ end
 
 sqrt( tmp/length( idxS ) )
 
-% [P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim );                                 % Provide a gridwork (you choose the size)
-% [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);                      % For idx 4
-[P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);                      % For idx 5
+% [P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim );                       
+if idx == 4
+    [P,Q] = meshgrid( -tmpLim - 0.15: 0.1 : tmpLim + 0.15);                  
+elseif idx == 5 || idx == 3 
+    [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);          
+elseif idx == 1 
+    [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.1);          
+else
+    [P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim);                      
+end
 
 XX = pC( 1 ) + w( 1, 1 ) * P + w( 1, 2 ) * Q;                              
 YY = pC( 2 ) + w( 2, 1 ) * P + w( 2, 2 ) * Q;                              
 ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
-       
+
+
 scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
            'parent', a,   'LineWidth', 6, ...
            'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_arr( idx, : ), ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
 
-if idx == 1       
+if idx == 1 || idx == 5 || idx == 2
     mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
-else    
+else
     mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
 end
 % mArrow3( pC, pC + 0.3 * eigvecs( : , 2 )', 'colorcl', c.green, 'tipWidth', 0.01, 'stemWidth', 0.004 )
@@ -702,8 +721,8 @@ tmpLim2 = 0.7;
 viewArr = [97.3451, 5.0653;
           142.4901, 3.2252;
           133.9720, 3.2252;
-          69.1394, 8.0028;
-          70.7497, 6.6311];
+          71.5977,0.1768;
+           81.6285,0.5443];
 
 set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
           'YLim',   [ - tmpLim2, tmpLim2 ] , ...    
@@ -711,9 +730,13 @@ set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % S
           'view',   viewArr( idx, : ) )  
 
 if idx == 1 
-    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m))", ""] )
+    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
     set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
     set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )        
+elseif idx == 5 || idx == 4
+    set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
+    set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
+    set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )            
 else
     set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "\fontsize{50}X (m)", "+0.5"] )
     if idx == 2
@@ -725,13 +748,14 @@ else
         set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["-0.5", "\fontsize{50}Y (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )
     end
     set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["-0.5", "\fontsize{50}Z (m)", "+0.5"] ); % ["-2", "X[m]", "+2"] )    
+    
 end
 
 
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 
-exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'_best_fit_plane.pdf'],'ContentType','vector' )
+exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'a_best_fit_plane.pdf'],'ContentType','vector' )
 
 %% -- (3E) Contribution of each Movements
 
@@ -1007,7 +1031,7 @@ exportgraphics( f,[fig_dir, 'S3_',num2str(idx),'a_posctrl_timelapse.pdf'],'Conte
 %% -- (4C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 5;
+idx = 1;
 
 tStarts = [0,0 ,0,0,0];
 tEnds   = [0.82778   ,0.95    ,0.583,0.58333   ,1.31667];
