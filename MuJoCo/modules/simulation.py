@@ -105,15 +105,27 @@ class Simulation( ):
                 [VAR NAME]             [TYPE]     [DESCRIPTION]
                 (1) time               float      The time of how long the simulation will just not run
         """
+        self.mjModel.opt.timestep = 0.01
         while self.mjData.time < time:
-
             input_ref, input_idx, input = self.ctrl.input_calc( 0  )
             input_ref[ input_idx ]      = input
             self.mjSim.step( )                                                  # Single step update
 
+            if( self._is_sim_unstable() ):                                      # Check if simulation is stable
+            #
+                # If not optimization, and result unstable, then save the detailed data
+                print( "[WARNING] UNSTABLE SIMULATION, HALTED AT {0:f} for at {1:f}".format( self.t, self.run_time )  )
+                print( "Makeing the simulation time step more detailed, from {0:f} to {1:f}".format( self.mjModel.opt.timestep , 0.1 * self.mjModel.opt.timestep ))
+                self.reset( )
+                self._init_sim(  )
+                self._set_init_cond(  )
+                self.mjModel.opt.timestep *= 0.1
+
+
         self.run_time   += time
         self.start_time += time
         self.t = self.mjData.time
+
 
     def run( self, init_cond = None ):
         """ Running the simulation """
@@ -121,7 +133,8 @@ class Simulation( ):
         self._init_sim(  )
         self._set_init_cond( init_cond )
 
-        # self.wait_until( 100 )
+        # self.wait_until( 240 )
+        # self.mjModel.opt.timestep = 0.0001
 
         while self.t <= self.run_time:
 
@@ -130,6 +143,7 @@ class Simulation( ):
                 if self.mjViewer is not None:
                     self.mjViewer.render( )
 
+            # print( self.t )
             # [NOTE] [2021.08.01] [Moses C. Nah]
             # To use this, you need to modify "mjviewer.py" file under "mujoco_py"
 
@@ -145,6 +159,7 @@ class Simulation( ):
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
             # input:     The actual input value which is inputted to input_ref
+
             if self.start_time >= self.t:
                 input_ref, input_idx, input = self.ctrl.input_calc( 0 )
             else:
@@ -228,12 +243,18 @@ class Simulation( ):
 
         self.init_cond = init_cond
 
+        self.dt           = self.mjModel.opt.timestep                           # Time step of the simulation [sec]
+        self.run_time     = self.args.run_time                                  # Total run time (tr) of simulation
+        self.start_time   = self.args.start_time                                # Start of controller
+        self.step         = 0                                                   # Number of steps of the simulation, in integer [-]
+        self.t            = 0
+
         if self.init_cond is None:
 
             nJ = self.ctrl.n_act                                                # Getting the number of active joints
 
             self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
-
+            # self.mjData.qpos_spring[ 0 : nJ ]
             # tmp = solve_eq_posture( self.ctrl.traj.pars[ "pi" ]  )
             # self.mjData.qpos[ 0 : nJ ] = tmp
             self.mjSim.forward()                                                # Update Needed for setting the posture of the upper limb by "forward" method.
@@ -308,6 +329,9 @@ class Simulation( ):
         elif nJ == 4: # for 4DOF Robot - The connection between the whip and upper-limb has 2DOF
             self.mjData.qpos[ nJ     ] = - roll                         # Setting the handle posture to make the whip being straight down at equilibrium.
             self.mjData.qpos[ nJ + 1 ] = + pitch                        # Setting the handle posture to make the whip being straight down at equilibrium.
+
+            # self.mjModel.qpos_spring[ nJ     ] = - roll
+            # self.mjModel.qpos_spring[ nJ + 1 ] = + pitch
 
         self.mjSim.forward()
 

@@ -852,6 +852,7 @@ data_list = cell( 1, N_data );                                             % The
 
 for i = 1 : N_data
     file_name      = ['myData/position_controller_2/optimization_result/optimization_log_T', num2str( i ), '.txt'];
+%     file_name =  ['myData/optimization_process_3_new/optimization_log_T1_w_tapered.txt']
     data_list{ i } = myTxtParse( file_name ); 
     
     % Printing out the idx, optimal value output and its input parameter
@@ -1351,21 +1352,35 @@ xlabel( 'Time (sec)' );
 %% -- (7A) Data read
 
 dir_name   = './myData/robustness_analysis/';
-file_names = { 'T1_init_noise.txt', 'T1_final_noise.txt', 'T1_D_noise.txt' };
+% file_names = { 'T1_init_noise.txt', 'T1_final_noise.txt', 'T1_D_noise.txt' };
+% file_names = { 'out1_init.txt', 'out1_final.txt', 'out1_D.txt' };
+% file_names = { 'out4_init.txt', 'out4_final.txt', 'out4_D.txt' };
+file_names = { 'out5_init.txt', 'out5_final.txt', 'out5_D.txt' };
 data_list  = cell( 1, 3 );
 mu         = zeros( 1, 3 );
 sigma      = zeros( 1, 3 );
-for i = 1 : 3
-    data_list{ i } = myTxtParse( [ dir_name, file_names{ i } ] );
-       mu( i ) = mean( data_list{ i }.output );
-    sigma( i ) =  std( data_list{ i }.output );
-end
+
 
 f = figure( ); a = axes( 'parent', f );
-errorbar( [1,2,3], mu, sigma, '.', 'linewidth', 4, 'CapSize',60, 'markersize', 100, 'Color', 'k', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k')
 hold on
+for i = 1 : 3
+    data_list{ i } = myTxtParse( [ dir_name, file_names{ i } ] );
+%        mu( i ) = mean( data_list{ i }.output );
+%     sigma( i ) =  std( data_list{ i }.output );
+    
+end
+hit_rate1 = length( find( data_list{1}.output == 0 )  )/200 * 100
+hit_rate2 = length( find( data_list{2}.output == 0 )  )/200 * 100
+hit_rate3 = length( find( data_list{3}.output == 0 )  )/200 * 100
+
+plot( 1 * ones( 1, 200 ), data_list{ 1 }.output, 'o', 'markeredgecolor', 'k' )
+plot( 2 * ones( 1, 200 ), data_list{ 2 }.output, 'o', 'markeredgecolor', 'k' )
+plot( 3 * ones( 1, 200 ), data_list{ 3 }.output, 'o', 'markeredgecolor', 'k' )
+
+% errorbar( [1,2,3], mu, sigma, '.', 'linewidth', 4, 'CapSize',60, 'markersize', 100, 'Color', 'k', 'MarkerEdgeColor', 'k', 'MarkerFaceColor', 'k')
+
 yline( 0.05071, 'linewidth', 4, 'linestyle', '--' )
-set( a, 'xtick', [1,2,3], 'xticklabel', {'Case A', 'Case B', 'Case C'}, 'xlim', [0, 4], 'ylim', [0, 0.35] )
+set( a, 'xtick', [1,2,3], 'xticklabel', {'Case A', 'Case B', 'Case C'}, 'xlim', [0, 4] )%, 'ylim', [0, 0.40] )
 ylabel( a, '{\it L^{*}} (m)' )
 
 exportgraphics( f, [ fig_dir,'S_fig4.pdf'] )
@@ -1542,3 +1557,21 @@ set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Set
 xtickangle( 0 ); ytickangle( 0 )
 
 exportgraphics( f, [ fig_dir,'S_fig5_wog.pdf'],'ContentType','vector' )
+
+
+%% ==================================================================
+%% (9-) Wrist Comparison
+%% -- (8A) Data read
+
+dir_name   = './myData/with_without_grav/data_log/';
+file_names = { 'data_log_w_g.txt', 'data_log_wo_g.txt' };
+
+N = length( file_names );
+data_list  = cell( 1, N );
+for i = 1 : N
+    rawData{ i } = myTxtParse( [ dir_name, file_names{ i } ] );
+    
+   rawData{ i }.geomXPositions = rawData{ i }.geomXYZPositions( 1 : 3 : end , : );
+   rawData{ i }.geomYPositions = rawData{ i }.geomXYZPositions( 2 : 3 : end , : );
+   rawData{ i }.geomZPositions = rawData{ i }.geomXYZPositions( 3 : 3 : end , : );    
+end
