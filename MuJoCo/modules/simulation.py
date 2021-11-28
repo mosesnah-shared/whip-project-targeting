@@ -133,8 +133,8 @@ class Simulation( ):
         self._init_sim(  )
         self._set_init_cond( init_cond )
 
-        # self.wait_until( 240 )
-        # self.mjModel.opt.timestep = 0.0001
+        self.wait_until( 240 )
+        self.mjModel.opt.timestep = 0.0001
 
         while self.t <= self.run_time:
 
