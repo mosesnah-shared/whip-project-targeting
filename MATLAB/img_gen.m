@@ -1561,17 +1561,167 @@ exportgraphics( f, [ fig_dir,'S_fig5_wog.pdf'],'ContentType','vector' )
 
 %% ==================================================================
 %% (9-) Wrist Comparison
-%% -- (8A) Data read
+%% -- (9A) Data read
 
-dir_name   = './myData/with_without_grav/data_log/';
-file_names = { 'data_log_w_g.txt', 'data_log_wo_g.txt' };
+dir_name   = './myData/with_wrist_Target_1/optimization_result/';
+file_names = { 'optimization_log_w_wrist.txt', 'optimization_log_wo_wrist.txt' };
 
-N = length( file_names );
-data_list  = cell( 1, N );
-for i = 1 : N
-    rawData{ i } = myTxtParse( [ dir_name, file_names{ i } ] );
+
+N_data    = length( file_names ); 
+data_list = cell( 1, N_data );    
+
+for i = 1 : N_data
+    file_name      = [dir_name, file_names{ i }];
+
+    data_list{ i } = myTxtParse( file_name ); 
     
+    % Printing out the idx, optimal value output and its input parameter
+    opt_val  = min( data_list{ i }.output );
+    idx      = find( data_list{ i }.output == opt_val );
+    mov_pars = data_list{ i }.inputPars( :, idx )';
+    
+    fprintf( '[Target %d] [Optimal value] [%.5f] [idx] [%d]\n', i, opt_val, idx);
+    fprintf( '[Target %d] [Optimal input pars] [%s] \n', i, join( string( mov_pars ), ', ' ) );
+    
+end
+
+% Find and halt if the optimal val has no update 
+opt_idx = zeros( 1, N_data );  % The index where the values stop.
+tol  = 0.1;               % If the vector norm doesn't change that much, then halt the simulation
+ntol = 15;
+
+f = figure( ); a = axes( 'parent', f );
+hold on
+
+for i = 1 : N_data
+
+    data     = data_list{ i };
+    mov_norm = abs( diff( vecnorm( data.inputPars, 2 ) ) ); 
+    
+    tmp      = ( mov_norm <= tol ); % Boolean array which shows if mov_norm is within tol 
+    cnt      = 0;
+    for j = data.Iter  
+        if tmp( j )
+           cnt = cnt + 1; 
+        else
+           cnt = 0;
+        end
+        
+        if cnt>= ntol
+           opt_idx( i ) = j;
+           break 
+        end
+        
+    end
+
+    plot( data.output( 1: opt_idx( i ) ), 'linewidth', 3 )
+    disp( min( data.output( 1 : opt_idx( i ) ) ) )
+end
+
+
+% For saving the figure of the iteration
+% exportgraphics( f, [ fig_dir,'S_fig2.eps'],'ContentType','vector')
+% exportgraphics( f, [ fig_dir,'S_fig2.pdf'] )
+
+
+% Displaying the best values within the opt_idx 
+for i = 1 : N_data
+    opt_val  = min( data_list{ i }.output( 1 : opt_idx( i ) ) );
+    idx      = find( opt_val == data_list{ i }.output( 1 : opt_idx( i ) ), 1, 'first' );
+    mov_pars = data_list{ i }.inputPars( :, idx )';
+    fprintf( '[Target %d] [Optimal value] [%.5f] [idx] [%d]\n', i, opt_val, idx);
+    fprintf( '[Target %d] [Optimal input pars] [%s] \n', i, join( string( mov_pars ), ', ' ) );
+end
+
+%% -- (9B) Reading the data 
+
+dir_name   = './myData/with_wrist_Target_1/data_log/';
+file_names = { 'data_log_wo_wrist.txt', 'data_log_w_wrist.txt' };
+
+
+for i = 1 : N_data
+    file_name      = [dir_name, file_names{ i }];
+    
+   rawData{ i } = myTxtParse( file_name  );
+%     rawData{ i } = myTxtParse( ['data_log_dense_T', num2str( i ), '.txt']  );
+   
    rawData{ i }.geomXPositions = rawData{ i }.geomXYZPositions( 1 : 3 : end , : );
    rawData{ i }.geomYPositions = rawData{ i }.geomXYZPositions( 2 : 3 : end , : );
-   rawData{ i }.geomZPositions = rawData{ i }.geomXYZPositions( 3 : 3 : end , : );    
+   rawData{ i }.geomZPositions = rawData{ i }.geomXYZPositions( 3 : 3 : end , : );
 end
+
+%% -- (9C) Comparison with/without wrist
+idx = 1;        % Choose type
+
+idxS = find( rawData{ idx }.output == min( rawData{ idx }.output ), 1, 'first'  );
+
+tIdx = [1, 42, idxS;
+        1, 37, idxS ];
+
+viewArr = [ 49.9456, 4.7355;
+            49.9456, 4.7355];
+
+alpha = [0.3, 0.5, 1.0];                                              % The alpha values of each screen shot   
+f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
+axis square; hold on;
+
+
+color_arr = [      0, 0.4470, 0.7410; ...
+                   0, 0.4470, 0.7410];
+          
+cTarget = color_arr( idx, : );
+
+mTarget = scatter3( rawData{ idx }.geomXPositions( 1, 1 ), ...
+                    rawData{ idx }.geomYPositions( 1, 1 ), ...
+                    rawData{ idx }.geomZPositions( 1, 1 ), 500, ...        % Setting the handle of the ZFT Plot, 
+                   'parent', a,   'LineWidth', 1,               ...       % For the main plot (s1)
+                   'MarkerFaceColor', cTarget, 'MarkerEdgeColor', cTarget, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha',    1  );
+
+      
+for i = 1 : 3
+    p1 = plot3(  rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
+                 rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
+                 rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), ...
+                 'parent', a, ...
+                'linewidth', 7, 'color', [ 0.2,0.2, 0.2, alpha( i ) ] );
+            
+    p2 = scatter3( rawData{ idx }.geomXPositions( 2:4, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomYPositions( 2:4, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomZPositions( 2:4, tIdx( idx, i ) ), 800, ... 
+                   'parent', a,   'LineWidth',  5, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i )  );
+
+               
+%     p3 = plot3(  rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
+%                  rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
+%                  rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), ...
+%                  'parent', a, ...
+%                 'linewidth', 8, 'color', [ c.purple_plum, alpha( i ) ] );
+            
+    p4 = scatter3( rawData{ idx }.geomXPositions( 5:end, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomYPositions( 5:end, tIdx( idx, i ) ), ...
+                   rawData{ idx }.geomZPositions( 5:end, tIdx( idx, i ) ), 100, ... 
+                   'parent', a,   'LineWidth', 3, ...
+                   'MarkerFaceColor', c.white, 'MarkerEdgeColor',  [0.75, 0, 0.75], ...[0.75, 0, 0.75], ...
+                   'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', alpha(i)  );
+               
+               
+end    
+
+
+tmpLim = 2.4;               
+set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Setting the axis ratio of x-y-z all equal.
+          'YLim',   [ - tmpLim, tmpLim ] , ...    
+          'ZLim',   [ - tmpLim, tmpLim ] , ...
+          'view',   viewArr( idx, : ) )  %  [BACKUP] [Target #1] 16.3213    6.0865
+      
+
+set( a, 'xtick', [-2, 0, 2] ); set( a, 'xticklabel', ["-2", "\fontsize{50}X (m)", "+2"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [-2, 0, 2] ); set( a, 'yticklabel', ["-2", "\fontsize{50}Y (m)", "+2"] ); % ["-2", "Y[m]", "+2"] )
+set( a, 'ztick', [-2, 0, 2] ); set( a, 'zticklabel', ["-2", "\fontsize{50}Z (m)", "+2"] ); % ["-2", "Z[m]", "+2"] )
+set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
+xtickangle( 0 ); ytickangle( 0 )
+exportgraphics( f,[fig_dir, 'SF7_',num2str(idx),'time_lapse.pdf'],'ContentType','vector')
+

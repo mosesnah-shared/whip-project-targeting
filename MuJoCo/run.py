@@ -159,7 +159,7 @@ def main( ):
         # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
         # mov_pars  = np.array( str2float( args.mov_pars )  )
-        mov_pars  = np.array( [-1.09762,-0.01293,-0.34907, 1.41372, 1.724  , 0.     ,-0.31028, 0.3161 , 0.94849])
+        mov_pars  = np.array( [-1.501, 0, -0.2715, 1.4137, 1.7279, 0, 0, 0.36652, 0.95])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
@@ -216,6 +216,14 @@ def main( ):
         # ================================================= #
         # =============== For optimization ================ #
         # ================================================= #
+
+        # =================================================================================================== #
+        # =============================== WITH WRIST         ================================== #
+        # =================================================================================================== #
+        # [Target 1] [Optimal value] [0.05758] [idx] [232]
+        # [Target 1] [Optimal input pars] [-1.0821, 0, -0.34907, 1.4137, 1.7279, 0, -0.34907, 0.33161, 0.95]
+        # [Target 2] [Optimal value] [0.05071] [idx] [232]
+        # [Target 2] [Optimal input pars] [-1.501, 0, -0.2715, 1.4137, 1.7279, 0, 0, 0.36652, 0.95]
 
         # =================================================================================================== #
         # =============================== For Tapered Whip Model           ================================== #
@@ -334,50 +342,50 @@ def main( ):
         # val = mySim.run( init_cond )                                            # Getting the objective value
 
         # For robustness analysis
-        if True:
-            N = 200
-
-            # std = 0.1
-
-            if args.target_type == 1:
-                mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ])
-                f = open( "out1_D.txt", "w" )
-
-            elif args.target_type == 2:
-                mov_pars  = np.array( [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
-                f = open( "out2_D.txt", "w" )
-
-            elif args.target_type == 3:
-                mov_pars  = np.array( [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )
-                f = open( "out3_D.txt", "w" )
-
-            elif args.target_type == 4:
-                mov_pars  = np.array( [-0.94248, 0.     , 1.0472 , 1.41372, 2.67035,-1.00841,-0.46542, 0.47124, 0.95   ] )
-                f = open( "out4_D.txt", "w" )
-
-            elif args.target_type == 5:
-                mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333 ] )
-                f = open( "out5_D.txt", "w" )
-
-            for _ in range( N ):
-
-                tmp_random = np.random.uniform( -0.05, 0.05 , 1 )
-
-                mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ] , "D" : mov_pars[ -1 ]+ tmp_random } ) # Setting the trajectory of the controller, for this case, traj = x0
-                val = mySim.run(  )                                            # Getting the objective value
-
-                print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random )
-                print( "[output]", val )
-
-                f.write( "[input_vals] ")
-                f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random ) ), separator=', ') + "\n" )
-                f.write( "[output] " )
-                f.write( str( val ) + "\n" )
-                mySim.reset( )
-        else:
-            val = mySim.run(  )                                            # Getting the objective value
-            print( val )
-            mySim.close( )
+        # if True:
+        #     N = 200
+        #
+        #     # std = 0.1
+        #
+        #     if args.target_type == 1:
+        #         mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ])
+        #         f = open( "out1_D.txt", "w" )
+        #
+        #     elif args.target_type == 2:
+        #         mov_pars  = np.array( [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
+        #         f = open( "out2_D.txt", "w" )
+        #
+        #     elif args.target_type == 3:
+        #         mov_pars  = np.array( [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )
+        #         f = open( "out3_D.txt", "w" )
+        #
+        #     elif args.target_type == 4:
+        #         mov_pars  = np.array( [-0.94248, 0.     , 1.0472 , 1.41372, 2.67035,-1.00841,-0.46542, 0.47124, 0.95   ] )
+        #         f = open( "out4_D.txt", "w" )
+        #
+        #     elif args.target_type == 5:
+        #         mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333 ] )
+        #         f = open( "out5_D.txt", "w" )
+        #
+        #     for _ in range( N ):
+        #
+        #         tmp_random = np.random.uniform( -0.05, 0.05 , 1 )
+        #
+        #         mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ] , "D" : mov_pars[ -1 ]+ tmp_random } ) # Setting the trajectory of the controller, for this case, traj = x0
+        #         val = mySim.run(  )                                            # Getting the objective value
+        #
+        #         print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random )
+        #         print( "[output]", val )
+        #
+        #         f.write( "[input_vals] ")
+        #         f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random ) ), separator=', ') + "\n" )
+        #         f.write( "[output] " )
+        #         f.write( str( val ) + "\n" )
+        #         mySim.reset( )
+        # else:
+        val = mySim.run(  )                                            # Getting the objective value
+        print( val )
+        mySim.close( )
 
     else:
         # If running nlopt optimization
