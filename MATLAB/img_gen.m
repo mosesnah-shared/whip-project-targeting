@@ -615,7 +615,7 @@ exportgraphics( f,[fig_dir, 'F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'Content
 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx  = 5;
+idx  = 1;
 
 color_arr = [      0, 0.4470, 0.7410; ...
               0.8500, 0.3250, 0.0980; ...
@@ -653,12 +653,12 @@ pC
 eigvecs( :, 1 )
 
 
-scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
-          rawData{ idx }.geomYPositions( 2, idxStart ), ...
-          rawData{ idx }.geomZPositions( 2, idxStart ), 300, 's', ... 
-          'parent', a,   'LineWidth', 4, ...
-          'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
-          'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
+% scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
+%           rawData{ idx }.geomYPositions( 2, idxStart ), ...
+%           rawData{ idx }.geomZPositions( 2, idxStart ), 300, 's', ... 
+%           'parent', a,   'LineWidth', 4, ...
+%           'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+%           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
 
 plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 4, idxStart : idxEnd ), ...
@@ -755,7 +755,7 @@ end
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 
-exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'a_best_fit_plane.pdf'],'ContentType','vector' )
+exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'a_best_fit_plane_no_shoulder.pdf'],'ContentType','vector' )
 
 %% -- (3E) Contribution of each Movements
 
@@ -1725,3 +1725,196 @@ set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 )
 exportgraphics( f,[fig_dir, 'SF7_',num2str(idx),'time_lapse.pdf'],'ContentType','vector')
 
+%% ==================================================================
+%% (10-) Simulation vs. Experiment
+%% -- (10A) Elbow + Shoulder joint angle
+
+
+raw_data_exp = load( './myData/Sim2Exp_Shared_NE/Sim2ExpData.mat' );
+
+% A bit of trimming
+fs = 667;
+dt = 1/fs;
+
+% Manually found initial/final posture 
+ts = 1.65;
+tf = 3.10;
+
+
+N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
+
+t_vec = 0:dt: (N-1)*dt;
+
+idx = find( ts <= t_vec & tf >= t_vec );
+
+t_vec_cal = t_vec( idx ) - min( t_vec( idx ) );
+
+qpos_sim = [ raw_data_exp.StructOut.JAngles.Upper2Vertical( idx )'; raw_data_exp.StructOut.JAngles.Lower2Upper( idx )' ];
+dist     = raw_data_exp.StructOut.Tip2TargetDistance( idx );
+
+qpos_sim = qpos_sim * pi/180;
+
+f = figure( 1 ); a = axes( 'parent', f );
+plot( t_vec_cal, qpos_sim(1, :), 'linewidth', 10, 'color', 'k' )
+hold on
+
+raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T1.txt' );
+
+plot( raw_data_sim.currentTime, raw_data_sim.qPos( 1, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
+set( a, 'xlim', [0, 1 ] )
+xlabel( 'Time (sec)' ); 
+ylabel( 'Shoulder Angle (rad)' ); 
+[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northwest'  );
+hl = findobj(hobj,'type','line');
+set( hl, 'linewidth', 4 )
+
+exportgraphics( f,[fig_dir, 'SF8_shoulder.pdf'],'ContentType','vector')
+
+f = figure( 2  ); a = axes( 'parent', f );
+plot( t_vec_cal, qpos_sim(2, :), 'linewidth', 10, 'color', 'k' )
+hold on
+
+
+
+raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T1.txt' );
+
+plot( raw_data_sim.currentTime, raw_data_sim.qPos( 4, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
+set( a, 'xlim', [0, 1 ] )
+xlabel( 'Time (sec)' ); 
+ylabel( 'Elbow Angle (rad)' ); 
+[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northeast'  );
+hl = findobj(hobj,'type','line');
+set( hl, 'linewidth', 4)
+exportgraphics( f,[fig_dir, 'SF8_elbow.pdf'],'ContentType','vector')
+
+%% -- (10B) Elbow + Shoulder Cartesian Position
+
+f = figure(3 ); a = axes( 'parent', f );
+hold on
+plot3( raw_data_sim.geomXYZPositions( 10, 1:60 ), 0.5 + raw_data_sim.geomXYZPositions( 11, 1:60  ), raw_data_sim.geomXYZPositions( 12, 1:60  ), 'color', [0, 0.4470, 0.7410]	 )
+
+tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
+
+% A bit of trimming
+fs = 667;
+dt = 1/fs;
+
+% Manually found initial/final posture 
+ts = 1.65;
+tf = 3.10;
+
+
+N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
+
+t_vec = 0:dt: (N-1)*dt;
+
+idx = find( ts <= t_vec & tf >= t_vec );
+
+
+plot3( 2-tmp( 2, idx ), -0.5 + tmp( 1, idx ), tmp( 3, idx ), 'color', [0, 0.4470, 0.7410], 'linestyle', '-.' )
+tmp1 = [-1, 1];
+set( a, 'xlim', tmp1, 'ylim', tmp1, 'zlim', tmp1, 'view', [49.9456, 4.7355] ); 
+axis square
+
+%% -- (10C) Best-fit Plane
+
+% A bit of trimming
+fs = 667;
+dt = 1/fs;
+
+% Manually found initial/final posture 
+ts = 1.65;
+tf = 2.15;
+
+
+N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
+
+t_vec = 0:dt: (N-1)*dt;
+
+idx = find( ts <= t_vec & tf >= t_vec );
+
+tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
+
+% Simulation
+x_w_exp = 2 - tmp( 2, idx )';
+y_w_exp = 0.2 + tmp( 1, idx )';
+z_w_exp = tmp( 3, idx )';
+
+
+p  = [ x_w_exp, y_w_exp, z_w_exp ]; 
+pC = mean( p );                                                            % The mean of the data
+pn = p - pC;                                                               % Centralized data
+[eigvecs, eigvals] = eig( pn' * pn );
+
+% The eigenvalues are ordered from low to high
+% Getting the first eigenvectors and find the vectors that are orthogonal to it.
+
+w = null( eigvecs( : , 1)' ); 
+pC
+eigvecs( :, 1 )
+
+tmp = 0;
+for i = 1 : length( idx )  % Brute force calculation of the distance.
+%     ttmp = ( eigvecs(1,1) * ( x(i) - pC(1) ) ) + ( eigvecs(2,1) * ( y(i) - pC(2) ) )^2 + ( eigvecs(3,1) * ( z(i) - pC(3) )  )^2 ;
+    ttmp = abs( ( eigvecs(1,1) * ( x_w_exp( i ) - pC( 1 ) ) ) + ...
+                ( eigvecs(2,1) * ( y_w_exp( i ) - pC( 2 ) ) ) + ...
+                ( eigvecs(3,1) * ( z_w_exp( i ) - pC( 3 ) ) ) );
+    tmp = tmp + ttmp^2;
+end
+
+sqrt( tmp/length( idx ) )
+
+
+          
+tmpLim = 0.7;    
+[P,Q] = meshgrid( -tmpLim + 0.2: 0.5 : tmpLim + 0.1);          
+
+
+XX = pC( 1 ) + w( 1, 1 ) * P + w( 1, 2 ) * Q;                              
+YY = pC( 2 ) + w( 2, 1 ) * P + w( 2, 2 ) * Q;                              
+ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
+
+f =figure( 10 ); a = axes( 'parent', f, 'Projection','perspective' );
+hold on
+scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
+           'parent', a,   'LineWidth', 6, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );      
+       
+ttmp = 2 * round( 1/60/(1/fs ) )
+       
+scatter3(  x_w_exp( 1 : ttmp : end ), y_w_exp( 1 : ttmp : end ), z_w_exp( 1 : ttmp : end ),200, ...
+           'parent', a,   'LineWidth', 4, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );       
+       
+       
+surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', [0, 0.4470, 0.7410], 'facealpha', 0.3 );
+
+mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', [0, 0.4470, 0.7410], 'tipWidth', 0.03, 'stemWidth', 0.008 );
+tmpLim2 = 0.7;
+
+set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
+          'YLim',   [ - tmpLim2, tmpLim2 ] , ...    
+          'ZLim',   [ - tmpLim2, tmpLim2 ] , ...
+          'view',   [ 97.3451, 5.0653] )  
+set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
+set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )        
+set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
+xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )      
+      
+axis square      
+exportgraphics( f,[fig_dir, 'SF10_BFP.pdf'],'ContentType','vector')
+
+%% 
+tmpH = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
+tmpE = raw_data_exp.StructOut.CoordsInTargetRF.Elbow';
+tmpS = raw_data_exp.StructOut.CoordsInTargetRF.Shoulder';
+tmpW = raw_data_exp.StructOut.CoordsInTargetRF.w1'; 
+hold on
+plot3( tmpH( 1, : ), tmpH( 2, : ), tmpH( 3, : ) )
+plot3( tmpE( 1, : ), tmpE( 2, : ), tmpE( 3, : ) )
+plot3( tmpS( 1, : ), tmpS( 2, : ), tmpS( 3, : ) )
+% plot3( tmpW( 1, : ), tmpW( 2, : ), tmpW( 3, : ) )
+axis square
