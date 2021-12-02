@@ -811,7 +811,7 @@ plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c2_K( idxS ), 'linewidt
 plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c3_K( idxS ), 'linewidth', 4, 'linestyle', ':'  , 'color', c.black )
 plot( rawData{idx}.currentTime( idxS ) - t_start( idx ), c4_K( idxS ), 'linewidth', 4, 'linestyle', '-.' , 'color', c.black )
 
-[hleg1, hobj1] = legend( "c_1","c_2","c_3","c_4", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
+[hleg1, hobj1] = legend( "w_1","w_2","w_3","w_4", 'fontsize', 50, 'location', 'northwest', 'fontname', 'myriad pro' );
    set(hleg1,'position',[0.15 0.70 0.1 0.15])
 
 
