@@ -17,6 +17,7 @@ from sympy.utilities.lambdify import lambdify, implemented_function
 
 from scipy.special    import lambertw
 from scipy.integrate  import quad
+from scipy.spatial.transform import Rotation as R
 
 # [Local modules]
 from modules.constants import Constants
@@ -128,6 +129,12 @@ def args_cleanup( args, s ):
         args[ new_key ] = args.pop( old_key )
 
     return args
+
+
+def rot2quat( rot ):
+    # Taking the SO(3) matrix as an input and return the quaternion
+
+    return quat
 
 def euler2quaternion( euler_angs ):
     """
@@ -266,6 +273,8 @@ def my_mkdir(  ):
 
 def my_mvdir( from_dir, to_dir ):
     shutil.move( from_dir , to_dir )
+
+
 
 
 def my_rmdir( dir ):

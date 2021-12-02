@@ -133,8 +133,8 @@ class Simulation( ):
         self._init_sim(  )
         self._set_init_cond( init_cond )
 
-        self.wait_until( 240 )
-        self.mjModel.opt.timestep = 0.0001
+        # self.wait_until( 240 )
+        # self.mjModel.opt.timestep = 0.0001
 
         while self.t <= self.run_time:
 
@@ -185,6 +185,8 @@ class Simulation( ):
             if self.args.print_mode == "verbose":
                 my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
                                               self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
+
+            print( "elbow position", self.mjData.geom_xpos[ self.mjModel.geom_name2id( "geom_elbow" ) ] )
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,

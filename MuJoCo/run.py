@@ -101,7 +101,7 @@ from modules.constants    import Constants
 # (0B) [SYSTEM SETTINGS] + [ARGUMENT PARSER]
 
                                                                                 # [Printing Format]
-np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       # Setting the numpy print options, useful for printing out data with consistent pattern.
+# np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       # Setting the numpy print options, useful for printing out data with consistent pattern.
                                                                                 # precision: float precision for print/number comparison.
 
 # [Argument parser]
@@ -159,7 +159,7 @@ def main( ):
         # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
         # mov_pars  = np.array( str2float( args.mov_pars )  )
-        mov_pars  = np.array( [-1.501, 0, -0.2715, 1.4137, 1.7279, 0, 0, 0.36652, 0.95])
+        mov_pars  = np.array( [-1.51650,      0,        0, 0.15708, 1.7279, 0, 0, 0.36652, 0.95])
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None

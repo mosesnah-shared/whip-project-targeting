@@ -76,8 +76,6 @@
 
 		</body>
 
-	<geom name='target' type='sphere' pos='1.69352 1.69352 0.0' material='LimbColor' mass='0' size='0.03'/>
-
   </worldbody>
 
 	<actuator>
