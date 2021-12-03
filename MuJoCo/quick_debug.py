@@ -43,13 +43,27 @@ def main( ):
         r = R.from_euler( 'yxz', [1.51650, 0, 0], degrees=False )
         print( r.as_quat( ) )
 
+        # Gravity Torque for the compensation
+        # print("HI", mjData.get_site_jacp( "site_upper_arm_COM" ) )
+
+        G = np.dot( mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : 4 ].T, - 1.595 * mjModel.opt.gravity  )  \
+          + np.dot( mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : 4 ].T, - 0.869 * mjModel.opt.gravity )
+
+        print( "1", mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 ) )
+        print( "2", mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 ) )
+
+        print( "Gravity Torque", G )
+
+
         my_print(  timeStep = t )
 
         mjData.qpos[ 0:4 ] = r.as_quat( )
         mjData.qpos[ -1]   = 0.15708
 
-        print( mjData.qpos )        # For the shoulder, we have four values, which are quaternion form.
+        print( "helo", mjData.qpos )        # For the shoulder, we have four values, which are quaternion form.
                                     # [1 0 0 0], means a + bi + cj + dk
+        print( "Hi", np.linalg.norm( mjData.qpos[ 0 : 4 ], 2 )  )
+
 
         # [-0.29356674  0.         -0.01595528]
         # elbow position [-0.29356674  0.         -0.01595528]
