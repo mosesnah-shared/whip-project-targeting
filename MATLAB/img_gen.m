@@ -61,8 +61,8 @@ A = [ zeros( N ), eye( N );
 S = [1,zeros( 1, N-1 )]';           
 
 % Input matrix 
-BB = [ zeros( N, 1 ); inv( M )*S ];
-C = ctrbf( A, BB )
+% BB = [ zeros( N, 1 ); inv( M )*S ];
+% C = ctrbf( A, BB )
 
 
 % Canonical form of the (complex) eigenvalue/eigenvector problem
@@ -139,7 +139,7 @@ axis equal off
 grid on
 
 % mySaveFig( gcf, 'S1_PZPlot' )
-exportgraphics( f,'S_fig1.eps')%,'ContentType','vector')
+% exportgraphics( f,'S_fig1.eps')%,'ContentType','vector')
 
 %% -- (1B) EigenMode Plot
 
@@ -188,6 +188,7 @@ alpha = [8, 20, 30];
 f = figure( );
 a = axes( 'parent', f );
 hold on
+grid off
 
 
 eigmode3 = alpha( 3 ) * imag( eig_mode( :, 1 ) );
@@ -230,7 +231,7 @@ set( gca,'LineWidth',3)
 
     % axis box
 
-exportgraphics( f,'S_fig2.eps')
+% exportgraphics( f,'S_fig2.eps')
 
 
 %% ==================================================================
