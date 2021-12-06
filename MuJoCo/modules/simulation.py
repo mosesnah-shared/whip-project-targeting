@@ -186,7 +186,7 @@ class Simulation( ):
                 my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
                                               self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
 
-            print( "elbow position", self.mjData.geom_xpos[ self.mjModel.geom_name2id( "geom_elbow" ) ] )
+            # print( "elbow position", self.mjData.geom_xpos[ self.mjModel.geom_name2id( "geom_elbow" ) ] )
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,

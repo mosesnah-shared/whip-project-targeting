@@ -151,9 +151,6 @@ class Controller( ):
                 # The mass of the whip is the other masses summed up
                 self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
 
-                print( "1", self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 ) )
-                print( "2", self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 ) )
-
                 # If no whip is attached, then the mass will be zero.
                 G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
 
