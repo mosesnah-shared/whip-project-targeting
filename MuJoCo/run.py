@@ -155,14 +155,14 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
+        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
         # mov_pars  = np.array( str2float( args.mov_pars )  )
-        mov_pars  = np.array( [-0.94248, 0.     , 0.     , 1.41372, 1.72788, 0.     , 0.     , 1.41372, 0.95   ] )
+        mov_pars  = np.array( [-0.8649, 0.0, 0.5042, 0.0175, 1.4021, 0.0, -0.5042,0.1920, 1.1356] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
-        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args ) if "_w_" in args.model_name else None
+        objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
         # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
         #               'qvel': np.zeros( 54 )  }
         # [BACKUP] [Moses C. Nah]
@@ -230,7 +230,8 @@ def main( ):
         # =================================================================================================== #
         # [Target 1] [Optimal value] [0.05638] [idx] [334]
         # [Target 1] [Optimal input pars] [-0.84939, -0.03879, 0.46542, 0.05236, 1.4137, 0, -0.46542, 0.15708, 1.1537]
-
+        # When considering the whole 600 iterations
+        # [Target 1] [-0.8649, 0.0, 0.5042, 0.0175, 1.4021, 0.0, -0.5042,0.1920, 1.1356]
         lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
         ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
         n_opt = 9
