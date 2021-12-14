@@ -1,6 +1,6 @@
 <mujoco model="1_3D_model_w_N25">
   <compiler inertiafromgeom="auto" angle="radian" />
-   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="all">
+   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="predefined">
      <flag energy="enable" />
    </option>
    <asset>
@@ -192,7 +192,7 @@
             <!-- === [ N, L, M, k, b, rho ] = [25,1.800000,0.300000,0.242000,0.092000,1.000000] -->
          </body>
       </body>
-      <geom name="geom_target" type="sphere" pos="0.8468 0.8468 0" material="LimbColor" mass="0" size="0.03" />
+      <geom name="geom_target" type="sphere" pos="1.5521 1.5521 0" material="LimbColor" mass="0" size="0.03" />
  </worldbody>
 
    <!-- BACKUP-->
