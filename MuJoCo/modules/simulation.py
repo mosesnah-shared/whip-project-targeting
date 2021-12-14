@@ -55,6 +55,7 @@ class Simulation( ):
         self.is_save_data = True  if args.save_data                    else False
         self.is_vid_rec   = True  if args.record_vid                   else False
         self.is_vid_on    = False if args.run_opt or args.vid_off      else True
+        # self.is_vid_on    = False if args.vid_off      else True
         self.is_run_opt   = args.run_opt
 
         # Based on the model_name, construct the simulation.
