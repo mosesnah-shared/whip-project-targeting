@@ -155,11 +155,12 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-        # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
+        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
 
         # mov_pars  = np.array( str2float( args.mov_pars )  )
-        mov_pars  = np.array( [-0.8649, 0.0, 0.5042, 0.0175, 1.4021, 0.0, -0.5042,0.1920, 1.1356] )
+        # mov_pars  = np.array( [0.0, 0.0, 0, 0.0,  1.72788,0.     ,0.23271,0.47124,0.85   ] )
+        mov_pars  = np.array( [0.0, 0.0, 0, 0.0,  1.72534,0.     ,0.     ,0.97741,0.77779] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
 
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
@@ -232,9 +233,15 @@ def main( ):
         # [Target 1] [Optimal input pars] [-0.84939, -0.03879, 0.46542, 0.05236, 1.4137, 0, -0.46542, 0.15708, 1.1537]
         # When considering the whole 600 iterations
         # [Target 1] [-0.8649, 0.0, 0.5042, 0.0175, 1.4021, 0.0, -0.5042,0.1920, 1.1356]
-        lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-        n_opt = 9
+
+        # lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        # ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        # n_opt = 9
+
+        # Upper/Lower bound for the simulation
+        lb    = np.array( [ 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.2 ] )                     # Defining the bound. with np array.
+        ub    = np.array( [ 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        n_opt = 5
 
         # [TODO] This is for fixing the initial condition of the system
         # lb    = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
@@ -419,9 +426,8 @@ def main( ):
         def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters
-            mySim.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
-            # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
-            # mySim.ctrl.traj.set_traj(  { "pi" : 0.57407, "pf" : pars[ 0 ], "D" : pars[ 1 ] }   )
+            # mySim.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
+            mySim.ctrl.traj.set_traj(  { "pi" : [0.0, 0, 0, 0.0], "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
             # val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
             val = mySim.run(  )
 
