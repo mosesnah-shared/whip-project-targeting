@@ -239,7 +239,7 @@ set( gca,'LineWidth',3)
 %% -- (2A) Calling the data + Plot
 
 dir_name  = './myData/optimization_process_3_new/';
-N_data    = 5;                                                             % We have 5 targets to analyze.
+N_data    = 6;                                                             % We have 5 targets to analyze.
 data_list = cell( 1, N_data );                                             % The whole collection of data     
 
 for i = 1 : N_data
@@ -287,20 +287,21 @@ for i = 1 : 3   % For target 1, 2 and 3
         
     end
 
-    plot( data.output( 1: opt_idx( i ) ), 'linewidth', 3 )
+%     plot( data.output( 1: opt_idx( i ) ), 'linewidth', 3 )
     disp( min( data.output( 1 : opt_idx( i ) ) ) )
 end
 
 % For targets that is within reach
-plot( data_list{ 4 }.Iter, data_list{ 4 }.output, 'linewidth', 3 )
-plot( data_list{ 5 }.Iter, data_list{ 5 }.output, 'linewidth', 3 )
+plot( data_list{ 4 }.Iter, data_list{ 4 }.output, 'linewidth', 3, 'color', [0.4940 0.1840 0.5560] )
+plot( data_list{ 5 }.Iter, data_list{ 5 }.output, 'linewidth', 3, 'color', [0.4660 0.6740 0.1880] )
+plot( data_list{ 6 }.Iter, data_list{ 6 }.output, 'linewidth', 3, 'color', [0.6350 0.0780 0.1840] )
 
 xlabel( 'Iteration (-)' );  ylabel( '{\it{L^*}}(m)' );
-[~, hobj, ~, ~] = legend( 'Target 1', 'Target 2', 'Target 3', 'Target 4', 'Target 5', 'fontsize', 30 );
+[~, hobj, ~, ~] = legend( 'Target 4', 'Target 5', 'Target 6', 'fontsize', 30 );
 ht = findobj(hobj,'type','line');
 set(ht,'Linewidth',12);
 
-set( gca, 'xlim', [1, max( opt_idx ) ] )
+set( gca, 'xlim', [1, 80] )
 set( gca, 'ylim', [0, 3.5] )
 
 % For saving the figure of the iteration
@@ -1759,34 +1760,82 @@ f = figure( 1 ); a = axes( 'parent', f );
 plot( t_vec_cal, qpos_sim(1, :), 'linewidth', 10, 'color', 'k' )
 hold on
 
-raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T1.txt' );
+raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
 
 plot( raw_data_sim.currentTime, raw_data_sim.qPos( 1, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
-set( a, 'xlim', [0, 1 ] )
+set( a, 'xlim', [0, 1.0 ] )
 xlabel( 'Time (sec)' ); 
 ylabel( 'Shoulder Angle (rad)' ); 
 [~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northwest'  );
 hl = findobj(hobj,'type','line');
 set( hl, 'linewidth', 4 )
 
-exportgraphics( f,[fig_dir, 'SF8_shoulder.pdf'],'ContentType','vector')
+% exportgraphics( f,[fig_dir, 'SF8_shoulder.pdf'],'ContentType','vector')
 
 f = figure( 2  ); a = axes( 'parent', f );
 plot( t_vec_cal, qpos_sim(2, :), 'linewidth', 10, 'color', 'k' )
 hold on
 
-
-
-raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T1.txt' );
+raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
 
 plot( raw_data_sim.currentTime, raw_data_sim.qPos( 4, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
-set( a, 'xlim', [0, 1 ] )
+set( a, 'xlim', [0, 1.0 ] )
 xlabel( 'Time (sec)' ); 
 ylabel( 'Elbow Angle (rad)' ); 
-[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northeast'  );
+[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northwest'  );
 hl = findobj(hobj,'type','line');
 set( hl, 'linewidth', 4)
-exportgraphics( f,[fig_dir, 'SF8_elbow.pdf'],'ContentType','vector')
+% exportgraphics( f,[fig_dir, 'SF8_elbow.pdf'],'ContentType','vector')
+
+% Normalization?
+
+D_exp = 0.43;
+phi_i_exp_s = 0.135;
+phi_f_exp_s = 1.000;
+phi_i_exp_e = 0.290;
+phi_f_exp_e = 0.500;
+
+phi_i_sim_s = 0.135;
+phi_f_sim_s = 2.042;
+phi_i_sim_e = 0.290;
+phi_f_sim_e = 0.995;
+D_sim = 0.83;
+
+idx_exp = find( ts <= t_vec & ts+D_exp >= t_vec );
+idx_sim = find( raw_data_sim.currentTime <= D_sim );
+
+t_exp = t_vec( idx_exp ) - min( t_vec( idx_exp ) );
+t_sim = raw_data_sim.currentTime( idx_sim );
+
+qpos_exp_norm = [ raw_data_exp.StructOut.JAngles.Upper2Vertical( idx_exp )'; raw_data_exp.StructOut.JAngles.Lower2Upper( idx_exp )' ] * pi/180;
+qpos_sim_norm = [ raw_data_sim.qPos( 1, idx_sim ); raw_data_sim.qPos( 4, idx_sim ) ];
+
+% Normalization 
+t_exp = t_exp / max( t_exp );
+t_sim = t_sim / max( t_sim );
+
+qpos_exp_norm( 1, : ) = ( qpos_exp_norm( 1, : ) - min( qpos_exp_norm( 1, : ) ) )/ max( qpos_exp_norm( 1, : ) - min( qpos_exp_norm( 1, : ) )  );
+qpos_exp_norm( 2, : ) = ( qpos_exp_norm( 2, : ) - min( qpos_exp_norm( 2, : ) ) )/ max( qpos_exp_norm( 2, : ) - min( qpos_exp_norm( 2, : ) )  );
+
+qpos_sim_norm( 1, : ) = ( qpos_sim_norm( 1, : ) - min( qpos_sim_norm( 1, : ) ) )/ max( qpos_sim_norm( 1, : ) - min( qpos_sim_norm( 1, : ) )  );
+qpos_sim_norm( 2, : ) = ( qpos_sim_norm( 2, : ) - min( qpos_sim_norm( 2, : ) ) )/ max( qpos_sim_norm( 2, : ) - min( qpos_sim_norm( 2, : ) )  );
+
+%%
+
+
+
+f = figure( );
+plot( t_sim, qpos_sim_norm( 1, : ), 'linewidth', 10, 'color', 'k', 'linestyle', '-.'  )
+hold on
+plot( t_exp, qpos_exp_norm( 1, : ), 'linewidth', 10, 'color', 'k'  )
+set( gca, 'xlim', [ 0, 1 ] )
+
+
+f = figure( );
+plot( t_sim, qpos_sim_norm( 2, : ), 'linewidth', 10, 'color', 'k', 'linestyle', '-.'  )
+hold on
+plot( t_exp, qpos_exp_norm( 2, : ), 'linewidth', 10, 'color', 'k'  )
+set( gca, 'xlim', [ 0, 1 ] )
 
 %% -- (10B) Elbow + Shoulder Cartesian Position
 

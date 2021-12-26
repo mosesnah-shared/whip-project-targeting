@@ -34,8 +34,13 @@ class MyVideo:
         -------
     """
     def __init__( self, vid_dir = None, height = 1440, width = 850, fps = 60 ):
-        self.height    = height
-        self.width     = width
+
+        # self.height    = height
+        # self.width     = width
+
+        self.height    = 2880
+        self.width     = 1800
+
         self.vid_dir   = vid_dir if not None else "."
         self.fps       = fps
 
@@ -44,13 +49,14 @@ class MyVideo:
                                                                                 #              VideoWriter::fourcc('M','J','P','G') is a motion-jpeg codec etc.
                                                                                 # List of codes can be obtained at Video Codecs by FOURCC page.
         # self.outVideo  = cv2.VideoWriter( self.vid_dir + "/video.mp4", fourcc, fps, ( self.height, self.width ) )
-        self.outVideo  = cv2.VideoWriter( self.vid_dir + "/video.mp4", fourcc, fps, ( self.height, self.width ) )
+        self.outVideo  = cv2.VideoWriter( self.vid_dir + "/video.mp4", fourcc, fps, ( self.height//2, self.width//2 ) )
 
     def write( self, myViewer ):
         data = myViewer.read_pixels( self.height, self.width, depth = False )   # Get the pixel from the render screen
         data = cv2.cvtColor( data, cv2.COLOR_BGR2RGB )
 
         # data = cv2.resize( data,( self.height, self.width  ) )
+        data = cv2.resize( data,( self.height//2, self.width//2  ) )
 
         self.outVideo.write( np.flip( data, axis = 0 ) )
 
