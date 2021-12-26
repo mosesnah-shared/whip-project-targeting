@@ -136,6 +136,12 @@ class Simulation( ):
 
         # self.wait_until( 240 )
         # self.mjModel.opt.timestep = 0.0001
+        # [BACKUP] For Wrist Dynamics
+        # self.mjData.qpos[ : ] = np.array( [ 0.135, 0, 0, 0.29,0.0003,-0.0987,0.0008,-0.2002,0.0003,-0.0818, 0.0001, -0.034, 0.0001 ,-0.0143, 0., -0.0062, 0., -0.0027, 0., -0.0012, 0., -0.0005,  0., -0.0003, 0., -0.0001, -0., -0.0001, -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,-0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,  -0., -0., -0., -0., -0.    ] )
+        # self.mjSim.forward( )
+
+        # Set run_time twice the duration
+        self.run_time = self.ctrl.traj.pars[ "D" ] * 2.
 
         while self.t <= self.run_time:
 
@@ -186,8 +192,6 @@ class Simulation( ):
             if self.args.print_mode == "verbose":
                 my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
                                               self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
-
-            # print( "elbow position", self.mjData.geom_xpos[ self.mjModel.geom_name2id( "geom_elbow" ) ] )
 
             if self.is_save_data and self.step % self.save_step == 0:
                 my_print( currentTime = self.t,
