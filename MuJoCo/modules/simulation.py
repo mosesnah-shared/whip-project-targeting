@@ -141,7 +141,7 @@ class Simulation( ):
         # self.mjSim.forward( )
 
         # Set run_time twice the duration
-        self.run_time = self.ctrl.traj.pars[ "D" ] * 2.
+        self.run_time = self.ctrl.traj.pars[ "D" ] * 2.3
 
         while self.t <= self.run_time:
 
