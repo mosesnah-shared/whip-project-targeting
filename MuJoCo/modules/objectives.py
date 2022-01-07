@@ -119,7 +119,7 @@ class DistFromTip2Target( Objective ):
             output = 0.0  # For tolerance.
             self.mjModel.geom_rgba[ self.target_idx ] = [ 0, 1, 0, 1 ]
 
-        return output
+        return output + 0.1     # If output 0.1 then 
 
     def _find_tip( self ):
 

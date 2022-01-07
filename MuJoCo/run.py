@@ -155,15 +155,20 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-        # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
+        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
         # mov_pars  = np.array( str2float( args.mov_pars )  )
         # mov_pars  = np.array( [0.0, 0.0, 0, 0.0,  1.72788,0.     ,0.23271,0.47124,0.85   ] )[
-        mov_pars  = np.array( [0.135, 0, 0, 0.29 , 2.04204,0.03879,0.23271,0.99484,0.82778] )
+        mov_pars  = np.array( [ -0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833 ] )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
         # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
         #               'qvel': np.zeros( 54 )  }
+
+        # [Target] [#1] -1.3609, 0.0047,  -0.3073 , 1.4130, 1.7279, -0.0559, -0.0074, 1.4046 ,0.9502
+        # [Target] [#2] -0.9285, 0.0922, -1.0446 , 1.3396, 1.7287, -1.0489, -0.0233,  0.4736 ,0.9491
+        # [Target] [#3] -0.9508, 1.0433, -0.0072,  1.3361, 1.7284, -1.0469, -0.0084,  1.4172 , 0.5815
+
         # [BACKUP] [Moses C. Nah]
         # If you want to impose that the controller's K and B matrices are symmetric
         # controller_object.set_ctrl_par(  mov_parameters =  [-1.50098, 0.     ,-0.23702, 1.41372, 1.72788, 0.     , 0.     , 0.33161, 0.95   ] ,
@@ -186,8 +191,10 @@ def main( ):
         # [Target 2] [Optimal input pars] [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ]
         # [Target 3] [Optimal value] [0.13481] [idx] [238]
         # [Target 3] [Optimal input pars] [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333]
-        # [Target 4] [Optimal input pars] [-1.36136, 0.     ,-0.34907, 1.41372, 1.72788, 0.     , 0.     , 1.41372, 0.95   ]
-        # [Target 5] [Optimal input pars] [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333]
+        # [Target 4] [Optimal input pars] [-1.3540, 0.0020,  -0.2817, 1.4156, 1.7279, -0.0817, -0.0163, 1.3788, 0.9500] [cam_pos] [0.55578,  0.01402, -0.57997,  5.16944,-14.29162, 98.39433]
+        # [Target 5] [Optimal input pars] [-0.9425, 0.0980,  -1.0492, 1.3641, 1.7279, -1.0492, -0.0184, 0.4712, 0.9500] [cam_pos] [0.24485,  0.38412, -1.22991,  6.25152,-45.53129,147.48524]
+        # [Target 6] [Optimal input pars] [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833] [cam_pos] [0.00263,   0.28365,  -0.44388,   6.82415, -25.87367,-173.73081]
+
 
         # =================================================================================================== #
         # =============================== Position Controller Result         ================================== #
@@ -201,9 +208,9 @@ def main( ):
         # [Target 2] [Optimal input pars] [-1.26830, 1.0472, -0.81449, 0.12217, 1.7279, -1.0472, -0.34907, 0.36652, 0.95000]
         # [Target 3] [Optimal value] [0.14324] [idx] [376]
         # [Target 3] [Optimal input pars] [-1.03560, 0.69813, -1.1636, 0.05236, 1.7279, -1.0472, -0.11636, 0.95993, 0.58333]
-        # [Target 4] [Optimal input pars] [-1.36136, 0.     ,-0.34907, 1.41372, 1.72788, 0.     , 0.     , 1.41372, 0.95   ]
-        # [Target 5] [Optimal input pars] [-0.94248, 0.     ,-1.0472 , 1.41372, 1.72788,-1.0472 , 0.     , 0.47124, 0.95   ]
-        # [Target 6] [Optimal input pars] [-0.94248, 1.0472 , 0.     , 1.41372, 1.72788,-1.0472 , 0.     , 1.41372, 0.58333]
+        # [Target 4] [Optimal input pars]
+        # [Target 5] [Optimal input pars]
+        # [Target 6] [Optimal input pars]
         # [Target 7] [Optimal input pars] [0.135, 0, 0, 0.29, 1.88496,0.     ,0.     ,0.86103,0.7    ]
         # [optimalOutput]: 0.04980
         # =================================================================================================== #
@@ -232,14 +239,14 @@ def main( ):
         # When considering the whole 600 iterations
         # [Target 1] [-0.8649, 0.0, 0.5042, 0.0175, 1.4021, 0.0, -0.5042,0.1920, 1.1356]
 
-        # lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        # ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-        # n_opt = 9
+        lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        n_opt = 9
 
         # Upper/Lower bound for the simulation
-        lb    = np.array( [ 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        ub    = np.array( [ 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-        n_opt = 5
+        # lb    = np.array( [ 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        # ub    = np.array( [ 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        # n_opt = 5
 
         # [TODO] This is for fixing the initial condition of the system
         # lb    = np.array( [ -np.pi/2,     0,     0,     0, 0.4 ] )
@@ -424,8 +431,8 @@ def main( ):
         def nlopt_objective( pars, grad ):                                      # Defining the objective function that we are aimed to optimize.
 
             # pars for this case is the number of movement parameters
-            # mySim.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
-            mySim.ctrl.traj.set_traj(  { "pi" : [0.135, 0, 0, 0.29], "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
+            mySim.ctrl.traj.set_traj(  { "pi" : pars[ 0 : 4 ], "pf" : pars[ 4 : 8 ], "D" : pars[ -1 ] }   )
+            # mySim.ctrl.traj.set_traj(  { "pi" : [0.135, 0, 0, 0.29], "pf" : pars[ 0 : 4 ], "D" : pars[ -1 ] }   )
             # val = mySim.run( init_cond )                                       # Running a single simulation and get the minimum distance achieved
             val = mySim.run(  )
 

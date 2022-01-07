@@ -383,7 +383,7 @@ end
 %% (3-) Miscellaneous Plots
 %% -- (3A) Calling the data + Plot
 
-for i = 1 : 5
+for i = 1 : 6
     
    rawData{ i } = myTxtParse( ['myData/simulation_log_3/data_log_T', num2str( i ), '.txt']  );
 %     rawData{ i } = myTxtParse( ['data_log_dense_T', num2str( i ), '.txt']  );
@@ -396,15 +396,16 @@ end
 
 %% -- (3B) Plot of Movement Snapshots
 
-idx = 5;        % Choose Target Type
+idx = 6;        % Choose Target Type
 
 idxS = find( rawData{ idx }.output == min( rawData{ idx }.output ), 1, 'first'  );
 
 tIdx = [1, 68, idxS;
         1, 37, idxS; 
         1, 24, idxS;
-        1, 44, idxS; 
-        1, 25, idxS];
+        1, 37, idxS; 
+        1, 37, idxS;
+        1, 24, idxS ];
 
 % viewArr = [ 49.9456, 4.7355;
 %             68.8342, 6.0279;
@@ -414,18 +415,20 @@ viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355;            
-            49.9456, 4.7355 ];
+            49.9456, 4.7355;
+            49.9456, 4.7355];
 
 alpha = [0.3, 0.5, 1.0];                                              % The alpha values of each screen shot   
 f = figure( ); a = axes( 'parent', f, 'Projection','perspective' );
 axis square; hold on;
 
 
-color_arr = [      0, 0.4470, 0.7410; ...
+color_arr = [  0.4940, 0.1840, 0.5560; ...
+              0.4660, 0.6740, 0.1880; ...
+              0.6350 0.0780 0.1840; ...
+              0, 0.4470, 0.7410; ...
               0.8500, 0.3250, 0.0980; ...
-              0.9290, 0.6940, 0.1250; ...
-              0.4940, 0.1840, 0.5560; ...
-              0.4660, 0.6740, 0.1880 ];
+              0.9290, 0.6940, 0.1250 ];
           
 cTarget = color_arr( idx, : );
 
@@ -489,10 +492,10 @@ exportgraphics( f,[fig_dir, 'F3_',num2str(idx),'a_timelapse.pdf'],'ContentType',
 %% -- (3C) The end-effector and the elbow's trajectory 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx = 5;
+idx = 6;
 
-tStarts = [0,0 ,0,0,0];
-tEnds   = [0.95 ,0.95    ,0.58333,0.95   ,0.58333];
+tStarts = [0,0 ,0,0,0, 0];
+tEnds   = [0.95 ,0.95    ,0.58333,0.95   , 0.95   , 0.58333];
 
 tStart = tStarts( idx );
 tEnd  = tEnds( idx );
@@ -507,19 +510,23 @@ axis equal; hold on;
 
 switch idx 
    
-    case 1
+    case 4
         idx_list = [1, 25, 35, 43, 57];
         alpha    = [0.2, 0.4, 0.6, 0.8, 1.0];
-    case 2
+    case 5
         idx_list = [1, 25, 33, 42, 57];
         alpha    = [0.2, 0.4, 0.6, 0.8, 1.0];
-    case 3
+    case 6
         idx_list = [1,  19, 25, 35];
         alpha    = [0.2, 0.4, 0.7, 1.0];
-    case 4
+        
+    case 1
         idx_list = [1, 30, 38, 57];
         alpha    = [0.2, 0.4, 0.7, 1.0];
-    case 5
+    case 2
+        idx_list = [1,  22, 28, 35];
+        alpha    = [0.2, 0.4, 0.7, 1.0];        
+    case 3
         idx_list = [1,  22, 28, 35];
         alpha    = [0.2, 0.4, 0.7, 1.0];        
 end
@@ -574,7 +581,8 @@ viewArr = [ 49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355;
             49.9456, 4.7355;            
-            49.9456, 4.7355 ];
+            49.9456, 4.7355;
+            49.9456, 4.7355];
 
 tmpLim = 0.6;               
 set( a,   'XLim',   [ - tmpLim, tmpLim ] , ...                             % Setting the axis ratio of x-y-z all equal.
@@ -617,15 +625,17 @@ exportgraphics( f,[fig_dir, 'F3_',num2str(idx),'b_timelapse_EL_EE.pdf'],'Content
 
 
 % Plotting the ``trace'' or ``path'' of the upper-limb movement.
-idx  = 1;
+idx  = 6;
 
-color_arr = [      0, 0.4470, 0.7410; ...
+color_arr = [  0.4940, 0.1840, 0.5560; ...
+              0.4660, 0.6740, 0.1880; ...
+              0.6350 0.0780 0.1840; ...
+              0, 0.4470, 0.7410; ...
               0.8500, 0.3250, 0.0980; ...
-              0.9290, 0.6940, 0.1250; ...
-              0.4940, 0.1840, 0.5560; ...
-              0.4660, 0.6740, 0.1880 ];
-t_start   = [     0,     0,     0,     0,    0 ];
-t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.583];
+              0.9290, 0.6940, 0.1250 ];
+          
+t_start   = [     0,     0,     0,     0,     0,    0 ];
+t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.950, 0.583];
 
 
 % Find the start and end point of the data
@@ -655,12 +665,12 @@ pC
 eigvecs( :, 1 )
 
 
-% scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
-%           rawData{ idx }.geomYPositions( 2, idxStart ), ...
-%           rawData{ idx }.geomZPositions( 2, idxStart ), 300, 's', ... 
-%           'parent', a,   'LineWidth', 4, ...
-%           'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
-%           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
+scatter3( rawData{ idx }.geomXPositions( 2, idxStart ), ...
+          rawData{ idx }.geomYPositions( 2, idxStart ), ...
+          rawData{ idx }.geomZPositions( 2, idxStart ), 300, 's', ... 
+          'parent', a,   'LineWidth', 4, ...
+          'MarkerFaceColor', c.white, 'MarkerEdgeColor', c.black, ...
+          'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );
 
 plot3( rawData{ idx }.geomXPositions( 4, idxStart : idxEnd ), ...
        rawData{ idx }.geomYPositions( 4, idxStart : idxEnd ), ...
@@ -690,9 +700,13 @@ sqrt( tmp/length( idxS ) )
 
 % [P,Q] = meshgrid( -tmpLim: 0.1 : tmpLim );                       
 if idx == 4
-    [P,Q] = meshgrid( -tmpLim - 0.15: 0.1 : tmpLim + 0.15);                  
-elseif idx == 5 || idx == 3 
+    [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.1);          
+elseif idx == 5     
+    [P,Q] = meshgrid( -tmpLim + 0.05: 0.1 : tmpLim + 0.05);                      
+elseif idx == 3 
     [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);          
+elseif idx == 6
+    [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.2);              
 elseif idx == 1 
     [P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.1);          
 else
@@ -709,7 +723,7 @@ scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',...
            'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_arr( idx, : ), ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
 
-if idx == 1 || idx == 5 || idx == 2
+if idx == 1 || idx == 2 || idx == 4
     mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
 else
     mArrow3( pC, pC + 0.3 * eigvecs( : , 1 )', 'color', color_arr( idx, : ), 'tipWidth', 0.03, 'stemWidth', 0.008 );
@@ -723,25 +737,25 @@ tmpLim2 = 0.7;
 viewArr = [97.3451, 5.0653;
           142.4901, 3.2252;
           133.9720, 3.2252;
-          71.5977,0.1768;
-           81.6285,0.5443];
+          97.3451, 5.0653;
+          142.4901, 3.2252;
+          133.9720, 3.2252;];
 
 set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
           'YLim',   [ - tmpLim2, tmpLim2 ] , ...    
           'ZLim',   [ - tmpLim2, tmpLim2 ] , ...
           'view',   viewArr( idx, : ) )  
 
-if idx == 1 
+if idx == 1 || idx == 4
     set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
     set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
     set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )        
-elseif idx == 5 || idx == 4
     set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
     set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
     set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )            
 else
     set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["-0.5", "\fontsize{50}X (m)", "+0.5"] )
-    if idx == 2
+    if idx == 2 || idx == 5
         set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["", "", ""] ); % ["-2", "X[m]", "+2"] )
         annotation('textbox', [0.30, 0.13, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{50}Y (m)")
         annotation('textbox', [0.23, 0.16, 0.1, 0.], 'EdgeColor','none','string', "\fontsize{40}-0.5")
@@ -757,7 +771,7 @@ end
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )
 
-exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'a_best_fit_plane_no_shoulder.pdf'],'ContentType','vector' )
+exportgraphics( f,[fig_dir, 'F4_',num2str(idx),'a_best_fit_plane.pdf'],'ContentType','vector' )
 
 %% -- (3E) Contribution of each Movements
 
@@ -776,10 +790,10 @@ v2 = V( :,2 );
 v3 = V( :,3 );
 v4 = V( :,4 );      % Ordered in ascending order of the size of eigenvalues. 
 
-idx = 5;
+idx = 6;
 
-t_start   = [     0,     0,     0,     0,    0 ];
-t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.583];
+t_start   = [     0,     0,     0,     0,     0,    0 ];
+t_end     = [ 0.950, 0.950, 0.583, 0.950, 0.950, 0.583];
 
 idxS = find( rawData{ idx }.currentTime >= t_start( idx ) & rawData{ idx }.currentTime <= t_end( idx ) );	
 idxStart = min( idxS ); idxEnd = max( idxS );
@@ -832,7 +846,10 @@ elseif idx ==3
 elseif idx  == 4
     set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
 
-elseif idx ==5
+elseif idx  == 5
+    set( a, 'xtick', [0, 0.3, 0.6, 0.9], 'xticklabel', ["0", "0.3", "0.6", "0.9"], 'fontname','myriad pro', 'fontsize', 40  )
+
+elseif idx == 6
     set( a, 'xtick', [0, 0.25, 0.5], 'xticklabel', ["0", "0.25", "0.5" ], 'fontname','myriad pro', 'fontsize', 40  )
 
     
@@ -1731,7 +1748,6 @@ exportgraphics( f,[fig_dir, 'SF7_',num2str(idx),'time_lapse.pdf'],'ContentType',
 %% (10-) Simulation vs. Experiment
 %% -- (10A) Elbow + Shoulder joint angle
 
-
 raw_data_exp = load( './myData/Sim2Exp_Shared_NE/Sim2ExpData.mat' );
 
 % A bit of trimming
@@ -1746,7 +1762,6 @@ tf = 3.10;
 N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
 
 t_vec = 0:dt: (N-1)*dt;
-
 idx = find( ts <= t_vec & tf >= t_vec );
 
 t_vec_cal = t_vec( idx ) - min( t_vec( idx ) );
@@ -1763,14 +1778,15 @@ hold on
 raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
 
 plot( raw_data_sim.currentTime, raw_data_sim.qPos( 1, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
-set( a, 'xlim', [0, 1.0 ] )
+set( a, 'xlim', [0, 1.3 ] )
 xlabel( 'Time (sec)' ); 
 ylabel( 'Shoulder Angle (rad)' ); 
 [~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northwest'  );
 hl = findobj(hobj,'type','line');
 set( hl, 'linewidth', 4 )
 
-% exportgraphics( f,[fig_dir, 'SF8_shoulder.pdf'],'ContentType','vector')
+exportgraphics( f,[fig_dir, 'fig_9a_shoulder.pdf'],'ContentType','vector')
+
 
 f = figure( 2  ); a = axes( 'parent', f );
 plot( t_vec_cal, qpos_sim(2, :), 'linewidth', 10, 'color', 'k' )
@@ -1779,117 +1795,126 @@ hold on
 raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
 
 plot( raw_data_sim.currentTime, raw_data_sim.qPos( 4, :), 'linewidth', 10, 'color', 'k', 'linestyle', '-.' )
-set( a, 'xlim', [0, 1.0 ] )
+set( a, 'xlim', [0, 1.3 ], 'ylim', [0, 1.8]  )
 xlabel( 'Time (sec)' ); 
 ylabel( 'Elbow Angle (rad)' ); 
-[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northwest'  );
+[~, hobj, ~, ~]  = legend( 'Experiment' , 'Simulation', 'location', 'northeast'  );
 hl = findobj(hobj,'type','line');
 set( hl, 'linewidth', 4)
-% exportgraphics( f,[fig_dir, 'SF8_elbow.pdf'],'ContentType','vector')
 
-% Normalization?
-
-D_exp = 0.43;
-phi_i_exp_s = 0.135;
-phi_f_exp_s = 1.000;
-phi_i_exp_e = 0.290;
-phi_f_exp_e = 0.500;
-
-phi_i_sim_s = 0.135;
-phi_f_sim_s = 2.042;
-phi_i_sim_e = 0.290;
-phi_f_sim_e = 0.995;
-D_sim = 0.83;
-
-idx_exp = find( ts <= t_vec & ts+D_exp >= t_vec );
-idx_sim = find( raw_data_sim.currentTime <= D_sim );
-
-t_exp = t_vec( idx_exp ) - min( t_vec( idx_exp ) );
-t_sim = raw_data_sim.currentTime( idx_sim );
-
-qpos_exp_norm = [ raw_data_exp.StructOut.JAngles.Upper2Vertical( idx_exp )'; raw_data_exp.StructOut.JAngles.Lower2Upper( idx_exp )' ] * pi/180;
-qpos_sim_norm = [ raw_data_sim.qPos( 1, idx_sim ); raw_data_sim.qPos( 4, idx_sim ) ];
-
-% Normalization 
-t_exp = t_exp / max( t_exp );
-t_sim = t_sim / max( t_sim );
-
-qpos_exp_norm( 1, : ) = ( qpos_exp_norm( 1, : ) - min( qpos_exp_norm( 1, : ) ) )/ max( qpos_exp_norm( 1, : ) - min( qpos_exp_norm( 1, : ) )  );
-qpos_exp_norm( 2, : ) = ( qpos_exp_norm( 2, : ) - min( qpos_exp_norm( 2, : ) ) )/ max( qpos_exp_norm( 2, : ) - min( qpos_exp_norm( 2, : ) )  );
-
-qpos_sim_norm( 1, : ) = ( qpos_sim_norm( 1, : ) - min( qpos_sim_norm( 1, : ) ) )/ max( qpos_sim_norm( 1, : ) - min( qpos_sim_norm( 1, : ) )  );
-qpos_sim_norm( 2, : ) = ( qpos_sim_norm( 2, : ) - min( qpos_sim_norm( 2, : ) ) )/ max( qpos_sim_norm( 2, : ) - min( qpos_sim_norm( 2, : ) )  );
-
-%%
+exportgraphics( f,[fig_dir, 'fig_9a_elbow.pdf'],'ContentType','vector')
 
 
+%% -- (10B) A Comparison of Simulation with Experiment
 
-f = figure( );
-plot( t_sim, qpos_sim_norm( 1, : ), 'linewidth', 10, 'color', 'k', 'linestyle', '-.'  )
-hold on
-plot( t_exp, qpos_exp_norm( 1, : ), 'linewidth', 10, 'color', 'k'  )
-set( gca, 'xlim', [ 0, 1 ] )
+% Simulation Side
+raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
+
+raw_data_sim.geomXPositions = raw_data_sim.geomXYZPositions( 1 : 3 : end , : );
+raw_data_sim.geomYPositions = raw_data_sim.geomXYZPositions( 2 : 3 : end , : );
+raw_data_sim.geomZPositions = raw_data_sim.geomXYZPositions( 3 : 3 : end , : );
+
+t_start = 0;  t_end = 0.95;
+
+% Find the start and end point of the data
+idxS = find( raw_data_sim.currentTime >= t_start & raw_data_sim.currentTime <= t_end );	
+idxStart = min( idxS ); idxEnd = max( idxS );
+
+f = figure( 3 ); a = axes( 'parent', f, 'Projection','perspective'  );
+axis equal; hold on;
+
+% The end-effector index is the 4th one, 
+% 1st one is target, 2nd one is shoulder, 3rd one is elbow and 4th the end-effector
+x = raw_data_sim.geomXPositions( 4, idxS )';
+y = raw_data_sim.geomYPositions( 4, idxS )';
+z = raw_data_sim.geomZPositions( 4, idxS )';
 
 
-f = figure( );
-plot( t_sim, qpos_sim_norm( 2, : ), 'linewidth', 10, 'color', 'k', 'linestyle', '-.'  )
-hold on
-plot( t_exp, qpos_exp_norm( 2, : ), 'linewidth', 10, 'color', 'k'  )
-set( gca, 'xlim', [ 0, 1 ] )
+p  = [ x, y, z ];                                                          % The position of the end-effector, N x 3
+pC = mean( p );                                                            % The mean of the data
+pn = p - pC;                                                               % Centralized data
+[eigvecs, eigvals] = eig( pn' * pn );
 
-%% -- (10B) Elbow + Shoulder Cartesian Position
+% The eigenvalues are ordered from low to high
+% Getting the first eigenvectors and find the vectors that are orthogonal to it.
 
-f = figure(3 ); a = axes( 'parent', f );
-hold on
-plot3( raw_data_sim.geomXYZPositions( 10, 1:60 ), 0.5 + raw_data_sim.geomXYZPositions( 11, 1:60  ), raw_data_sim.geomXYZPositions( 12, 1:60  ), 'color', [0, 0.4470, 0.7410]	 )
+w = null( eigvecs( : , 1)' ); 
+pC
+eigvecs( :, 1 )
 
-tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
 
+plot3( raw_data_sim.geomXPositions( 4, idxStart : idxEnd ), ...
+       raw_data_sim.geomYPositions( 4, idxStart : idxEnd ), ...
+       raw_data_sim.geomZPositions( 4, idxStart : idxEnd ), ... 
+      'parent', a,   'LineWidth', 4, 'color', [ 0 0.4470 0.7410, 0.3] )
+
+scatter3(  raw_data_sim.geomXPositions( 4, idxS ), ...
+           raw_data_sim.geomYPositions( 4, idxS ), ...
+           raw_data_sim.geomZPositions( 4, idxS ), 200, ... 
+           'parent', a,   'LineWidth', 4, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0 0.4470 0.7410], ...
+           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
+       
+
+
+
+tmp = 0;
+for i = 1 : length( idxS )  % Brute force calculation of the distance.
+%     ttmp = ( eigvecs(1,1) * ( x(i) - pC(1) ) ) + ( eigvecs(2,1) * ( y(i) - pC(2) ) )^2 + ( eigvecs(3,1) * ( z(i) - pC(3) )  )^2 ;
+    ttmp = abs( ( eigvecs(1,1) * ( x( i ) - pC( 1 ) ) ) + ...
+                ( eigvecs(2,1) * ( y( i ) - pC( 2 ) ) ) + ...
+                ( eigvecs(3,1) * ( z( i ) - pC( 3 ) ) ) );
+    tmp = tmp + ttmp^2;
+end
+
+sqrt( tmp/length( idxS ) )
+                    
+tmpLim = 0.55;      
+[P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.1);          
+
+XX = pC( 1 ) + w( 1, 1 ) * P + w( 1, 2 ) * Q;                              
+YY = pC( 2 ) + w( 2, 1 ) * P + w( 2, 2 ) * Q;                              
+ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
+
+
+scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
+           'parent', a,   'LineWidth', 6, ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0 0.4470 0.7410], ...
+           'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );           
+
+mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', [0 0.4470 0.7410], 'tipWidth', 0.03, 'stemWidth', 0.008 );
+
+surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', [0 0.4470 0.7410], 'facealpha', 0.3 );
+
+
+% Experiment Side 
 % A bit of trimming
-fs = 667;
-dt = 1/fs;
+offset = 0.5;
 
-% Manually found initial/final posture 
-ts = 1.65;
-tf = 3.10;
-
+fs = 667;  dt = 1/fs;
+ts = 1.65; tf = 2.15;
 
 N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
 
-t_vec = 0:dt: (N-1)*dt;
-
+t_vec = 0 : dt : (N-1)*dt;
 idx = find( ts <= t_vec & tf >= t_vec );
 
+tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
 
-plot3( 2-tmp( 2, idx ), -0.5 + tmp( 1, idx ), tmp( 3, idx ), 'color', [0, 0.4470, 0.7410], 'linestyle', '-.' )
 tmp1 = [-1, 1];
 set( a, 'xlim', tmp1, 'ylim', tmp1, 'zlim', tmp1, 'view', [49.9456, 4.7355] ); 
 axis square
 
-%% -- (10C) Best-fit Plane
+% Adding the Best-fit Plane
+% Experiment
+tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
 
-% A bit of trimming
-fs = 667;
-dt = 1/fs;
-
-% Manually found initial/final posture 
 ts = 1.65;
 tf = 2.15;
 
-
-N = length( raw_data_exp.StructOut.JAngles.Upper2Vertical' );
-
-t_vec = 0:dt: (N-1)*dt;
-
-idx = find( ts <= t_vec & tf >= t_vec );
-
-tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
-
-% Simulation
 x_w_exp = 2 - tmp( 2, idx )';
-y_w_exp = 0.2 + tmp( 1, idx )';
+y_w_exp = 0.2 + tmp( 1, idx )' + offset ;
 z_w_exp = tmp( 3, idx )';
-
 
 p  = [ x_w_exp, y_w_exp, z_w_exp ]; 
 pC = mean( p );                                                            % The mean of the data
@@ -1915,16 +1940,15 @@ end
 sqrt( tmp/length( idx ) )
 
 
-          
-tmpLim = 0.7;    
-[P,Q] = meshgrid( -tmpLim + 0.2: 0.5 : tmpLim + 0.1);          
+tmpLim = 0.55;      
+[P,Q] = meshgrid( -tmpLim + 0.2: 0.1 : tmpLim + 0.1);          
 
 
 XX = pC( 1 ) + w( 1, 1 ) * P + w( 1, 2 ) * Q;                              
 YY = pC( 2 ) + w( 2, 1 ) * P + w( 2, 2 ) * Q;                              
 ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
 
-f =figure( 10 ); a = axes( 'parent', f, 'Projection','perspective' );
+
 hold on
 scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
            'parent', a,   'LineWidth', 6, ...
@@ -1938,24 +1962,24 @@ scatter3(  x_w_exp( 1 : ttmp : end ), y_w_exp( 1 : ttmp : end ), z_w_exp( 1 : tt
            'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );       
        
-       
 surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', [0, 0.4470, 0.7410], 'facealpha', 0.3 );
 
 mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', [0, 0.4470, 0.7410], 'tipWidth', 0.03, 'stemWidth', 0.008 );
-tmpLim2 = 0.7;
+tmpLim2 = 0.8;
 
-set( a,   'XLim',   [ - tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
-          'YLim',   [ - tmpLim2, tmpLim2 ] , ...    
-          'ZLim',   [ - tmpLim2, tmpLim2 ] , ...
-          'view',   [ 97.3451, 5.0653] )  
+set( a,   'XLim',   [ -tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
+          'YLim',   [ -tmpLim2 + offset/2, tmpLim2 + offset/2] , ...    
+          'ZLim',   [ -tmpLim2, tmpLim2 ] , ...
+          'view',   [ 108.5433    4.3877] )  
 set( a, 'xtick', [-0.5, 0, 0.5] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
-set( a, 'ytick', [-0.5, 0, 0.5] ); set( a, 'yticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Y (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )
+set( a, 'ytick', [ offset/2 ] ); set( a, 'yticklabel', ["\fontsize{43}Y (m)"] )
 set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["\fontsize{35}-0.5", "\fontsize{43}Z (m)", "\fontsize{35}+0.5"] ); % ["-2", "X[m]", "+2"] )        
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )      
       
 axis square      
-exportgraphics( f,[fig_dir, 'SF10_BFP.pdf'],'ContentType','vector')
+exportgraphics( f,[fig_dir, 'fig_9a_planarity.pdf'],'ContentType','vector')
+% exportgraphics( f,[fig_dir, 'SF10_BFP.pdf'],'ContentType','vector')
 
 %% 
 tmpH = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
@@ -1968,3 +1992,128 @@ plot3( tmpE( 1, : ), tmpE( 2, : ), tmpE( 3, : ) )
 plot3( tmpS( 1, : ), tmpS( 2, : ), tmpS( 3, : ) )
 % plot3( tmpW( 1, : ), tmpW( 2, : ), tmpW( 3, : ) )
 axis square
+
+
+%% -- (11A) Distribution of the Optimal Parameters - Reading Data
+
+% Using 600 iterations
+N = 600;
+for i = 1 : 3
+    data_raw{ i } = myTxtParse( ['./myData/optimization_process_3_new/optimization_log_T',num2str( i + 3 ), '_longer.txt' ] );
+    data_raw{ i }.opt_idx = find( data_raw{ i }.output( 1: N ) == 0.1 );
+end
+
+dir_name  = './myData/optimization_process_3_new/';
+for i = 4 : 6
+    file_name      = [ dir_name, 'optimization_log_T', num2str( i - 3 ), '.txt' ];
+    data_raw{ i } = myTxtParse( file_name );
+end
+
+
+%% -- (11B) Parsing the data and retriving the best value
+
+% Find and halt if the optimal val has no update 
+opt_idx = zeros( 1, 6 );  % The index where the values stop.
+tol  = 0.1;               % If the vector norm doesn't change that much, then halt the simulation
+ntol = 15;
+
+f = figure( ); a = axes( 'parent', f );
+hold on
+
+for i = 1 : 6   % For target 1, 2 and 3
+
+    data     = data_raw{ i };
+    mov_norm = abs( diff( vecnorm( data.inputPars, 2 ) ) ); 
+    
+    tmp      = ( mov_norm <= tol ); % Boolean array which shows if mov_norm is within tol 
+    cnt      = 0;
+    for j = data.Iter  
+        if tmp( j )
+           cnt = cnt + 1; 
+        else
+           cnt = 0;
+        end
+        
+        if cnt>= ntol
+           opt_idx( i ) = j;
+           break 
+        end
+        
+    end
+
+%     plot( data.output( 1: opt_idx( i ) ), 'linewidth', 3 )
+%     disp( min( data.output( 1 : opt_idx( i ) ) ) )
+end
+
+% For targets that is within reach
+subplot( 2, 1, 1 )
+hold on
+plot( data_raw{ 1 }.Iter( 1 : opt_idx( 1 ) ), data_raw{ 1 }.output( 1 : opt_idx( 1 ) ) - 0.1, 'linewidth', 3, 'color', [0.0000, 0.4470, 0.7410] )
+plot( data_raw{ 2 }.Iter( 1 : opt_idx( 2 ) ), data_raw{ 2 }.output( 1 : opt_idx( 2 ) ) - 0.1, 'linewidth', 3, 'color', [0.8500, 0.3250, 0.0980] )
+plot( data_raw{ 3 }.Iter( 1 : opt_idx( 3 ) ), data_raw{ 3 }.output( 1 : opt_idx( 3 ) ) - 0.1, 'linewidth', 3, 'color', [0.9290, 0.6940, 0.1250] )
+set( gca, 'ylim', [-0.1, 3.5], 'xlim', [0, 160],  'fontsize', 30 )
+[~, hobj, ~, ~] = legend( 'Target 1', 'Target 2', 'Target 3', 'fontsize', 30 );
+ht = findobj(hobj,'type','line');
+set(ht,'Linewidth',12);
+
+subplot( 2, 1, 2 )
+hold on
+plot( data_raw{ 4 }.Iter( 1 : opt_idx( 4 ) ), data_raw{ 4 }.output( 1 : opt_idx( 4 ) ) , 'linewidth', 3, 'color', [0.4940 0.1840 0.5560] )
+plot( data_raw{ 5 }.Iter( 1 : opt_idx( 5 ) ), data_raw{ 5 }.output( 1 : opt_idx( 5 ) ) , 'linewidth', 3, 'color', [0.4660 0.6740 0.1880] )
+plot( data_raw{ 6 }.Iter( 1 : opt_idx( 6 ) ), data_raw{ 6 }.output( 1 : opt_idx( 6 ) ) , 'linewidth', 3, 'color', [0.6350 0.0780 0.1840] )
+[~, hobj, ~, ~] = legend( 'Target 4', 'Target 5', 'Target 6', 'fontsize', 30 );
+  
+set( gca, 'ylim', [-0.1, 3.5], 'xlim', [0, 260],  'fontsize', 30 )
+ht = findobj(hobj,'type','line');
+set(ht,'Linewidth',12);
+han=axes(gcf,'visible','off'); 
+han.Title.Visible='on';
+han.XLabel.Visible='on';
+han.YLabel.Visible='on';
+
+% Add Text
+xlabel( han, 'Iteration (-)' );
+ylabel( han, '{\it{L^*}}(m)' );
+
+% For saving the figure of the iteration
+exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
+exportgraphics( f, [ fig_dir,'fig2.pdf'] )
+
+%% -- (11C) Plotting the data distribution
+% Plotting the distribution 
+tmp = { '\phi_{i,1}', '\phi_{i,2}', '\phi_{i,3}', '\phi_{i,4}', ...
+        '\phi_{f,1}', '\phi_{f,2}', '\phi_{f,3}', '\phi_{f,4}', 'D', } ;
+    
+opt_mov_pars = cell( 1, 3 );    
+for i = 1 : 3
+    
+    data_raw{ i }.opt_idx = find( data_raw{ i }.output( 1: opt_idx( i ) ) == 0.1 );
+    idx = data_raw{ i }.opt_idx;
+    opt_mov_pars{ i } = data_raw{ i }.inputPars( :, idx );
+    opt_mov_pars{ i } = uniquetol( opt_mov_pars{ i }', 0.1, 'ByRows', true )';
+%     f = figure( i ); a = axes( 'parent', f );
+    
+    subplot( 3, 1, i )
+    hold on
+    
+    for j = 1 : 9
+       plot( j, opt_mov_pars{ i }( j, : ) , 'o', 'color', 'k', 'linewidth', 4, 'markeredgecolor', 'k', 'markersize', 6, 'markerfacecolor', 'k' )
+    end
+    
+    hold off
+    set( gca, 'ylim', [-2.5, 2.5], 'xticklabel', [], 'xtick', [1:9], 'xlim', [0, 10] )
+%     title( [ 'Target ', num2str( i  ) ] )
+%     xlabel( 'Optimal Movement Parameters' )
+    disp( mean( opt_mov_pars{i}' ) )
+%     exportgraphics( f, ['./figure', num2str( i ),'.pdf' ],'ContentType','vector')
+end
+set( gca, 'xtick', [1:9], 'xticklabel', tmp )
+
+han=axes(gcf,'visible','off'); 
+han.Title.Visible='on';
+han.XLabel.Visible='on';
+han.YLabel.Visible='on';
+
+ylabel( 'Values (rad, s)' )
+
+exportgraphics( gcf, './myFigures/value_distb.pdf','ContentType','vector')
