@@ -155,11 +155,11 @@ def main( ):
         # [2] Setting the trajectory is a separate member function, since we mostly modify the trajectory while keeping the gains constant.
         # [3] Any modification to simply include "set_traj" and "set_ctrl_par" as a whole? Since currently, "set_ctrl_par" is only used for changing the gain.
         ctrl = JointImpedanceController( mySim.mjModel, mySim.mjData, args, is_noise = False )
-        # ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
-        ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
+        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        # ctrl.set_ctrl_par(  K = 300 * np.identity( ctrl.n_act ), B = 30 * np.identity( ctrl.n_act ) )
         # mov_pars  = np.array( str2float( args.mov_pars )  )
         # mov_pars  = np.array( [0.0, 0.0, 0, 0.0,  1.72788,0.     ,0.23271,0.47124,0.85   ] )[
-        mov_pars  = np.array( [ -0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833 ] )
+        mov_pars  = np.array( [-0.94248, 1.0472 , 0.     , 0.47124, 1.72788,-1.0472 , 0.     , 1.41372, 0.58333]  )
         ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
         objective = DistFromTip2Target( mySim.mjModel, mySim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
         # init_cond = { 'qpos': np.array( [ 1.71907, 0., 0., 1.40283, 0.,-1, 0., 0.0069 , 0., 0.00867, 0., 0.00746, 0., 0.00527, 0., 0.00348, 0.     , 0.00286, 0.     , 0.00367, 0.     , 0.00582, 0.     , 0.00902, 0.     , 0.01283, 0.     , 0.0168 , 0.     , 0.02056, 0.     , 0.02383, 0.     , 0.02648, 0.     , 0.02845, 0.     , 0.02955, 0.     , 0.02945, 0.     , 0.02767, 0.     , 0.02385, 0.     , 0.01806, 0.     , 0.01106, 0.     , 0.00433, 0.     ,-0.00027, 0.     ,-0.00146]),
@@ -208,9 +208,9 @@ def main( ):
         # [Target 2] [Optimal input pars] [-1.26830, 1.0472, -0.81449, 0.12217, 1.7279, -1.0472, -0.34907, 0.36652, 0.95000]
         # [Target 3] [Optimal value] [0.14324] [idx] [376]
         # [Target 3] [Optimal input pars] [-1.03560, 0.69813, -1.1636, 0.05236, 1.7279, -1.0472, -0.11636, 0.95993, 0.58333]
-        # [Target 4] [Optimal input pars]
-        # [Target 5] [Optimal input pars]
-        # [Target 6] [Optimal input pars]
+        # [Target 4] [Optimal input pars] [-1.36136, 0.     , 0.     , 0.47124, 1.72788, 0.     , 0.     , 1.41372, 0.95   ] [cam_pos] [0.55578,  0.01402, -0.57997,  5.16944,-14.29162, 98.39433]
+        # [Target 5] [Optimal input pars] [-1.36136, 1.0472 ,-1.0472 , 0.15708, 1.72788,-1.0472 , 0.     , 0.47124, 0.95   ] [cam_pos] [0.24485,  0.38412, -1.22991,  6.25152,-45.53129,147.48524]
+        # [Target 6] [Optimal input pars] [-0.94248, 1.0472 , 0.     , 0.47124, 1.72788,-1.0472 , 0.     , 1.41372, 0.58333] [cam_pos] [0.00263,   0.28365,  -0.44388,   6.82415, -25.87367,-173.73081]
         # [Target 7] [Optimal input pars] [0.135, 0, 0, 0.29, 1.88496,0.     ,0.     ,0.86103,0.7    ]
         # [optimalOutput]: 0.04980
         # =================================================================================================== #
@@ -359,39 +359,30 @@ def main( ):
         #     N = 200
         #
         #     # std = 0.1
-        #
-        #     if args.target_type == 1:
-        #         mov_pars  = np.array( [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ])
-        #         f = open( "out1_D.txt", "w" )
-        #
-        #     elif args.target_type == 2:
-        #         mov_pars  = np.array( [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
-        #         f = open( "out2_D.txt", "w" )
-        #
-        #     elif args.target_type == 3:
-        #         mov_pars  = np.array( [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )
-        #         f = open( "out3_D.txt", "w" )
-        #
-        #     elif args.target_type == 4:
-        #         mov_pars  = np.array( [-0.94248, 0.     , 1.0472 , 1.41372, 2.67035,-1.00841,-0.46542, 0.47124, 0.95   ] )
+        #     if   args.target_type == 4:
+        #         mov_pars  = np.array( [-1.3540, 0.0020,  -0.2817, 1.4156, 1.7279, -0.0817, -0.0163, 1.3788, 0.9500] )
         #         f = open( "out4_D.txt", "w" )
         #
         #     elif args.target_type == 5:
-        #         mov_pars  = np.array( [-0.94248,-0.11636,-0.34907, 1.41372, 1.72788,-0.34907, 0.     , 1.09956, 0.58333 ] )
+        #         mov_pars  = np.array( [-0.9425, 0.0980,  -1.0492, 1.3641, 1.7279, -1.0492, -0.0184, 0.4712, 0.9500] )
         #         f = open( "out5_D.txt", "w" )
+        #
+        #     elif args.target_type == 6:
+        #         mov_pars  = np.array( [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833] )
+        #         f = open( "out6_D.txt", "w" )
         #
         #     for _ in range( N ):
         #
-        #         tmp_random = np.random.uniform( -0.05, 0.05 , 1 )
+        #         tmp_random = np.random.uniform( -0.1, 0.1 , 1 )
         #
-        #         mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ] , "D" : mov_pars[ -1 ]+ tmp_random } ) # Setting the trajectory of the controller, for this case, traj = x0
+        #         mySim.ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ]  , "D" : mov_pars[ -1 ]+ tmp_random} ) # Setting the trajectory of the controller, for this case, traj = x0
         #         val = mySim.run(  )                                            # Getting the objective value
         #
-        #         print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random )
+        #         print( "Input Values", mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ]+ tmp_random  )
         #         print( "[output]", val )
         #
         #         f.write( "[input_vals] ")
-        #         f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4], mov_pars[ 4: 8], mov_pars[ -1 ] + tmp_random ) ), separator=', ') + "\n" )
+        #         f.write( np.array2string( np.hstack( (mov_pars[ 0 : 4] , mov_pars[ 4: 8], mov_pars[ -1 ]+ tmp_random, ) ), separator=', ') + "\n" )
         #         f.write( "[output] " )
         #         f.write( str( val ) + "\n" )
         #         mySim.reset( )
