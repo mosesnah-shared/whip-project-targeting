@@ -2267,15 +2267,25 @@ xlabel( han, 'Iteration (-)' );
 ylabel( han, '{\it{L^*}}(m)' );
 
 % For saving the figure of the iteration
-exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
-exportgraphics( f, [ fig_dir,'fig2.pdf'] )
+% exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
+% exportgraphics( f, [ fig_dir,'fig2.pdf'] )
 
 %% -- (11C) Plotting the data distribution
 % Plotting the distribution 
 tmp = { '\phi_{i,1}', '\phi_{i,2}', '\phi_{i,3}', '\phi_{i,4}', ...
         '\phi_{f,1}', '\phi_{f,2}', '\phi_{f,3}', '\phi_{f,4}', 'D', } ;
     
+    
+color_arr = [      0, 0.4470, 0.7410; ...
+              0.8500, 0.3250, 0.0980; ...
+              0.9290, 0.6940, 0.1250  ];
+
+    
 opt_mov_pars = cell( 1, 3 );    
+
+ub = [ -0.5 * pi, -0.5 * pi, -0.5 * pi,        0, 0.1 * pi, -0.5 * pi, -0.5 * pi,        0, 0.4 ];
+lb = [ -0.1 * pi,  0.5 * pi,  0.5 * pi, 0.9 * pi, 1.0 * pi,  0.5 * pi,  0.5 * pi, 0.9 * pi, 1.5 ] ;
+
 for i = 1 : 3
     
     data_raw{ i }.opt_idx = find( data_raw{ i }.output( 1: opt_idx( i ) ) == 0.1 );
@@ -2288,15 +2298,21 @@ for i = 1 : 3
     hold on
     
     for j = 1 : 9
-       plot( j, opt_mov_pars{ i }( j, : ) , 'o', 'color', 'k', 'linewidth', 4, 'markeredgecolor', 'k', 'markersize', 6, 'markerfacecolor', 'k' )
+       plot( j, opt_mov_pars{ i }( j, : ) , 'o', 'linewidth', 4, 'markeredgecolor', color_arr( i, : ), 'markersize', 6, 'markerfacecolor', color_arr( i, : ) )
+       plot( j, ub( j ) , '_', 'color', 'k', 'linewidth', 2 )
+       plot( j, lb( j ) , '_', 'color', 'k', 'linewidth', 2 )
     end
     
+    
+    
+    
     hold off
-    set( gca, 'ylim', [-2.5, 2.5], 'xticklabel', [], 'xtick', [1:9], 'xlim', [0, 10] )
+    set( gca, 'ylim', [-2.0, 3.4], 'xticklabel', [], 'xtick', [1:9], 'xlim', [0, 10] )
 %     title( [ 'Target ', num2str( i  ) ] )
 %     xlabel( 'Optimal Movement Parameters' )
     disp( mean( opt_mov_pars{i}' ) )
 %     exportgraphics( f, ['./figure', num2str( i ),'.pdf' ],'ContentType','vector')
+    legend( ['Target ', num2str( i ) ], 'location', 'northwest' )
 end
 set( gca, 'xtick', [1:9], 'xticklabel', tmp )
 
