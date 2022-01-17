@@ -242,12 +242,19 @@ classdef myAnimation < handle
             for i = 1 : step : N
                 
                 obj.goto( i )                                              % Run a single step of the simulation
+                
+%                 if i >= 58 % For target 4
+%                    set( obj.hGraphicObjs{ 1 }( 1 ), "MarkerFaceColor", [0,1,0], "MarkerEdgeColor", [0,1,0] )
+%                 end
+                
                 if isVidRecord                                             % If videoRecord is ON
                     frame = getframe( obj.hFigure );                       % Get the current frame of the figure
                     writeVideo( writerObj, frame );                        % Writing it to the mp4 file/
                 else                                                       % If videoRecord is OFF
                     drawnow                                                % Just simply show at Figure
                 end
+                
+                
 
             end   
 

@@ -1785,8 +1785,11 @@ subplot( 2, 1, 1 )
 plot( t_vec_cal, qpos_sim(1, :), 'linewidth', 5, 'color', 'k' )
 hold on
 
+color_sim = [0.0, 0.4470, 0.7410 ];
+color_exp = [0.2, 0.2   , 0.2    ];
+
 raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
-plot( raw_data_sim.currentTime, raw_data_sim.qPos( 1, :), 'linewidth', 5, 'color', 'k', 'linestyle', '-.' )
+plot( raw_data_sim.currentTime, raw_data_sim.qPos( 1, :), 'linewidth', 5, 'color', color_sim, 'linestyle', '-' )
 set( gca, 'xlim', [0, 1.3 ], 'ylim', [-2.2, 2.5], 'xtick', [0:0.2:1.2], 'xticklabel', [] )
 % xlabel( 'Time (sec)' ); 
 ylabel( 'Shoulder (rad)', 'fontsize', 40 ); 
@@ -1803,7 +1806,7 @@ hold on
 
 raw_data_sim = myTxtParse( './myData/Sim2Exp_Shared_NE/data_log_T4.txt' );
 
-plot( raw_data_sim.currentTime, raw_data_sim.qPos( 4, :), 'linewidth', 5, 'color', 'k', 'linestyle', '-.' )
+plot( raw_data_sim.currentTime, raw_data_sim.qPos( 4, :), 'linewidth', 5, 'color', color_sim, 'linestyle', '-' )
 set( gca, 'xlim', [0, 1.3 ], 'ylim', [0, 2.2]  )
 % xlabel( 'Time (sec)' ); 
 ylabel( 'Elbow (rad)', 'fontsize', 40 );  
@@ -1921,6 +1924,8 @@ axis square
 % Experiment
 tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
 
+color_exp = [0.2, 0.2, 0.2];
+
 ts = 1.65;
 tf = 2.15;
 
@@ -1967,19 +1972,19 @@ ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
 hold on
 scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
            'parent', a,   'LineWidth', 6, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_exp, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );      
        
 ttmp = 2 * round( 1/60/(1/fs ) )
        
 scatter3(  x_w_exp( 1 : ttmp : end ), y_w_exp( 1 : ttmp : end ), z_w_exp( 1 : ttmp : end ),200, ...
            'parent', a,   'LineWidth', 4, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_exp, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );       
        
-surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', [0, 0.4470, 0.7410], 'facealpha', 0.3 );
+surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', color_exp, 'facealpha', 0.3 );
 
-mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', [0, 0.4470, 0.7410], 'tipWidth', 0.03, 'stemWidth', 0.008 );
+mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color_exp, 'tipWidth', 0.03, 'stemWidth', 0.008 );
 tmpLim2 = 0.8;
 
 set( a,   'XLim',   [ -tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
@@ -1993,7 +1998,7 @@ set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )      
       
 axis square      
-% exportgraphics( f,[fig_dir, 'fig_9a_planarity.pdf'],'ContentType','vector')
+exportgraphics( f,[fig_dir, 'fig_9a_planarity.pdf'],'ContentType','vector')
 % exportgraphics( f,[fig_dir, 'SF10_BFP.pdf'],'ContentType','vector')
 
 %% -- (10B-2) A Comparison of Simulation with Experiment
@@ -2092,6 +2097,8 @@ idx = find( ts <= t_vec & tf >= t_vec );
 
 tmp = raw_data_exp.StructOut.CoordsInTargetRF.Hand';
 
+color_exp = [0.2, 0.2, 0.2];
+
 tmp1 = [-1, 1];
 set( a, 'xlim', tmp1, 'ylim', tmp1, 'zlim', tmp1, 'view', [49.9456, 4.7355] ); 
 axis square
@@ -2143,19 +2150,19 @@ ZZ = pC( 3 ) + w( 3, 1 ) * P + w( 3, 2 ) * Q;
 hold on
 scatter3(  pC( 1 ) , pC( 2 ), pC( 3 ), 400, 'd',... 
            'parent', a,   'LineWidth', 6, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_exp, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );      
        
 ttmp = 2 * round( 1/60/(1/fs ) )
        
 scatter3(  x_w_exp( 1 : ttmp : end ), y_w_exp( 1 : ttmp : end ), z_w_exp( 1 : ttmp : end ),200, ...
            'parent', a,   'LineWidth', 4, ...
-           'MarkerFaceColor', c.white, 'MarkerEdgeColor', [0, 0.4470, 0.7410], ...
+           'MarkerFaceColor', c.white, 'MarkerEdgeColor', color_exp, ...
            'MarkerFaceAlpha', 1      , 'MarkerEdgeAlpha', 1  );       
        
-surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', [0, 0.4470, 0.7410], 'facealpha', 0.3 );
+surf( XX, YY, ZZ, 'parent', a, 'edgecolor', 'none', 'facecolor', color_exp, 'facealpha', 0.3 );
 
-mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', [0, 0.4470, 0.7410], 'tipWidth', 0.03, 'stemWidth', 0.008 );
+mArrow3( pC, pC - 0.3 * eigvecs( : , 1 )', 'color', color_exp, 'tipWidth', 0.03, 'stemWidth', 0.008 );
 tmpLim2 = 0.8;
 
 set( a,   'XLim',   [ -tmpLim2, tmpLim2 ] , ...                             % Setting the axis ratio of x-y-z all equal.
@@ -2165,10 +2172,14 @@ set( a,   'XLim',   [ -tmpLim2, tmpLim2 ] , ...                             % Se
 set( a, 'xtick', [] ); set( a, 'xticklabel', ["", "\fontsize{43}X (m)", ""] )
 set( a, 'ytick', [ offset/2 ] ); set( a, 'yticklabel', ["\fontsize{43}Y (m)"] )
 set( a, 'ztick', [-0.5, 0, 0.5] ); set( a, 'zticklabel', ["", "", ""] )
+
+
+
 set(a,'LineWidth',3.0 ); set(a, 'TickLength',[0.01, 0.03]);
 xtickangle( 0 ); ytickangle( 0 ); ztickangle( 0 )      
       
 axis square      
+
 exportgraphics( f,[fig_dir, 'fig_9ab_planarity.pdf'],'ContentType','vector')
 % exportgraphics( f,[fig_dir, 'SF10_BFP.pdf'],'ContentType','vector')
 
@@ -2267,8 +2278,8 @@ xlabel( han, 'Iteration (-)' );
 ylabel( han, '{\it{L^*}}(m)' );
 
 % For saving the figure of the iteration
-% exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
-% exportgraphics( f, [ fig_dir,'fig2.pdf'] )
+exportgraphics( f, [ fig_dir,'fig2.eps'],'ContentType','vector')
+exportgraphics( f, [ fig_dir,'fig2.pdf'] )
 
 %% -- (11C) Plotting the data distribution
 % Plotting the distribution 
@@ -2324,3 +2335,5 @@ han.YLabel.Visible='on';
 ylabel( 'Values (rad, s)' )
 
 exportgraphics( gcf, './myFigures/value_distb.pdf','ContentType','vector')
+exportgraphics( gcf, './myFigures/value_distb.eps','ContentType','vector')
+
