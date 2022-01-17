@@ -22,10 +22,11 @@ c  = myColor();
 %% (1-) Video Geneartion
 %% -- (1A) Calling the data for animation
 
-idx  = 5;
+idx  = 1;
 % data = myTxtParse( ['./myData/simulation_log/data_log_T', num2str( idx ), '.txt' ] );
-data = myTxtParse( ['./myData/for_do_sim/data_log_T', num2str( idx ), '.txt' ] );
-
+for i = 1 : 6
+    data_raw{i} = myTxtParse( ['./myData/for_do_sim/data_log_T', num2str( i ), '.txt' ] );
+end
 %% -- (1B) For the forward kinematics
 
 % To use the 4DOF robot, use the following line
@@ -67,6 +68,15 @@ clear gObjs
 genNodes = @(x) ( "node" + (1:x) );
 N        = 25;
 
+idx = 6;
+data = data_raw{ idx };
+
+color_arr = [      0, 0.4470, 0.7410; ...
+              0.8500, 0.3250, 0.0980; ...
+              0.9290, 0.6940, 0.1250;...
+              0.4940, 0.1840, 0.5560; ...
+              0.4660, 0.6740, 0.1880; ...
+              0.6350, 0.0780, 0.1840 ];
 
 
 % For the target of the model
@@ -76,15 +86,15 @@ gObjs(  1 ) = myMarker( 'XData', data.geomXYZPositions( 1, :  ) , ...
                          'name', "target"  , ...
                      'SizeData',  500      , ...
                     'LineWidth',   1       , ...
-              'MarkerEdgeColor',   [1,0,0] , ...
-              'MarkerFaceColor',   [1,0,0] , ...
+              'MarkerEdgeColor',   color_arr( idx, : ) , ...
+              'MarkerFaceColor',    color_arr( idx, : ), ...
               'MarkerFaceAlpha', 0.8       );                         % Defining the markers for the plot
 
           
 
 stringList = [      "SH", "EL", "EE",     genNodes( N ) ];                                
-sizeList   = [           700,      700,      700, 200 * ones( 1, N ) ];                            
-colorList  = [ repmat( c.black, 3, 1 ); repmat( [0, 0.4470, 0.7410], N , 1 ) ];                            
+sizeList   = [           500,      500,      500, 100 * ones( 1, N ) ];                            
+colorList  = [ repmat( c.black, 3, 1 ); repmat( [0.75, 0.00, 0.75], N , 1 ) ];                            
            
 % For the whole model
 for i = 1 : length( stringList )
@@ -93,7 +103,7 @@ for i = 1 : length( stringList )
                               'ZData', data.geomXYZPositions( 3 * i + 3, :  ) , ... 
                                'name', stringList( i ), ...
                            'SizeData',   sizeList( i ), ...
-                          'LineWidth',   15            , ...
+                          'LineWidth',   4            , ...
                     'MarkerEdgeColor',  colorList( i, : ) ); 
 
 end

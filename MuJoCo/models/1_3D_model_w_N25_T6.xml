@@ -8,8 +8,8 @@
      <!-- Joint and Limb Color -->
 		 <material name="JointColor" 		 rgba="0.1 0.1 0.1 1" />
 		 <material name="LimbColor" 		 rgba="0.1 0.1 0.1 1" />
-		 <!-- <material name="pointMassColor" rgba="0.75 0.0 0.75 1" /> -->
-		 <material name="pointMassColor" rgba="0 0.4470 0.7410 1" />
+		 <material name="pointMassColor" rgba="0.75 0.0 0.75 1" />
+		 <!-- <material name="pointMassColor" rgba="0 0.4470 0.7410 1" /> -->
 		 <material name="RefMassColor" 	 rgba="0.2 0.9 0.1 1.0" />
 		 <material name="TargetColor"	   rgba="0.6350, 0.0780, 0.1840" />
   </asset>
@@ -192,7 +192,7 @@
             <!-- === [ N, L, M, k, b, rho ] = [25,1.800000,0.300000,0.242000,0.092000,1.000000] -->
          </body>
       </body>
-	 <geom name="geom_target" type="sphere" pos="0.9975 0.9975 1.410" material="TargetColor" mass="0" size="0.03" />
+	 <geom name="geom_target" type="sphere" pos="0.9975 0.9975 1.410" rgba="0.9290 0.6940 0.1250 1" mass="0" size="0.03" />
  </worldbody>
 
    <!-- BACKUP-->
