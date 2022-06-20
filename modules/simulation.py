@@ -24,7 +24,7 @@ try:
     import mujoco_py as mjPy
 
 except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
+    raise e.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
                                              and also perform the setup instructions here: \
                                              https://github.com/openai/mujoco-py/.)".format( e ) )
 

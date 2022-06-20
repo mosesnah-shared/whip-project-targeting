@@ -15,12 +15,8 @@ results
 
 
 # Stuffs related to virtual environment.
-*lib*
-*bin*
-tmp
-*include*
-*.cfg
-*share*
+.venv
+
 backup
 
 Sim2Exp_Shared_NE
