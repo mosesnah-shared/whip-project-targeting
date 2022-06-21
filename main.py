@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 
 # ============================================================================= #
@@ -6,14 +5,14 @@
 | Title:          mujoco-py scripts for running a whip-targeting simuation
 | Author:         Moses C. Nah
 | Email:          [Moses] mosesnah@mit.edu
-| Creation Date:  Saturday, Dec 8th, 2020
+| Creation Date:  Dec 8th,  2020
+| Final Update:   Jun 20th, 2022
 # ============================================================================= #
 
 # ============================================================================= #
 | (0A) [DESCRIPTION]
 |
 |  - Python Script for running mujoco-py.
-|    The corresponding xml model file is under "models" directory.
 |
 # ============================================================================= #
 
@@ -55,57 +54,29 @@
 
 """
 
-
-
-# ================================================================================== #
-# (0A) [IMPORT MODULES]
-# ------------------ #
-# [Built-in modules] #
-# ------------------ #
-import sys
+#%% 
 import os
-import re
+import sys
 import argparse
-import datetime
-import shutil
-import pickle
 
-# ------------------- #
-# [3rd party modules] #
-# ------------------- #
-import numpy       as np
 import nlopt
+import numpy as np
 
-import matplotlib.pyplot as plt
+# To Add Local Files, adding the directory via sys module
+# __file__ saves the current directory of this file. 
+sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
-# import nevergrad   as ng                                                      # [BACKUP] Needed for Optimization
-import sympy as sp
-from sympy.utilities.lambdify import lambdify, implemented_function
+from simulation   import Simulation
+from controllers  import ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController, ControllerBinder 
+from utils        import my_print, my_mkdir, args_cleanup, my_rmdir, str2float, camel2snake, snake2camel, solve_eq_posture
+from objectives   import DistFromTip2Target, TargetState
+from traj_funcs   import MinJerkTrajectory
+from constants    import Constants
 
-# --------------- #
-# [Local modules] #
-# --------------- #
-# See modules directory for more details
-from modules.simulation   import Simulation
-from modules.controllers  import ( ImpedanceController, CartesianImpedanceController,
-                                   JointImpedanceController, JointSlidingController, ControllerBinder )
-from modules.utils        import ( my_print, my_mkdir, args_cleanup,
-                                   my_rmdir, str2float, camel2snake, snake2camel, solve_eq_posture )
-from modules.objectives   import DistFromTip2Target, TargetState
-from modules.traj_funcs   import MinJerkTrajectory
-from modules.constants    import Constants
-
-# ================================================================================== #
-
-# ================================================================================== #
-# (0B) [SYSTEM SETTINGS] + [ARGUMENT PARSER]
-
-                                                                                # [Printing Format]
-np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       # Setting the numpy print options, useful for printing out data with consistent pattern.
-                                                                                # precision: float precision for print/number comparison.
-
-# [Argument parser]
-# [REF] https://docs.python.org/3/library/argparse.html
+# Setting the numpy print options, useful for printing out data with consistent pattern.
+np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
+                                                                                
+# Argument Parsers
 parser = argparse.ArgumentParser( description = 'Parsing the arguments for running the simulation' )
 parser.add_argument( '--version'     , action = 'version'     , version = Constants.VERSION )
 parser.add_argument( '--run_time'    , action = 'store'       , type = float ,  default = 4.0,       help = 'Total run time of the simulation'                              )
@@ -120,12 +91,13 @@ parser.add_argument( '--vid_off'     , action = 'store_true'  ,                 
 parser.add_argument( '--run_opt'     , action = 'store_true'  ,                                      help = 'Run optimization of the simulation'                            )
 parser.add_argument( '--target_type' , action = 'store'       , type = int   ,                       help = 'Save data log of the simulation, with the specified frequency' )
 
+# For jupyter compatibility.
+# [REF] https://stackoverflow.com/questions/48796169/how-to-fix-ipykernel-launcher-py-error-unrecognized-arguments-in-jupyter
+args, unknown = parser.parse_known_args( )
 
-args = parser.parse_args()
-args.save_dir = my_mkdir( )                                                     # Doesn't hurt to save the name directory in case
+args.save_dir = my_mkdir( )                                                
 
-# ================================================================================= #
-
+#%%
 
 # ================================================================================= #
 
@@ -455,3 +427,5 @@ if __name__ == "__main__":
 
         print( "Ctrl-C was inputted. Halting the program. ", end = ' ' )
         my_rmdir( Constants.TMP_DIR )                                           # Cleaning up the tmp folder
+
+# %%

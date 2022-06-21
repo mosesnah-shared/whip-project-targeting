@@ -10,9 +10,9 @@ try:
     from sympy.utilities.lambdify import lambdify, implemented_function
 
 except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install sympy, \
-                                             Simply type pip3 install sympy. \
-                                             Sympy is necessary for building ZFT Calculation)".format( e ) )
+    raise e.DependencyNotInstalled( "{}. (HINT: you need to install sympy, \
+                                          Simply type pip3 install sympy. \
+                                          Sympy is necessary for building ZFT Calculation)".format( e ) )
 
 """
     This python script defines the basis functions/miscellaneous functions that will be used for multiple situations
