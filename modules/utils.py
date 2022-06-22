@@ -1,4 +1,3 @@
-# [Built-in modules]
 import os
 import re
 import sys
@@ -20,48 +19,8 @@ from scipy.integrate  import quad
 from scipy.spatial.transform import Rotation as R
 
 # [Local modules]
-from modules.constants import Constants
+from modules.constants import Constants as C
 
-class MyVideo:
-    """
-        Description
-        ----------
-
-        Arguments
-        ---------
-
-        Returns
-        -------
-    """
-    def __init__( self, vid_dir = None, height = 1440, width = 850, fps = 60 ):
-
-        self.height    = height
-        self.width     = width
-
-        # self.height    = 2880
-        # self.width     = 1800
-
-        self.vid_dir   = vid_dir if not None else "."
-        self.fps       = fps
-
-        fourcc         = cv2.VideoWriter_fourcc( *'MP4V' )                      # 4-character code of codec used to compress the frames.
-                                                                                # For example, VideoWriter::fourcc('P','I','M','1') is a MPEG-1 codec,
-                                                                                #              VideoWriter::fourcc('M','J','P','G') is a motion-jpeg codec etc.
-                                                                                # List of codes can be obtained at Video Codecs by FOURCC page.
-        self.outVideo  = cv2.VideoWriter( self.vid_dir + "/video.mp4", fourcc, fps, ( self.height, self.width ) )
-        # self.outVideo  = cv2.VideoWriter( self.vid_dir + "/video.mp4", fourcc, fps, ( self.height//2, self.width//2 ) )
-
-    def write( self, myViewer ):
-        data = myViewer.read_pixels( self.height, self.width, depth = False )   # Get the pixel from the render screen
-        data = cv2.cvtColor( data, cv2.COLOR_BGR2RGB )
-
-        # data = cv2.resize( data,( self.height, self.width  ) )
-        # data = cv2.resize( data,( self.height//2, self.width//2  ) )
-
-        self.outVideo.write( np.flip( data, axis = 0 ) )
-
-    def release( self ):
-        self.outVideo.release()
 
 def length_elem2elem( mjModel, mjData, elem_name1, elem_name2 ):
     type1 = get_elem_type( mjModel, elem_name1 )
@@ -96,38 +55,13 @@ def get_property( mjModel, elem_name, prop_name ):
 
 
 def snake2camel( s: str ):
-
     return ''.join( word.title() for word in s.split( '_' ) )
 
 def camel2snake( s: str ):
-
     return re.sub( r'(?<!^)(?=[A-Z])', '_', s ).lower()
 
 def clear_dir( dir ):
     """ Cleaning up the contents in the directory """
-
-def args_cleanup( args, s ):
-    """
-        Description
-        -----------
-            Clean-up the substring s for keys in args
-
-        Arguments
-        ---------
-            args: The dictionary to be parsed
-            s   : Substring to be discarded. e.g. s = '--', then "--record" --> "record"
-
-    """
-    if not isinstance( args, dict ) or not isinstance( s, str ):
-        raise ValueError( "Wrong input type. args should be type dict and s should be type str. {0:} and {1:} are rather given".format(
-                                                                                            type( args ), type( str ) ) )
-
-    for old_key in list( args ) :
-        new_key = old_key.replace( s, '' )
-        args[ new_key ] = args.pop( old_key )
-
-    return args
-
 
 def rot2quat( rot ):
     # Taking the SO(3) matrix as an input and return the quaternion
@@ -230,56 +164,6 @@ def str2float( s : str ):
 
     return [ float( i ) for i in re.findall( r"[-+]?\d*\.\d+|[-+]?\d+", s ) ]
 
-
-def my_print( **kwargs ):
-    """
-        Description:
-        ----------
-            ** double asterisk means giving the argument as dictionary
-            By using double asterisk "kwargs" as input argument,
-
-        Arguments:
-        ----------
-
-        Returns:
-        ----------
-    """
-
-    prec = kwargs[ "prec" ] if "prec" in kwargs else 5
-    f    = kwargs[ "file" ] if "file" in kwargs else sys.stdout                 # If there is a keyword called "file" then use that as our standard output
-
-    tmpMaxLen = len( max( kwargs.keys( ), key = len ) )                         # Getting the maximum length of a string list
-
-    for args in kwargs:
-
-        if 'file' == args.lower( ):
-            # Ignore the file's value, since it should not be added to the "output.txt" log file.
-            continue
-
-
-        print( "[{1:{0}s}]:".format( tmpMaxLen, args ), end = ' ', file = f )   # Printing out the name of the array
-                                                                                # {1:{0}s} Enables to set a variable as format length.
-        tmpData = kwargs[ args ]
-
-        if   isinstance( tmpData, ( float, int ) ):
-            tmpPrint = "{2:{1}.{0}f}".format( prec, prec + 2, tmpData )
-
-        elif isinstance( tmpData, list  ):
-            tmpPrint = np.array2string( np.array( tmpData ).flatten(), precision = prec, separator = ',' )
-
-        elif isinstance( tmpData, np.ndarray  ):
-            tmpPrint = np.array2string( tmpData.flatten()            , precision = prec, separator = ',' )
-
-        elif isinstance( tmpData, str   ):
-            tmpPrint = tmpData
-
-        elif tmpData is None:
-            tmpPrint = "None"
-
-        else:
-            raise ValueError( "CHECK INPUT")
-
-        print( tmpPrint, file = f )
 
 def solve_eq_posture( q0 ):
 

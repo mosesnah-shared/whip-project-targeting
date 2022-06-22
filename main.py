@@ -14,7 +14,6 @@
 
 import os
 import sys
-import shutil
 import argparse
 
 import nlopt
@@ -90,9 +89,15 @@ def main( ):
     my_sim.attach_ctrl( ctrl )
     my_sim.attach_objective( objective  )
 
-    # Set the initial condition of the simulation 
+    # Set the initial conditions of the simulation 
     my_sim.initialize( qpos = np.zeros( my_sim.nq ), qvel = np.zeros( my_sim.nq )  )
+
+    # Set the whip downward posture. 
+
+    # Run the simulation
     my_sim.run( )
+
+    # If succesful, close all the simulation. 
     my_sim.close( )
 
 

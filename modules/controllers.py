@@ -1,20 +1,5 @@
-# [Built-in modules]
-
-# [3rd party modules]
-import numpy as np
-import sys
-import time
-import pickle
-
-from   modules.utils        import my_print, get_elem_type, length_elem2elem, get_property
-from   modules.traj_funcs   import MinJerkTrajectory
-import matplotlib.pyplot as plt
-
-import mujoco_py as mjPy
-
-
-import sympy as sp
-
+import numpy           as np
+from   modules.utils   import length_elem2elem, get_property
 
 class Controller:
     """
@@ -22,54 +7,51 @@ class Controller:
         -----------
             Parent class for the controllers
 
-            For all of the controllers, there exist some sort of nominal trajectory (e.g., zero-force traj, zero-torque traj etc.).
-            Hence, a lambdified function should exist, which can calculate the position of nominal trajectory at arbitrary time.
-
-            Moreover, since the controller must identify some model parameters of our upper-limb model, there should be a "parse" function
-            that parses the "mjModel" class and retrieves the essential data (e.g., number of actuators, number of limbs etc. )
-
-            For the parsing, some member functions which faciliate this are required, and hence defined in this controller class.
-
-            From this parent class, the children classes are subsequently defined, and the input_calc function are augmented.
-
     """
 
+    def __init__( self, mj_model, mj_data, args, t_start: float ): 
 
-    def __init__( self, mj_model, mj_data, args, t_start: float ):
+        # Saving the reference of mujoco model and data for 
         self.mj_model = mj_model
         self.mj_data  = mj_data
+
+        # Saving the arguments passed via ArgumentParsers
         self.mj_args  = args
+
+        # Save the starting time of the simulation 
         self.t_start  = t_start 
         
+        # The name of the control parameters 
         self.ctrl_par_names = None
 
-        # Parsing the current model that we are using.
+        # There are crucial parameters which can be calculated from the given model. 
+        # Hence, "parsing" the model 
         self.parse_model( )
 
-        # The symbolic lambdified function of the trajectory to track.
-        # Trajectory is defined under "modules.traj_funcs"
-        self.traj = None
-
-    def __str__( self ):
-        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
-        return str( vars( self ) )
 
     def parse_model( self ):
         """
-            # [Basic Parameters of the model]
+            # Extracting out all the crucial parameters of the model
             # The number of actuators, number of limbs should be calculated.
             # Mostly the upper-limb model parameters
         """
-        self.act_names      = self.mjModel.actuator_names                       # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.n_act          = len( self.mjModel.actuator_names )                # The number of actuators, 2 for 2D model and 4 for 3D model
-        self.n_limbs        = '-'.join( self.mjModel.body_names ).lower().count( 'arm' ) # The number of limbs of the controller. Checking bodies which contain "arm" as the name (Refer to xml model files)
+        # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
+        self.act_names      = self.mj_model.actuator_names                       
+
+        # The number of actuators of the model
+        self.n_act          = len( self.mj_model.actuator_names )
+
+        # The number of limbs in the robot, count the number of arm in the body names 
+        self.n_limbs        = '-'.join( self.mj_model.body_names ).lower().count( 'arm' ) 
 
         self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
+
         self.g              = self.mjModel.opt.gravity                          # The gravity vector of the simulation
 
         self.geom_names     = self.mjModel.geom_names
         self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.geom_names  ]
 
+        # If there are 2 limbs in the robot model
         if   self.n_limbs == 2:
             self.M  = [ get_property( self.mjModel, 'body_upper_arm', 'mass'    ), get_property( self.mjModel, 'body_fore_arm', 'mass'    ) ]
             self.I  = [ get_property( self.mjModel, 'body_upper_arm', 'inertia' ), get_property( self.mjModel, 'body_fore_arm', 'inertia' ) ]
@@ -95,13 +77,13 @@ class Controller:
                 else:
                     pass
 
-    def input_calc( self, time ):
+    def input_calc( self, t ):
         """
-            Calculating the torque input
+            Calculating the torque input for the given time 
         """
         raise NotImplementedError( )
 
-    def append_ctrl( self, ctrl1 ):
+    def append_ctrl( self, ctrl ):
         """
             Append the current controller to ctrl1
             Usually we append the controller with convex combinations
@@ -114,8 +96,10 @@ class Controller:
         """
         raise NotImplementedError( )
 
-    def get_G( self ):
-        """ Gravity Compensation Torque """
+    def get_tauG( self ):
+        """ 
+            Calculate the gravity compensation torque for the model 
+        """
 
         # There exists some models which doesn't require gravity compensation torque.
         # Hence, handling this might be required.
@@ -124,7 +108,7 @@ class Controller:
         # So that it doesn't need to calculate the G value.
         # For now, we use the trick using the model_name itself, but a much sophisticated method seems favorable
 
-        if "cart" and "pole" in self.mjArgs.model_name:
+        if "cart" and "pole" in self.mj_args.model_name:
             G = np.zeros( self.n_act )
 
         else:
@@ -145,6 +129,26 @@ class Controller:
                 raise NotImplementedError( )
 
         return G
+
+class DebugController( Controller ):
+    """
+        Description:
+        ----------
+            Controller for quick debugging, useful when practicing/debugging with MuJoCo
+
+    """
+    def __init__( self, mjModel, mjData, mjArgs ):
+        super().__init__( mjModel, mjData, mjArgs )
+        self.n_act = 0
+
+    def set_ZFT( self ):
+        return 0
+
+    def input_calc( self, current_time ):
+        return None, None, 0
+
+
+
 
 class ControllerBinder( Controller ):
     """
@@ -249,51 +253,9 @@ class ControllerBinder( Controller ):
 
         return self.mjData.ctrl, self.idx_act, tau
 
-class DebugController( Controller ):
-    """
-        Description:
-        ----------
-            Controller for quick debugging, useful when practicing/debugging with MuJoCo
-
-    """
-    def __init__( self, mjModel, mjData, mjArgs ):
-        super().__init__( mjModel, mjData, mjArgs )
-        self.n_act = 0
-
-    def set_ZFT( self ):
-        return 0
-
-    def input_calc( self, current_time ):
-        return None, None, 0
 
 
-
-class ImpedanceController( Controller ):
-    """
-        Description:
-        ----------
-            Class for an Impedance Controller
-            Inheritance of parent class "Contronller"
-
-    """
-    def __init__( self, mjModel, mjData, mjArgs, is_noise = False ):
-
-        super().__init__( mjModel, mjData, mjArgs )
-
-        # The impedance parameter of the controller
-        # Used for both Cartesian or Joint impedances.
-        self.Kmat = None
-        self.Bmat = None
-        self.Mmat = None
-
-        self.n_mov_pars     = None                                              # The number of parameters of the movement
-        self.n_ctrl_pars    = None                                              # The number of ctrl parameters. This definition would be useful for the optimization process.
-        self.mov_parameters = None                                              # The actual values of the movement parameters, initializing it with random values
-        self.ctrl_par_names = None                                              # Useful for self.set_ctrl_par method
-
-        self.is_noise       = is_noise                                          # Noise model on/off
-
-class JointImpedanceController( ImpedanceController ):
+class JointImpedanceController( Controller ):
 
     """
         Description:
@@ -303,7 +265,7 @@ class JointImpedanceController( ImpedanceController ):
 
     """
 
-    def __init__( self, mjModel, mjData, mjArgs, is_noise = False ):
+    def __init__( self, mj_model, mj_data, mj_args, is_noise = False ):
 
         super().__init__( mjModel, mjData, mjArgs, is_noise )
 
@@ -527,7 +489,7 @@ class JointSlidingController( SlidingController ):
         return self.mjData.ctrl, self.idx_act, tau
 
 
-class CartesianImpedanceController( ImpedanceController ):
+class CartesianImpedanceController( Controller ):
     """
         Description:
         ----------
