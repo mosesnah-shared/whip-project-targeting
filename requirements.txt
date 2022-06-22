@@ -3,3 +3,6 @@ sympy
 scipy
 matplotlib
 opencv-python
+argparse
+datetime
+moviepy
