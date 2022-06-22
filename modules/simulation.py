@@ -1,5 +1,4 @@
 import os
-import cv2
 import shutil
 import numpy           as np
 import mujoco_py       as mjPy

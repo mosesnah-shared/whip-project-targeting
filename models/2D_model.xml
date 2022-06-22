@@ -95,21 +95,21 @@
     <!-- ===============  MODEL STARTS  =============== -->
 
     <!-- =============  UPPER ARM START =============== -->
-		<body name='upperArm' pos='0 0 0' euler='0 0 0'>
-      <joint name='shoulderJoint' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0' />
+		<body name='body_upper_arm' pos='0 0 0' euler='0 0 0'>
+      <joint name='joint_shoulder' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0' />
 			<inertial pos='0 0 -0.129' mass='1.595' diaginertia='0.011917 0.011937 0.001325'/>
-			<geom name='shoulderGeom' type='sphere' pos='0 0 0' material='JointColor' size='0.0294' mass='0'/>
+			<geom name='geom_shoulder' type='sphere' pos='0 0 0' material='JointColor' size='0.0294' mass='0'/>
 			<geom type='cylinder' fromto='0 0 0 0 0 -0.294'     material='LimbColor'  size='0.0147' mass='0'/>
-      <site name='upperArmCOM' pos='0 0 -0.129' />      <!-- This site is attached to the Center of Mass of the upper Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
+      <site name='site_upper_arm_COM' pos='0 0 -0.129' />      <!-- This site is attached to the Center of Mass of the upper Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
     	<!-- =============  UPPER ARM  END  =============== -->
 
       <!-- ============ FORE ARM START =============== -->
-			<body name='foreArm' pos='0 0 -0.294' euler='0 0 0'>
-        <joint name='elbowJoint' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0'/>
+			<body name='body_fore_arm' pos='0 0 -0.294' euler='0 0 0'>
+        <joint name='joint_elbow' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0'/>
 				<inertial pos='0 0 -0.112' mass='0.869' diaginertia='0.004765 0.004855 0.000472'/>
-				<geom name='elbowGeom'       type='sphere' pos='0 0 0'      material='JointColor' size='0.0294' mass='0'/>
+				<geom name='geom_elbow'       type='sphere' pos='0 0 0'      material='JointColor' size='0.0294' mass='0'/>
 				<geom type='cylinder' fromto='0 0 0 0 0 -0.291'             material='LimbColor'  size='0.0147' mass='0'/>
-        <site name='foreArmCOM' pos='0 0 -0.112' />      <!-- This site is attached to the Center of Mass of the fore Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
+        <site name='site_fore_arm_COM' pos='0 0 -0.112' />      <!-- This site is attached to the Center of Mass of the fore Arm. This site is needed for the gravity-compensation torque, please see "../controller/myController.py" for more detail  -->
 				<geom name='geom_EE' type='sphere' pos='0 0 -0.291' material='JointColor' size='0.0294' mass='0'/>
 				<!-- Do not change 'geom_EE' as name, since the whip will be appended to the body containig geom_EE -->
 
