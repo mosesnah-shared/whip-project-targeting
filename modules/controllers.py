@@ -10,28 +10,13 @@ from   modules.utils        import my_print, get_elem_type, length_elem2elem, ge
 from   modules.traj_funcs   import MinJerkTrajectory
 import matplotlib.pyplot as plt
 
-try:
-    import mujoco_py as mjPy
-
-except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
-                                             and also perform the setup instructions here: \
-                                             https://github.com/openai/mujoco-py/.)".format( e ) )
-
-# Added
-try:
-    import sympy as sp
-    from sympy.utilities.lambdify import lambdify, implemented_function
-
-except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install sympy, \
-                                             Simply type pip3 install sympy. \
-                                             Sympy is necessary for building ZFT Calculation)".format( e ) )
-
-# [Local modules]
+import mujoco_py as mjPy
 
 
-class Controller( ):
+import sympy as sp
+
+
+class Controller:
     """
         Description:
         -----------
@@ -50,10 +35,12 @@ class Controller( ):
     """
 
 
-    def __init__( self, mjModel, mjData, mjArgs ):
-        self.mjModel        = mjModel
-        self.mjData         = mjData
-        self.mjArgs         = mjArgs
+    def __init__( self, mj_model, mj_data, args, t_start: float ):
+        self.mj_model = mj_model
+        self.mj_data  = mj_data
+        self.mj_args  = args
+        self.t_start  = t_start 
+        
         self.ctrl_par_names = None
 
         # Parsing the current model that we are using.

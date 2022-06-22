@@ -1,350 +1,227 @@
-"""
-
-[PYTHON NAMING CONVENTION]
-    module_name, package_name, ClassName, method_name, ExceptionName, function_name,
-    GLOBAL_CONSTANT_NAME, global_var_name, instance_var_name, function_parameter_name,
-    local_var_name.
-
-
-"""
-
-import sys, os
+import os
 import cv2
-import re
-import pprint
 import shutil
-import numpy as np
-import time, datetime
+import numpy           as np
+import mujoco_py       as mjPy
+import moviepy.editor  as mpy
 
-from modules.utils        import ( my_print, quaternion2euler, camel2snake, snake2camel,
-                                   MyVideo, str2float, my_mvdir, my_rmdir, solve_eq_posture )
-from modules.constants    import Constants
 
-try:
-    import mujoco_py as mjPy
+from utils     import str2float
+from datetime  import datetime
+from constants import Constants as C
 
-except ImportError as e:
-    raise e.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
-                                             and also perform the setup instructions here: \
-                                             https://github.com/openai/mujoco-py/.)".format( e ) )
-
-# from mujoco_py import
-
-class Simulation( ):
+class Simulation:
     """
         Running a single Whip Simulation
-
-        [INHERITANCE]
-
-        [DESCRIPTION]
-
-
-        [NOTE]
-            All of the model files are saved in "models" directory, and we are using "relative directory"
-            to generate and find the .xml model file. Hence do not change of "model directory" variable within this
-
     """
-
-    MODEL_DIR     = Constants.MODEL_DIR
-    SAVE_DIR      = Constants.SAVE_DIR
-    TMP_DIR       = Constants.TMP_DIR
 
     def __init__( self, args  ):
 
-        # Saving the boolean simulation variables
-        self.is_save_data = True  if args.save_data                    else False
-        self.is_vid_rec   = True  if args.record_vid                   else False
-        self.is_vid_on    = False if args.run_opt or args.vid_off      else True
-        # self.is_vid_on    = False if args.vid_off      else True
-        self.is_run_opt   = args.run_opt
+        # The whole argument passed to the main python file. 
+        self.args = args
 
-        # Based on the model_name, construct the simulation.
-        self.model_name = args.model_name + ".xml" if args.model_name[ -4: ] != ".xml" else args.model_name
-        self.mjModel    = mjPy.load_model_from_path( self.MODEL_DIR + self.model_name ) #  Loading xml model as and save it as "model"
-        self.mjSim      = mjPy.MjSim( self.mjModel )                                    # Construct the simulation environment and save it as "sim"
-        self.mjData     = self.mjSim.data                                               # Construct the basic MuJoCo data and save it as "mjData"
-        self.mjViewer   = mjPy.MjViewerBasic( self.mjSim ) if self.is_vid_on else None  # Construct the basic MuJoCo viewer and save it as "myViewer"
-        self.ctrl       = None
-        self.args       = args
-        self.obj_val    = np.inf
+        # Check if we save data, record video, or video turn off the render.  
+        self.is_save_data   = args.save_data
+        self.is_record_vid  = args.record_vid
+        self.is_vid_off     = args.vid_off
 
-        # Saving the default simulation variables
-        self.fps          = 60                                                  # Frames per second for the mujoco render
-        self.dt           = self.mjModel.opt.timestep                           # Time step of the simulation [sec]
-        self.run_time     = args.run_time                                       # Total run time (tr) of simulation
-        self.start_time   = args.start_time                                     # Start of controller
-        self.step         = 0                                                   # Number of steps of the simulation, in integer [-]
-        self.t            = 0
-        self.g            = self.mjModel.opt.gravity                            # Calling the gravity vector of the simulation environment
-        self.init_cond    = None
+        # Controller and the objective function 
+        self.ctrl      = None
+        self.objective = None
 
-        # Steps for updating the record or data save
-        self.vid_step         = round( 1 / self.dt / self.fps          )            # The very basic update rate.
+        # Save the model name.
+        self.model_name = args.model_name
 
-        # If record is on, then calculate rec_step
-        if self.is_vid_rec:
-            self.rec_step     = round( self.vid_step * args.record_vid )        # vid_rec is given as 0.2, 0.1, 0.3x etc.
+        # Construct the basic mujoco attributes
+        self.mj_model  = mjPy.load_model_from_path( C.MODEL_DIR + self.model_name + ".xml" ) 
+        self.mj_sim    = mjPy.MjSim( self.mj_model )    
+        self.mj_data   = self.mj_sim.data                                              
+        self.mj_viewer = mjPy.MjViewerBasic( self.mj_sim ) if not self.is_vid_off else None  
 
-        # If save_data is on, then calculate save_step
-        if self.is_save_data:
-            self.save_step    = round( 1 / self.dt / args.save_data    )        # save_data is given as 60Hz, 30Hz, etc.
+        # Save the number of generalized coordinate of the system 
+        self.nq = len( self.mj_data.qpos ) 
+        
+        # We set the normal frames-per-second as 60. 
+        self.fps = 60                   
 
+        # Time-step (dt), start time of the controller (ts) and total runtime (T) of the simulation
+        self.dt  = self.mj_model.opt.timestep   
+        self.ts  = self.args.start_time                                              
+        self.T   = self.args.run_time                     
+
+        # If it is 60 frames per second, then for vid_speed = 2, we save 30 frames per second, hence 
+        # The number of steps for a single-second is ( 1. / self.dt ), and divide 
+        # [Example] for dt = 0.001, we have 1000 for ( 1. / self.dt ), and for vid_speed = 2, self.fps / self.vid_speed = 30 
+        #           Hence, we save/render the video every round( 1000 / 30 ) time steps. 
+        self.vid_step   = round( ( 1. / self.dt ) / ( self.fps / self.args.vid_speed )  )
+
+        # Step for printing the data. 
+        self.print_step = round( ( 1. / self.dt ) / self.args.print_freq  )                
+
+        # Generate tmp directory before moving to results folder 
+        self.tmp_dir  = C.TMP_DIR + datetime.now( ).strftime( "%Y%m%d_%H%M%S/" )
+        os.mkdir( self.tmp_dir )  
+
+        if   self.is_save_data: self.save_file = open( self.tmp_dir + "sim_data.txt", "a+" )
+        
+        # This variable is for saving the video of the simulation
+        self.frames = [ ]
+
+    def initialize( self, qpos: np.ndarray, qvel: np.ndarray ):
+        """
+            Initialize the Simulation. Note that the controller and objective function is NOT erased. 
+        """
+
+        # Current time (t) of the simulation 
+        self.t  = 0
+          
+        # Number of steps of the simulation. 
+        self.n_steps = 0  
+
+        # The value of the objective function
+        self.obj_val  = np.inf
+
+        # Save initial q_pos and q_vel 
+        self.init_qpos = qpos 
+        self.init_qvel = qvel 
+
+        # If None is given, set numpy arrays aszero. 
+        # We should specifically add [ : ]
+        self.mj_data.qpos[ : ] = qpos[ : ] 
+        self.mj_data.qvel[ : ] = qvel[ : ] 
+
+
+    def reset( self ):
+        """
+            Reset the simulation. 
+        """
+        self.mj_sim.reset( )
+        self.initialize( qpos = self.init_qpos, qvel = self.init_qvel )
+        
+    def close( self ):
+        """ 
+            Wrapping up the simulation
+        """
+        # If video should be recorded, write the video file. 
+        if self.is_record_vid and self.frames is not None:
+            clip = mpy.ImageSequenceClip( self.frames, fps = self.fps )
+            clip.write_videofile( self.tmp_dir + "video.mp4", fps = self.fps, logger = None )
+
+        # Move the tmp folder to results if not empty, else just remove the tmp file. 
+        shutil.move( self.tmp_dir, C.SAVE_DIR  ) if len( os.listdir( self.tmp_dir ) ) != 0 else os.rmdir( self.tmp_dir )
+        
+
+    def set_camera_pos( self ):
+        """
+            Set the camera posture of the simulation. 
+        """
+
+        # Raw string to float. 
+        tmp = str2float( self.args.cam_pos )
+
+        # There should be six variables
+        assert len( tmp ) == 6
+
+        self.mj_viewer.cam.lookat     = tmp[ 0 : 3 ]
+        self.mj_viewer.cam.distance   = tmp[ 3 ]
+        self.mj_viewer.cam.elevation  = tmp[ 4 ]
+        self.mj_viewer.cam.azimuth    = tmp[ 5 ]
 
     def attach_ctrl( self, ctrl ):
-        """For detailed controller description, please check 'controllers.py' """
+        """
+            For detailed controller description, please check 'controllers.py' 
+        """
         self.ctrl = ctrl
 
     def attach_objective( self, objective, weights = 1 ):
-        """ Appending objective function with weights as coefficients, refer to 'objectives.py for details' """
-        self.objective = objective
-
-    def wait_until( self, time ):
+        """ 
+            Appending objective function with weights as coefficients, refer to 'objectives.py for details' 
         """
-            Simply waiting the simulation. This is used BEFORE the controller is activated, i.e., when t <= start_time.
-            This function is handy when we want to wait for the model's residual dynamics to be stopped.
-            [INPUT]
-                [VAR NAME]             [TYPE]     [DESCRIPTION]
-                (1) time               float      The time of how long the simulation will just not run
+        # self.objective = objective * weights
+        pass
+
+    def step( self ):
         """
-        self.mjModel.opt.timestep = 0.01
-        while self.mjData.time < time:
-            input_ref, input_idx, input = self.ctrl.input_calc( 0  )
-            input_ref[ input_idx ]      = input
-            self.mjSim.step( )                                                  # Single step update
+            A wrapper function for our usage. 
+        """
 
-            if( self._is_sim_unstable() ):                                      # Check if simulation is stable
-            #
-                # If not optimization, and result unstable, then save the detailed data
-                print( "[WARNING] UNSTABLE SIMULATION, HALTED AT {0:f} for at {1:f}".format( self.t, self.run_time )  )
-                print( "Makeing the simulation time step more detailed, from {0:f} to {1:f}".format( self.mjModel.opt.timestep , 0.1 * self.mjModel.opt.timestep ))
-                self.reset( )
-                self._init_sim(  )
-                self._set_init_cond(  )
-                self.mjModel.opt.timestep *= 0.1
+        # Update the step
+        self.mj_sim.step( )
 
+        # Update the number of steps and time
+        self.n_steps += 1
+        self.t = self.mj_data.time                               
 
-        self.run_time   += time
-        self.start_time += time
-        self.t = self.mjData.time
+    def run( self ):
+        """ 
+            Running the simulation 
+        """
 
+        # The main loop of the simulation 
+        while self.t <= self.T:
 
-    def run( self, init_cond = None ):
-        """ Running the simulation """
+            # Render the simulation if mj_viewer exists        
+            if self.mj_viewer is not None and self.n_steps % self.vid_step == 0:
 
-        self._init_sim(  )
-        self._set_init_cond( init_cond )
+                self.mj_viewer.render( )
 
-        # self.wait_until( 240 )
-        # self.mjModel.opt.timestep = 0.0001
-        # [BACKUP] For Wrist Dynamics
-        # self.mjData.qpos[ : ] = np.array( [ 0.135, 0, 0, 0.29,0.0003,-0.0987,0.0008,-0.2002,0.0003,-0.0818, 0.0001, -0.034, 0.0001 ,-0.0143, 0., -0.0062, 0., -0.0027, 0., -0.0012, 0., -0.0005,  0., -0.0003, 0., -0.0001, -0., -0.0001, -0., -0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,-0., -0., -0., -0., -0., -0., -0., -0., -0., -0.,  -0., -0., -0., -0., -0.    ] )
-        # self.mjSim.forward( )
+                if self.is_record_vid: 
+                    # Read the raw rgb image
+                    rgb_img = self.mj_viewer.read_pixels( self.mj_viewer.width, self.mj_viewer.height, depth = False )
 
-        # Set run_time twice the duration
-        # self.run_time = self.ctrl.traj.pars[ "D" ] * 2.3
+                    # Convert BGR to RGB and flip upside down.
+                    rgb_img = np.flip( rgb_img, axis = 0 )
+                    
+                    # Add the frame list, this list will be converted to a video via moviepy library
+                    self.frames.append( rgb_img )  
 
-        while self.t <= self.run_time:
-
-            # Render the simulation
-            if self.step % self.vid_step == 0:
-                if self.mjViewer is not None:
-                    self.mjViewer.render( )
-
-            # print( self.t )
-            # [NOTE] [2021.08.01] [Moses C. Nah]
-            # To use this, you need to modify "mjviewer.py" file under "mujoco_py"
-
-            if self.mjViewer is not None and self.mjViewer.is_reset:
-                self._back_to_init( )
-                self.mjViewer.is_reset = False
-                continue
-
-            if self.mjViewer is not None and self.mjViewer.is_paused:
-                continue
+                # If reset button (BACKSPACE) is pressed
+                if self.mj_viewer.is_reset:
+                    self.reset( )
+                    self.mj_viewer.is_reset = False
+                
+                # If SPACE BUTTON is pressed
+                if self.mj_viewer.is_paused:  continue
 
             # [Calculate Input]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
             # input_idx: The specific index of input_ref data array that should be inputted
             # input:     The actual input value which is inputted to input_ref
-
-            if self.start_time >= self.t:
-                input_ref, input_idx, input = self.ctrl.input_calc( 0 )
-            else:
-                input_ref, input_idx, input = self.ctrl.input_calc( self.t - self.start_time )
-
-            # Setting this on the controller
-            if input_ref is not None:
+            if self.ctrl is not None: 
+                input_ref, input_idx, input = self.ctrl.input_calc( self.t )
                 input_ref[ input_idx ] = input
 
-            # [Calculate objective Value]
-            if self.objective is not None:
-                self.obj_val = min( self.obj_val, self.objective.output_calc()  )
+            # Run a single simulation 
+            self.step( )
 
-            if self.is_vid_rec and self.step % self.rec_step == 0 :
-                self.vid.write( self.mjViewer )
+            # Set the objective function. This should be modified/ 
+            if self.objective is not None: self.obj_val = min( self.obj_val, self.objective.output_calc( )  )
 
-            # [Printing out the details]
-            # [TODO] [Moses C. Nah] [2021.08.01] Making this code much cleaner
-            # if self.step % self.vid_step == 0:
-            #     if not self.args.run_opt and self.args.print_mode == "normal" :
-            #         my_print( currentTime = self.t, output = self.obj_val  )
-            #
-            if self.args.print_mode == "verbose":
-                my_print( cameraPositions = [ self.mjViewer.cam.lookat[ 0 ], self.mjViewer.cam.lookat[ 1 ], self.mjViewer.cam.lookat[ 2 ],
-                                              self.mjViewer.cam.distance,    self.mjViewer.cam.elevation,   self.mjViewer.cam.azimuth ] )
+            # Print the basic 
+            if self.n_steps % self.print_step == 0:
+                self.print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ] }  )
 
-            if self.is_save_data and self.step % self.save_step == 0:
-                my_print( currentTime = self.t,
-                                 qPos = self.mjData.qpos[ : ],
-                                 qVel = self.mjData.qvel[ : ],
-                                qPos0 = self.ctrl.x0,
-                                qVel0 = self.ctrl.dx0,
-                     geomXYZPositions = self.mjData.geom_xpos[ self.ctrl.idx_geom_names ],
-                               output = self.objective.output_calc(),
-                               taus   = self.ctrl.tau, file = self.file   )
-
-
-            self.mjSim.step( )
-            self.t = self.mjData.time                                           # Update the current time variable of the simulation
-            self.step += 1
-
-
-            if( self._is_sim_unstable() ):                                      # Check if simulation is stable
-
-                # If not optimization, and result unstable, then save the detailed data
-                print( "[WARNING] UNSTABLE SIMULATION, HALTED AT {0:f} for at {1:f}".format( self.t, self.run_time )  )
+            # Check if simulation is stable. 
+            # We check the accelerations
+            if  self.is_sim_unstable( ):     
+                print( '[UNSTABLE SIMULATION], HALTED AT {0:f} for a {1:f}-second long simulation'.format( self.t, self.T )  )                                 
                 break
 
-        return self.obj_val                                                     # Returning the minimum value achieved with the defined objective function
+    def print_vars( self, vars2print: dict ):
+        """
+            Print out all the details of the variables to the standard output + file to save. 
+        """
 
-    def reset( self ):
-        """ Reseting the mujoco simulation without changing the model/controller etc. """
-        self.t            = 0
-        self.sim_step     = 0
-        self.obj_val      = np.inf
-        self.mjSim.reset( )
+        # Iterate Through the dictionary for printing out the values. 
+        for var_name, var_vals in vars2print.items( ):
 
-    def close( self ):
-        """ Wrapping up the simulation"""
-        if self.is_vid_rec:
-            self.vid.release( )
+            # Check if var_vals is a list or numpy's ndarray else just change it as string 
+            var_vals = np.array2string( var_vals, separator =', ', floatmode = 'fixed' ) if isinstance( var_vals, ( list, np.ndarray ) ) else str( var_vals )
+            print( f'[{var_name}]: {var_vals}' )
 
-        if self.is_save_data:
-            self.file.close(  )
-
-        if self.is_vid_rec or self.is_save_data or self.is_run_opt:
-            self._save_sim_details(  )
-            shutil.copyfile( Constants.MODEL_DIR + self.args.model_name,
-                              self.args.save_dir + self.args.model_name )
-
-            my_mvdir( self.args.save_dir, self.SAVE_DIR  )
-            my_rmdir( Constants.TMP_DIR )
-
-
-
-    # ======================================================================== #
-    # INTERNAL METHODS
-    # ======================================================================== #
-    def _set_init_cond( self, init_cond = None ):
-        """ Manually setting the initial condition of the system. """
-
-        self.init_cond = init_cond
-
-        self.dt           = self.mjModel.opt.timestep                           # Time step of the simulation [sec]
-        self.run_time     = self.args.run_time                                  # Total run time (tr) of simulation
-        self.start_time   = self.args.start_time                                # Start of controller
-        self.step         = 0                                                   # Number of steps of the simulation, in integer [-]
-        self.t            = 0
-
-        if self.init_cond is None:
-
-            nJ = self.ctrl.n_act                                                # Getting the number of active joints
-
-            self.mjData.qpos[ 0 : nJ ] = self.ctrl.traj.pars[ "pi" ]            # Setting the initial posture of the upper-limb as the movement parameters
-            # self.mjData.qpos_spring[ 0 : nJ ]
-            # tmp = solve_eq_posture( self.ctrl.traj.pars[ "pi" ]  )
-            # self.mjData.qpos[ 0 : nJ ] = tmp
-            self.mjSim.forward()                                                # Update Needed for setting the posture of the upper limb by "forward" method.
-
-            # The whip should face downward, complying to gravity at rest.
-            # Hence, manually setting the whip to do so.
-            if "_w_" in self.model_name:                                        # If whip is attached to the model.
-                                                                                # This is distinguished by the xml model file's name. "_w_" is included on the name.
-                self._set_whip_downward(  )
-
-        else:
-            self.mjData.qpos[ : ] = self.init_cond[ "qpos" ]
-            self.mjData.qvel[ : ] = self.init_cond[ "qvel" ]
-            self.mjSim.forward()                                                # Again, updating the posture after setting the "qpos" value.
-
-    # [TODO] [Moses C. Nah] [2021.08.03]
-    # Just simply merging this function to reset
-    def _back_to_init( self ):
-        """ Going back to the initial condition of the simulation"""
-        self._set_init_cond( self.init_cond )
-        self.t            = 0
-        self.sim_step     = 0
-        self.obj_val      = np.inf
-
-    def _init_sim( self ):
-
-        # Warn the user if input and output function is empty
-        if self.ctrl is None:
-            raise ValueError( "CONTROLLER NOT ATTACHED TO SIMULATION. Please attach Ctrl object via 'attach_ctrl' " )
-
-        if self.is_vid_rec:
-            self.vid = MyVideo( fps = self.fps * self.args.record_vid ,
-                            vid_dir = self.args.save_dir )
-
-        if self.is_save_data:
-            self.file = open( self.args.save_dir + "data_log.txt", "a+" )
-
-        if self.args.cam_pos is not None:
-            self._set_cam_pos( self.args.cam_pos )
-
-    def _set_cam_pos( self, cam_pos ):
-        tmp = str2float( self.args.cam_pos )
-        self.mjViewer.cam.lookat[ 0:3 ] = tmp[ 0 : 3 ]
-        self.mjViewer.cam.distance      = tmp[ 3 ]
-        self.mjViewer.cam.elevation     = tmp[ 4 ]
-        self.mjViewer.cam.azimuth       = tmp[ 5 ]
-
-    def _save_sim_details( self  ):
-
-        with open( self.args.save_dir + "sim_details.txt", "w+" ) as f:
-            print( self           , file = f )
-            print( self.ctrl      , file = f )
-            print( self.args      , file = f )
-
-
-
-    def _is_sim_unstable( self ):
-        """ Check whether the simulation is stable. If the acceleration exceeds some threshold value, then halting the simulation """
-        return True if max( np.absolute( self.mjData.qacc ) ) > 1 * 10 ** 6 else False
-
-    def _set_whip_downward( self  ):
-        """ Setting the whip posture downward at rest """
-
-        tmp = self.mjData.get_body_xquat( "body_node1" )                # Getting the quaternion angle of the whip handle
-        yaw, pitch, roll = quaternion2euler( tmp )
-
-        nJ = self.ctrl.n_act
-
-        if   nJ == 2: # for 2DOF Robot - The connection between the whip and upper-limb has 1DOF
-            self.mjData.qpos[ nJ ] = + pitch if round( roll ) == 0 else np.pi - pitch
-
-        elif nJ == 4: # for 4DOF Robot - The connection between the whip and upper-limb has 2DOF
-            self.mjData.qpos[ nJ     ] = - roll                         # Setting the handle posture to make the whip being straight down at equilibrium.
-            self.mjData.qpos[ nJ + 1 ] = + pitch                        # Setting the handle posture to make the whip being straight down at equilibrium.
-
-            # self.mjModel.qpos_spring[ nJ     ] = - roll
-            # self.mjModel.qpos_spring[ nJ + 1 ] = + pitch
-
-        self.mjSim.forward()
-
-    # ======================================================================== #
-    # MAGIC METHODS
-    # ======================================================================== #
-    def __str__( self ):
-        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
-        return str( vars( self ) )
+    def is_sim_unstable( self ):
+        """ 
+            Check whether the simulation is stable. 
+            If the acceleration exceeds some threshold value, then halting the simulation 
+        """
+        return True if max( abs( self.mj_data.qacc ) ) > 10 ** 6 else False

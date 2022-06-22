@@ -117,7 +117,7 @@
 
   </body>
 
-	  <geom name='target' type='sphere' pos='1.595 0.0 0.0' material='LimbColor' mass='0' size='0.03'/>
+	  <geom name='target' type='sphere' pos='1.595 0.0 0.0' material='LimbColor' mass='0' size='0.03' rgba='1 0 0 1'/>
 
   </worldbody>
 

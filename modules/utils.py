@@ -95,24 +95,16 @@ def get_property( mjModel, elem_name, prop_name ):
     raise NameError( 'Cannot find geom_name with {0} in list, please check'.format( elem_name )  )
 
 
-def snake2camel( s ):
-    """
-        Switch string s from snake_form_naming to CamelCase
-    """
+def snake2camel( s: str ):
 
     return ''.join( word.title() for word in s.split( '_' ) )
 
-def camel2snake( s ):
-    """
-        Switch string s from CamelCase to snake_form_naming
-        [REF] https://stackoverflow.com/questions/1175208/elegant-python-function-to-convert-camelcase-to-snake-case
-    """
-    re.sub( r'(?<!^)(?=[A-Z])', '_', s ).lower()
+def camel2snake( s: str ):
+
+    return re.sub( r'(?<!^)(?=[A-Z])', '_', s ).lower()
 
 def clear_dir( dir ):
     """ Cleaning up the contents in the directory """
-
-
 
 def args_cleanup( args, s ):
     """
@@ -139,8 +131,8 @@ def args_cleanup( args, s ):
 
 def rot2quat( rot ):
     # Taking the SO(3) matrix as an input and return the quaternion
-
-    return quat
+    # return quat
+    pass
 
 def euler2quaternion( euler_angs ):
     """
@@ -222,78 +214,22 @@ def quaternion2euler( quatVec ):                                                
 
     return yaw, pitch, roll
 
-def str2bool( s ):
+def str2float( s : str ):
     """
 
-        Description:
-        ----------
-        Converting an input string to a boolean
-
-        Arguments:
-        ----------
-            [NAME]          [TYPE]        [DESCRIPTION]
-            (1) s           dict, str     The string which
-
-        Returns:
-        ----------
-            True/False depending on the given input strin gv
-
-    """
-    if isinstance( s, dict ):
-        for key, _ in s.items():
-            s[ key ] = str2bool( s[ key ] )
-    else:
-        return v.lower() in ( "yes", "true", "t", "1" )
-
-def str2float( s ):
-    """
-
-        Description:
-        ----------
-        Converting an input string to a float arraay
-
-        Arguments:
+        Args:
         ----------
             [NAME]          [TYPE]        [DESCRIPTION]
             (1) s           str           The string which will be parsed to float array
 
         Returns:
         ----------
-            The parsed float array
+            A list of float that is parsed from given string s
 
     """
-    if not isinstance( s, str ):
-        raise ValueError( "Input argument should be string, but {} is given".format( type( s ) ) )
 
     return [ float( i ) for i in re.findall( r"[-+]?\d*\.\d+|[-+]?\d+", s ) ]
 
-def my_mkdir(  ):
-
-    dir = Constants.TMP_DIR                                                     # Temporarily saving at tmp
-    dir += datetime.datetime.now().strftime( "%Y%m%d_%H%M%S/" )                 # Appending the date when this directory is called.
-    if not os.path.exists( dir ):                                               # If directory not exist
-        os.makedirs( dir, exist_ok = True )                                     # mkdir -p functionality via exist_ok
-
-    return dir
-
-
-def my_mvdir( from_dir, to_dir ):
-    shutil.move( from_dir , to_dir )
-
-
-
-
-def my_rmdir( dir ):
-
-    if not isinstance( dir, str ):
-        raise ValueError( "Input directory should be a str, {} is given".format( type ( dir ) ) )
-
-    try:
-        shutil.rmtree( dir  )
-    except:
-        print( "{0:s} Doesn't exist, hence cannot remove the directory".format( dir ) )
-
-    print( "Erasing Directory [{0:s}]".format( dir ) )
 
 def my_print( **kwargs ):
     """
