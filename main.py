@@ -26,7 +26,6 @@ sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 from simulation   import Simulation
 from controllers  import ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController, ControllerBinder 
 from objectives   import DistFromTip2Target, TargetState
-from traj_funcs   import MinJerkTrajectory
 from constants    import Constants  as C
 
 # Setting the numpy print options, useful for printing out data with consistent pattern.
