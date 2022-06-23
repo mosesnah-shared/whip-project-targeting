@@ -21,45 +21,32 @@ class Controller:
         # Save the starting time of the simulation 
         self.t_start  = t_start 
         
-        # The name of the control parameters 
-        self.ctrl_par_names = None
+        # A tuple of control parameters 
+        self.ctrl_par_names = ( )
 
         # There are crucial parameters which can be calculated from the given model. 
-        # Hence, "parsing" the model 
+        # Hence, "parsing" the xml model file
         self.parse_model( )
 
 
     def parse_model( self ):
         """
-            # Extracting out all the crucial parameters of the model
-            # The number of actuators, number of limbs should be calculated.
-            # Mostly the upper-limb model parameters
+            Extracting out all the crucial parameters of the model
+            e.g., The number of actuators, number of limbs etc.
         """
-        # The names of the actuators, all the names end with "TorqueMotor" (Refer to xml model files)
-        self.act_names      = self.mj_model.actuator_names                       
+
+        # The names of the actuators, all the names start with "motor"
+        self.act_names = self.mj_model.actuator_names                       
 
         # The number of actuators of the model
-        self.n_act          = len( self.mj_model.actuator_names )
+        self.n_act = len( self.act_names )
 
-        # The number of limbs in the robot, count the number of arm in the body names 
-        self.n_limbs        = '-'.join( self.mj_model.body_names ).lower().count( 'arm' ) 
+        # Get the masses and inertias of the limbs. The name should contain "arm"
+        self.M = [ self.mj_model.body_mass[    self.mj_model.body_name2id[ name ] ] for name in self.mj_model.body_names if "body" and "arm" in name ]
+        self.I = [ self.mj_model.body_inertia[ self.mj_model.body_name2id[ name ] ] for name in self.mj_model.body_names if "body" and "arm" in name ]
+        
+        # Get the length of the limbs and the center of mass
 
-        self.idx_act        = np.arange( 0, self.n_act )                        # The idx array of the actuators, this is useful for self.input_calc method
-
-        self.g              = self.mjModel.opt.gravity                          # The gravity vector of the simulation
-
-        self.geom_names     = self.mjModel.geom_names
-        self.idx_geom_names = [ self.mjModel._geom_name2id[ name ] for name in self.geom_names  ]
-
-        # If there are 2 limbs in the robot model
-        if   self.n_limbs == 2:
-            self.M  = [ get_property( self.mjModel, 'body_upper_arm', 'mass'    ), get_property( self.mjModel, 'body_fore_arm', 'mass'    ) ]
-            self.I  = [ get_property( self.mjModel, 'body_upper_arm', 'inertia' ), get_property( self.mjModel, 'body_fore_arm', 'inertia' ) ]
-            self.L  = [ length_elem2elem( self.mjModel, self.mjData, 'geom_shoulder', 'geom_elbow'        ), length_elem2elem( self.mjModel, self.mjData, 'geom_elbow' , 'geom_end_effector'  )  ]
-            self.Lc = [ length_elem2elem( self.mjModel, self.mjData, 'geom_shoulder', 'site_fore_arm_COM' ), length_elem2elem( self.mjModel, self.mjData, 'geom_elbow' , 'site_upper_arm_COM' )  ]
-
-        elif self.n_limbs == 3:
-            NotImplementedError( )
 
     def set_ctrl_par( self, **kwargs ):
         """
@@ -70,6 +57,7 @@ class Controller:
             This method function will become handy when we want to modify, or set the control parameters.
 
         """
+
         if kwargs is not None:
             for args in kwargs:
                 if args in self.ctrl_par_names:
@@ -81,73 +69,41 @@ class Controller:
         """
             Calculating the torque input for the given time 
         """
-        raise NotImplementedError( )
+        raise NotImplementedError
 
     def append_ctrl( self, ctrl ):
         """
             Append the current controller to ctrl1
             Usually we append the controller with convex combinations
         """
-        raise NotImplementedError( )
-
-    def print_vals( self, list ):
-        """
-            print out the list of variables
-        """
-        raise NotImplementedError( )
+        raise NotImplementedError
 
     def get_tauG( self ):
         """ 
             Calculate the gravity compensation torque for the model 
         """
 
-        # There exists some models which doesn't require gravity compensation torque.
-        # Hence, handling this might be required.
-        # [TODO] [Moses C. Nah]
-        # It might be great if the model name itself has some sort of "class" structure
-        # So that it doesn't need to calculate the G value.
-        # For now, we use the trick using the model_name itself, but a much sophisticated method seems favorable
-
-        if "cart" and "pole" in self.mj_args.model_name:
-            G = np.zeros( self.n_act )
-
-        else:
-            if   self.n_limbs == 2:
-
-                # Torque for Gravity compensation is simply tau = J^TF
-                # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
-                G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 0 ] * self.g  )  \
-                  + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 1 ] * self.g  )
-
-                # The mass of the whip is the other masses summed up
-                self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
-
-                # If no whip is attached, then the mass will be zero.
-                G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
-
-            elif self.n_limbs == 3:
-                raise NotImplementedError( )
-
-        return G
-
-class DebugController( Controller ):
-    """
-        Description:
-        ----------
-            Controller for quick debugging, useful when practicing/debugging with MuJoCo
-
-    """
-    def __init__( self, mjModel, mjData, mjArgs ):
-        super().__init__( mjModel, mjData, mjArgs )
-        self.n_act = 0
-
-    def set_ZFT( self ):
-        return 0
-
-    def input_calc( self, current_time ):
-        return None, None, 0
+        # The gravity vector of the simulation
+        self.g = self.mjModel.opt.gravity                 
 
 
+        if   self.n_limbs == 2:
+
+            # Torque for Gravity compensation is simply tau = J^TF
+            # [REF] [Moses C. Nah] [MIT Master's Thesis]: "Dynamic Primitives Facilitate Manipulating a Whip", [Section 7.2.1.] Impedance Controller
+            tau_G = np.dot( self.mjData.get_site_jacp( "site_upper_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 0 ] * self.g  )  \
+              + np.dot( self.mjData.get_site_jacp(  "site_fore_arm_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ 1 ] * self.g  )
+
+            # The mass of the whip is the other masses summed up
+            self.Mw = sum( self.mjModel.body_mass[ : ] ) - sum( self.M[ : ] )
+
+            # If no whip is attached, then the mass will be zero.
+            tau_G += np.dot( self.mjData.get_geom_jacp(  "geom_end_effector"    ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.Mw  * self.g  )
+
+        elif self.n_limbs == 3:
+            raise NotImplementedError( )
+
+        return tau_G
 
 
 class ControllerBinder( Controller ):

@@ -123,8 +123,8 @@
 
   <!-- Independently controlled torque actuators were mounted co-axially with the shoulder and elbow joints. -->
   <actuator>
-		  <motor joint='shoulderJoint' name='shoulderJointTorqueMotor' forcelimited='false'/>
-		  <motor joint='elbowJoint'    name='elbowJointTorqueMotor'    forcelimited='false'/>
+		  <motor joint='joint_shoulder' name='motor_joint_shoulder' forcelimited='false'/>
+		  <motor joint='joint_elbow'    name='motor_joint_elbow'    forcelimited='false'/>
   </actuator>
 
 </mujoco>
