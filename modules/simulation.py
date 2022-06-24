@@ -89,6 +89,9 @@ class Simulation:
         self.mj_data.qpos[ : ] = qpos[ : ] 
         self.mj_data.qvel[ : ] = qvel[ : ] 
 
+        # We shoulder forward the simulation to update the posture 
+        self.mj_sim.forward( )
+
 
     def reset( self ):
         """

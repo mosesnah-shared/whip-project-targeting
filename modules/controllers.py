@@ -1,8 +1,5 @@
 import numpy  as np
-
 from   modules.constants import Constants as C
-from   modules.utils     import length_elem2elem, get_property
-from   itertools         import combinations
 
 class Controller:
     """
@@ -48,8 +45,8 @@ class Controller:
         # The name is all in "body_XXX_arm", hence we need to take out the "body" prefix
         limb_names = [ "_".join( name.split( "_" )[ 1 : ] ) for name in m.body_names if "body" and "arm" in name ]
         
-        self.M  = { name: m.body_mass[    m.body_name2id[ name ] ] for name in limb_names }
-        self.I  = { name: m.body_inertia[ m.body_name2id[ name ] ] for name in limb_names }
+        self.M  = { name: m.body_mass[    m.body_name2id( "_".join( [ "body", name ] ) ) ] for name in limb_names }
+        self.I  = { name: m.body_inertia[ m.body_name2id( "_".join( [ "body", name ] ) ) ] for name in limb_names }
         
         # Get the length of the limbs and the center of mass (COM)
         # Getting the length between the geoms. Note that order does not matter
@@ -58,8 +55,8 @@ class Controller:
         # [2] use site_pos[ site_name2id ] for the calculation. 
         # [3] L  is from 'site_XXX_start' to 'site_XXX_end' 
         # [4] Lc is from 'site_XXX_start' to 'site_XXX_COM' 
-        self.L  = { name: np.linalg.norm( m.site_pos[  m.site_name2id[ "_".join( [ 'site', name, 'start' ] )  ]  ], m.site_pos[  m.site_name2id[  "_".join( [ 'site', name, 'end' ] )  ]  ] , ord = 2  ) for name in limb_names } 
-        self.Lc = { name: np.linalg.norm( m.site_pos[  m.site_name2id[ "_".join( [ 'site', name, 'start' ] )  ]  ], m.site_pos[  m.site_name2id[  "_".join( [ 'site', name, 'COM' ] )  ]  ] , ord = 2  ) for name in limb_names }         
+        self.L  = { name: np.mean( sum( m.site_pos[  m.site_name2id( "_".join( [ 'site', name, 'start' ] )  )  ] - m.site_pos[  m.site_name2id(  "_".join( [ 'site', name, 'end' ] )  )  ] ** 2 ) ) for name in limb_names } 
+        self.Lc = { name: np.mean( sum( m.site_pos[  m.site_name2id( "_".join( [ 'site', name, 'start' ] )  )  ] - m.site_pos[  m.site_name2id(  "_".join( [ 'site', name, 'COM' ] )  )  ] ** 2 ) ) for name in limb_names }         
 
         # ====================================================== #
 
@@ -109,9 +106,9 @@ class Controller:
         # Get the mass of the whip, we simply add the mass with body name containing "whip"
         self.M[ "whip" ] = sum( [ m.body_mass( name ) for name in m.body_names if "whip" in name ] )
 
-        for name in enumerate( [ "upper_arm", "fore_arm", "whip" ] ):
+        for name in [ "upper_arm", "fore_arm", "whip" ]:
             # Get the 3 x 4 Jacobian array, transpose it via .T method, and multiply the mass 
-            tau_G += np.dot( d.get_site_jacp( name ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ name ] * self.g  )
+            tau_G += np.dot( d.get_site_jacp( "_".join( [ "site", name, "COM" ] ) ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ name ] * self.g  )
         
         return tau_G 
 
@@ -133,11 +130,12 @@ class JointImpedanceController( Controller ):
         self.n_act = len( self.mj_model.actuator_names )
 
         # Define the controller parameters that we can change via "set_ctr_par" method
-        self.ctrl_par_names = [ "K", "B", "pi", "pf", "D" ]       
+        self.ctrl_par_names = [ "K", "B", "q0i", "q0f", "D" ]       
 
+        # Define the parameters that we will use for printing. This will be useful for "printing out the variables' detail" 
+        self.print_par_naems = [ "K", "B", "q0" ]
 
         if   self.n_act == 2:   
-
             c = 0.1
             self.K = C.K_2DOF
             self.B = c * self.K
@@ -147,6 +145,11 @@ class JointImpedanceController( Controller ):
             self.K = C.K_4DOF
             self.B = c * self.K
 
+        # The trajectory 
+        self.traj_pos, self.traj_vel = None, None
+
+        # The movement parameters
+        self.q0i, self.q0f, self.D = None, None, None
 
         # The number of control parameters of each name               
         # For K and B, we need self.n_act ** 2 parameters, in 2D
@@ -154,49 +157,70 @@ class JointImpedanceController( Controller ):
         # For D, we need a single scalar
         self.n_ctrl_pars    = [ self.n_act ** 2, self.n_act ** 2, self.n_act, self.n_act, 1 ]    
 
+    def set_traj( self, mov_pars: dict, basis_func: str = "min_jerk_traj" ):
+        
+        self.q0i = mov_pars[ "q0i" ]
+        self.q0f = mov_pars[ "q0f" ]
+        self.D   = mov_pars[  "D"  ]
 
-    def input_calc( self, t ):
+        if   basis_func == "min_jerk_traj":
+            self.traj_pos = lambda t :      self.q0i + ( self.q0f - self.q0i ) * (  10 * ( t / self.D ) ** 3 - 15 * ( t / self.D ) ** 4 +  6 * ( t / self.D ) ** 5 )
+            self.traj_vel = lambda t :  1.0 / self.D * ( self.q0f - self.q0i ) * (  30 * ( t / self.D ) ** 2 - 60 * ( t / self.D ) ** 3 + 30 * ( t / self.D ) ** 4 )
+
+        elif basis_func == "b_spline":
+            pass
+
+    def input_calc( self, t, is_gravity_comp = True, is_noise = False ):
         """
+            Descriptions
+            ------------
+                We implement the controller. 
+                The controller generates torque with the following equation 
+
+                tau = K( q0 - q ) + B( dq0 - dq ) + tau_G 
+
+                (d)q0: The zero-torque trajectory, which follows a minimum-jerk profile. 
+                 (d)q: current angular position (velocity) of the robot
+
             Arguments
             ---------
                 t: The current time of the simulation. 
         """
-        if time <= 0:
-            # For negative time, just set time as zero
-            time = 0
 
-        q  = self.mjData.qpos[ 0 : self.n_act ]                                 # Getting the relative angular position (q) and velocity (dq) of the shoulder and elbow joint, respectively.
-        dq = self.mjData.qvel[ 0 : self.n_act ]
-        D  = self.traj.pars[ "D" ]
+        # The following two trajectories  should not be "None"
+        assert self.traj_pos and self.traj_vel
 
-        if   time <= D:                                                         # If time greater than startTime
-            self.x0, self.dx0 = self.traj.func_pos( time ), self.traj.func_vel( time  )  # Calculating the corresponding ZFT of the given time. the startTime should be subtracted for setting the initial time as zero for the ZFT Calculation.
+        # Get the current angular position and velocity of the robot 
+        q  = self.mj_data.qpos[ 0 : self.n_act ]       
+        dq = self.mj_data.qvel[ 0 : self.n_act ]
+ 
+        if    t < self.t_start:
+            self.q0  = self.q0i 
+            self.dq0 = np.zeros( self.n_act )
+
+        elif  self.t_start < t <= self.D:
+            self.q0  = self.traj_pos( t - self.t_start )
+            self.dq0 = self.traj_vel( t - self.t_start )
         else:
-            self.x0, self.dx0 = self.traj.pars[ "pf" ], np.zeros( ( self.n_act ) )       # Before start time, the posture should be remained at ZFT's initial posture
+            self.q0  = self.q0f
+            self.dq0 = np.zeros( self.n_act )
 
-        tau_imp = np.dot( self.K, self.x0 - q ) + np.dot( self.B, self.dx0 - dq )
-        tau_g   = self.get_G( )                                                 # Calculating the torque due to gravity compensation
+        tau_imp = np.dot( self.K, self.q0 - q ) + np.dot( self.B, self.dq0 - dq )
 
-        # If noise is on
-        if self.is_noise:
-            # Noise model is assumed to be white Gaussian Noise with variance proportional mean force / torque
-            # [REF] Enoka, Roger M., and Dario Farina. "Force steadiness: from motor units to voluntary actions." Physiology 36.2 (2021): 114-130.
-            tau   = tau_imp + tau_g
+        tau_G = self.get_tau_G( )                     if is_gravity_comp else np.zeros( self.n_act ) 
+        tau_n = np.random.normal( size = self.n_act ) if is_noise        else np.zeros( self.n_act ) 
 
-            #                           The mean as zeros,
-            tau_n = np.random.normal( np.zeros( len( tau ) ), 1 * np.sqrt( np.abs( tau  ) )   )
-            tau += tau_n
-            self.tau = tau
-            self.tau_n = tau_n
-            # NotImplementedError( )
-        else:
-            self.tau   = tau_imp + tau_g
+        self.tau  = tau_imp + tau_G + tau_n
 
-        # # [TMP] The result of lqr
-        # # # print( tau_imp )
-        # # + np.dot( 2, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.8, self.mjData.qvel[ -1 ] )# Calculating the torque due to impedance
-        # # tau_imp = np.dot( 1, self.mjData.qpos[ -1 ] - np.pi ) + np.dot( 0.4, self.mjData.qvel[ -1 ] )
-        return self.mjData.ctrl, self.idx_act, self.tau
+        # The  (1) object         (2) index array          (3) It's value. 
+        return self.mj_data.ctrl, np.arange( self.n_act ), self.tau
 
-if __name__ == "__main__":
-    pass
+    def reset( self ):
+        """
+            Initialize allt he variables  
+        """
+        self.traj_pos = None
+        self.traj_vel = None 
+
+        self.q0i, self.q0f, self.D = None, None, None
+
