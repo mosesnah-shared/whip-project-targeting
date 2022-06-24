@@ -24,8 +24,8 @@ import numpy as np
 sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
-from controllers  import ImpedanceController, CartesianImpedanceController, JointImpedanceController, JointSlidingController, ControllerBinder 
-from objectives   import DistFromTip2Target, TargetState
+from controllers  import JointImpedanceController
+# from objectives   import DistFromTip2Target, TargetState
 from constants    import Constants  as C
 
 # Setting the numpy print options, useful for printing out data with consistent pattern.
@@ -70,11 +70,10 @@ def main( ):
     # If we use a 3D whip model
     elif  "3D" and "whip" in args.model_name:
 
-        ctrl = JointImpedanceController( my_sim.mjModel, my_sim.mjData, args, is_noise = False )
-        ctrl.set_ctrl_par(  K = ( ctrl.K + np.transpose( ctrl.K ) ) / 2, B = ( ctrl.B + np.transpose( ctrl.B ) ) / 2 )
+        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, is_noise = False )
 
         mov_pars  = np.array( [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833]  )
-        ctrl.traj = MinJerkTrajectory( { "pi" : mov_pars[ 0 : 4 ], "pf" : mov_pars[ 4 : 8 ], "D" : mov_pars[ -1 ] } ) # Setting the trajectory of the controller, for this case, traj = x0
+        
         objective = DistFromTip2Target( my_sim.mjModel, my_sim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
 
         lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
@@ -82,16 +81,18 @@ def main( ):
         n_opt = 9
 
     else:   
-        ctrl      = None
+        ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 1., 3. ] ), "q0f" : np.array( [ 2., 2. ] ), "D" : 1. } )
         objective = None
 
     my_sim.attach_ctrl( ctrl )
     my_sim.attach_objective( objective  )
 
     # Set the initial conditions of the simulation 
-    my_sim.initialize( qpos = np.zeros( my_sim.nq ), qvel = np.zeros( my_sim.nq )  )
+    my_sim.initialize( qpos = np.array( [ 1., 3. ] ), qvel = np.zeros( my_sim.nq )  )
 
     # Set the whip downward posture. 
+    # [TODO] Fill in the function
 
     # Run the simulation
     my_sim.run( )
