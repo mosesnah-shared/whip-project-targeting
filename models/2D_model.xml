@@ -116,7 +116,6 @@
 				<geom name='geom_EE' type='sphere' pos='0 0 -0.291' material='JointColor' size='0.0294' mass='0'/>
         <site name='site_whip_COM' pos='0 0 -0.291' />
         <site name='site_fore_arm_end' pos='0 0 -0.291' /> 
-				<!-- Do not change 'geom_EE' as name, since the whip will be appended to the body containig geom_EE -->
 
       </body>
 
