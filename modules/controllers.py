@@ -28,6 +28,48 @@ class Controller:
         # Hence, "parsing" the xml model file
         self.parse_model( )
 
+    def get_model_par( self, elem_name: str, name: str, prop_name:str ):
+        """
+            A method which simplifies the sentence for calling the values in interest
+            If mj_model is the mujoco py's model, we retrive the value of
+
+                mj_model."elem_name" + "prop_name", 
+
+                [Example] mj_model.body_mass
+
+                name is needed for finding that value. 
+        """
+
+        # Saving the method (mth) that we will use. 
+        mth = getattr( self.mj_model, "_".join( [ elem_name, "name2id" ] ) )
+
+        # Returning the value.
+        return getattr( self.mj_model, "_".join( [ elem_name, prop_name ] ) )[  mth( "_".join( [ elem_name, name ]  ) )  ]
+
+
+    def get_length( self, elem1_type:str, elem1_name:str, elem2_type:str, elem2_name:str ):
+        """
+            Get the Euclidean distance between two elements. 
+
+            Arguments
+            --------
+                [1] elem1_type: "site" or "body" or "geom" etc. 
+                [2] elem1_name: name of element 1
+                [3] elem2_type: "site" or "body" or "geom" etc. 
+                [4] elem2_name: name of element 2
+
+            This function will eventually derive the distance between 
+            {elem1_type}_{elem1_name} and {elem2_type}_{elem2_name}
+
+            [Example]
+
+            length_elem2elem( mj_data, "site", "upper_arm_end", "site", "fore_arm_end" )
+
+            returns the distance between "site_upper_arm_end" and "site_fore_arm_end".
+
+        """
+
+        return np.linalg.norm( self.get_model_par( elem1_type, elem1_name, "pos" ) - self.get_model_par( elem2_type, elem2_name, "pos" )  , ord = 2  )
 
     def parse_model( self ):
         """
@@ -45,8 +87,9 @@ class Controller:
         # The name is all in "body_XXX_arm", hence we need to take out the "body" prefix
         limb_names = [ "_".join( name.split( "_" )[ 1 : ] ) for name in m.body_names if "body" and "arm" in name ]
         
-        self.M  = { name: m.body_mass[    m.body_name2id( "_".join( [ "body", name ] ) ) ] for name in limb_names }
-        self.I  = { name: m.body_inertia[ m.body_name2id( "_".join( [ "body", name ] ) ) ] for name in limb_names }
+        # get_model_par calls self.mj_model.body_mass attribute and get the value of body_name's 
+        self.M  = { name: self.get_model_par( "body", name, "mass"    ) for name in limb_names }
+        self.I  = { name: self.get_model_par( "body", name, "inertia" ) for name in limb_names }
         
         # Get the length of the limbs and the center of mass (COM)
         # Getting the length between the geoms. Note that order does not matter
@@ -55,8 +98,9 @@ class Controller:
         # [2] use site_pos[ site_name2id ] for the calculation. 
         # [3] L  is from 'site_XXX_start' to 'site_XXX_end' 
         # [4] Lc is from 'site_XXX_start' to 'site_XXX_COM' 
-        self.L  = { name: np.mean( sum( m.site_pos[  m.site_name2id( "_".join( [ 'site', name, 'start' ] )  )  ] - m.site_pos[  m.site_name2id(  "_".join( [ 'site', name, 'end' ] )  )  ] ** 2 ) ) for name in limb_names } 
-        self.Lc = { name: np.mean( sum( m.site_pos[  m.site_name2id( "_".join( [ 'site', name, 'start' ] )  )  ] - m.site_pos[  m.site_name2id(  "_".join( [ 'site', name, 'COM' ] )  )  ] ** 2 ) ) for name in limb_names }         
+        #                                           from "site_limb_name_start"     to    "site_limb_name_end (COM)""
+        self.L  = { name: self.get_length( "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "end" ] ) ) for name in limb_names } 
+        self.Lc = { name: self.get_length( "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "COM" ] ) ) for name in limb_names }         
 
         # ====================================================== #
 
@@ -198,7 +242,7 @@ class JointImpedanceController( Controller ):
             self.q0  = self.q0i 
             self.dq0 = np.zeros( self.n_act )
 
-        elif  self.t_start < t <= self.D:
+        elif  self.t_start < t <= self.t_start + self.D:
             self.q0  = self.traj_pos( t - self.t_start )
             self.dq0 = self.traj_vel( t - self.t_start )
         else:
@@ -217,7 +261,7 @@ class JointImpedanceController( Controller ):
 
     def reset( self ):
         """
-            Initialize allt he variables  
+            Initialize all variables  
         """
         self.traj_pos = None
         self.traj_vel = None 

@@ -82,14 +82,14 @@ def main( ):
 
     else:   
         ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
-        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 1., 3. ] ), "q0f" : np.array( [ 2., 2. ] ), "D" : 1. } )
+        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
         objective = None
 
     my_sim.attach_ctrl( ctrl )
     my_sim.attach_objective( objective  )
 
     # Set the initial conditions of the simulation 
-    my_sim.initialize( qpos = np.array( [ 1., 3. ] ), qvel = np.zeros( my_sim.nq )  )
+    my_sim.initialize( qpos = np.array( [ 0.3, 0.4 ] ), qvel = np.zeros( my_sim.nq )  )
 
     # Set the whip downward posture. 
     # [TODO] Fill in the function

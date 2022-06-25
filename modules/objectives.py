@@ -1,40 +1,15 @@
 import re
-import numpy as np
-import pprint
-
-from modules.utils import length_elem2elem
-
-try:
-    import mujoco_py as mjPy
-except ImportError as e:
-    raise error.DependencyNotInstalled( "{}. (HINT: you need to install mujoco_py, \
-                                             and also perform the setup instructions here: \
-                                             https://github.com/openai/mujoco-py/.)".format( e ) )
+import numpy     as np
 
 class Objective( ):
-    """ Mother class of all objective functions """
-    def __init__( self, mjModel, mjData, mjArgs ):
-        self.mjModel     = mjModel
-        self.mjData      = mjData
-        self.mjArgs      = mjArgs
 
-    # [TODO] [Moses C. Nah]
-    # Making this to do things as 0.3 + 0.5 obj1
-    # The reason why we've used class is because of static variables.
-    # def __add__( self, other ):
-    #     """ Modifying the __add__ function will help us use syntax like func1 + func2 """
-    #     return self.output_calc( ) + other.output_calc( )
-    #
-    # def __mul__( self, other ):
-    #     """ Modifying the __mul__ function will help us use syntax like 0.3 * func1 """
-    #     return self.output_calc( ) * other if isinstance( other, int ) or isinstance( other, float ) else self.output_calc( ) * other.output_calc( )
-
-    def __str__( self ):
-        """ Starting and ending with __ are called "magic methods" [REF] https://www.tutorialsteacher.com/python/magic-methods-in-python """
-        return str( vars( self ) )
+    def __init__( self, mj_model, mj_data, args ):
+        self.mj_model = mj_model
+        self.mj_data  = mj_data
+        self.args     = args
 
     def output_calc( self ):
-        NotImplementedError( )  # Imposing the child class to implement this function
+        raise NotImplementedError  
 
 class TargetState( Objective ):
     """ Trying to reach some target State  """
