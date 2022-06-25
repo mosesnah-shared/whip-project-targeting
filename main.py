@@ -27,6 +27,7 @@ from simulation   import Simulation
 from controllers  import JointImpedanceController
 # from objectives   import DistFromTip2Target, TargetState
 from constants    import Constants  as C
+from utils        import *
 
 # Setting the numpy print options, useful for printing out data with consistent pattern.
 np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
@@ -62,8 +63,8 @@ def main( ):
     # If we use a 2D whip model
     if    "2D" and "whip" in args.model_name:
 
-        controller_object = CartesianImpedanceController( my_sim.mjModel, my_sim.mjData, args )
-        controller_object.set_ctrl_par(  mov_parameters =  [0 , -0.585 , 0.6, 0, 1.5] )
+        ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
         objective = None
     
 
@@ -73,12 +74,11 @@ def main( ):
         ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, is_noise = False )
 
         mov_pars  = np.array( [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833]  )
-        
-        objective = DistFromTip2Target( my_sim.mjModel, my_sim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
+        # objective = DistFromTip2Target( my_sim.mjModel, my_sim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
 
-        lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
-        ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
-        n_opt = 9
+        # lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
+        # ub    = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )                     # Defining the bound. with np array.
+        # n_opt = 9
 
     else:   
         ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
@@ -89,7 +89,11 @@ def main( ):
     my_sim.attach_objective( objective  )
 
     # Set the initial conditions of the simulation 
+    # In case if we have the whip model in the model, we need to calculate the numpy arrays for making the whip downward 
+    
     my_sim.initialize( qpos = np.array( [ 0.3, 0.4 ] ), qvel = np.zeros( my_sim.nq )  )
+    
+    if "whip" in args.model_name: make_whip_downwards( my_sim )
 
     # Set the whip downward posture. 
     # [TODO] Fill in the function
@@ -97,7 +101,7 @@ def main( ):
     # Run the simulation
     my_sim.run( )
 
-    # If succesful, close all the simulation. 
+    # If successful, close all the simulation. 
     my_sim.close( )
 
 

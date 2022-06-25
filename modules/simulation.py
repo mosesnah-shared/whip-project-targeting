@@ -5,7 +5,7 @@ import mujoco_py       as mjPy
 import moviepy.editor  as mpy
 
 
-from utils     import str2float
+from utils     import *
 from datetime  import datetime
 from constants import Constants as C
 
@@ -84,10 +84,9 @@ class Simulation:
         self.init_qpos = qpos 
         self.init_qvel = qvel 
 
-        # If None is given, set numpy arrays aszero. 
-        # We should specifically add [ : ]
-        self.mj_data.qpos[ : ] = qpos[ : ] 
-        self.mj_data.qvel[ : ] = qvel[ : ] 
+        # If the array is shorter than the actual self.nq in the model, just fill it with zero 
+        self.mj_data.qpos[ : ] = qpos[ : self.nq ] if len( qpos ) >= self.nq else np.concatenate( ( qpos, np.zeros( self.nq - len( qpos ) ) ) , axis = None )
+        self.mj_data.qvel[ : ] = qvel[ : self.nq ] if len( qvel ) >= self.nq else np.concatenate( ( qvel, np.zeros( self.nq - len( qvel ) ) ) , axis = None )
 
         # We shoulder forward the simulation to update the posture 
         self.mj_sim.forward( )
@@ -99,6 +98,8 @@ class Simulation:
         """
         self.mj_sim.reset( )
         self.initialize( qpos = self.init_qpos, qvel = self.init_qvel )
+        if "whip" in self.args.model_name: make_whip_downwards( self )
+
         
     def close( self ):
         """ 
@@ -135,12 +136,12 @@ class Simulation:
         """
         self.ctrl = ctrl
 
-    def attach_objective( self, objective, weights = 1 ):
+    def attach_objective( self, objective ):
         """ 
-            Appending objective function with weights as coefficients, refer to 'objectives.py for details' 
+            Adding objective function refer to 'objectives.py for details' 
         """
-        # self.objective = objective * weights
-        pass
+        self.objective = objective
+        
 
     def step( self ):
         """
@@ -199,7 +200,7 @@ class Simulation:
             # Set the objective function. This should be modified/ 
             if self.objective is not None: self.obj_val = min( self.obj_val, self.objective.output_calc( )  )
 
-            # Print the basic 
+            # Print the basic data
             if self.n_steps % self.print_step == 0:
                 self.print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ] }  )
 
