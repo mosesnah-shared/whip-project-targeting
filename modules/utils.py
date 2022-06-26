@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 # Define functions to be imported when used "import *"
-__all__  = [ "str2float", "get_model_prop", "get_data_prop", "get_length", "make_whip_downwards", "quaternion2euler" ] 
+__all__  = [ "str2float", "get_model_prop", "get_data_prop", "get_length", "make_whip_downwards", "quaternion2euler", "print_vars" ] 
 
 
 def quaternion2euler( quat: np.ndarray ):                                         
@@ -136,3 +136,15 @@ def make_whip_downwards( sim ):
         sim.mj_data.qpos[ n_act + 1 ] = + pitch 
 
     sim.mj_sim.forward( )
+
+def print_vars( vars2print: dict  ):
+    """
+        Print out all the details of the variables to the standard output + file to save. 
+    """
+
+    # Iterate Through the dictionary for printing out the values. 
+    for var_name, var_vals in vars2print.items( ):
+
+        # Check if var_vals is a list or numpy's ndarray else just change it as string 
+        var_vals = np.array2string( var_vals, separator =', ', floatmode = 'fixed' ) if isinstance( var_vals, ( list, np.ndarray ) ) else str( var_vals )
+        print( f'[{var_name}]: {var_vals}' )

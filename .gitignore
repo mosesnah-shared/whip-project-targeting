@@ -17,6 +17,9 @@ results
 # vscode settins
 .vscode
 
+# Temporary File which will be discarded.
+tmp
+
 # [LEGACY] Backup 
 backup
 
