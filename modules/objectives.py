@@ -1,25 +1,55 @@
 import numpy as np
 from modules.utils import *
 
-class Objective:
+class ObjectiveFunction:
+    """
+        The objective function that we are planning to maximize/minimize 
+    """
 
-    def __init__( self, mj_model, mj_data, args, func ):
+    def __init__( self, mj_model, mj_data, args ):
         self.mj_model = mj_model
         self.mj_data  = mj_data
         self.args     = args
-        self.func     = func
+
+        # This internal "func" will return a scalar value every time step 
+        # The func should have the following arguments -- "mj_model", "mj_data" and "args". 
+        self.func     = None
+
+    def set_func( self, func ):
+        """
+            Define the function that will be called every time step. 
+        """
+        self.func = func
+
+    def set_success_trig( self ):
+        """
+            This defines an act that will be used called when objective is successful. 
+        """
+
 
     def output_calc( self ):
-        raise NotImplementedError  
 
-    def __add__( self, other_objective ):
-        """
-            This magic method __add__ will make an intuitive syntax for combining objective functions. 
-        """ 
-        raise NotImplementedError  
+        return self.func( self.mj_model, self.mj_data, self.args  )
+
+    def __add__( self, other_obj ):
 
 
-class DistFromTip2Target( Objective ):
+        new_obj = ObjectiveFunction( self.mj_model, self.mj_data, self.args )
+        new_obj.set_func(  self.func + other_obj.func   )
+
+        return new_obj
+
+    def __radd__( self, other_obj ):
+        pass
+
+    def __mul__( self, other_obj ):    
+        pass
+
+    def __rmul__( self, other_obj ):    
+        pass
+
+
+class DistFromTip2Target( ObjectiveFunction ):
 
     def __init__( self, mj_model, mj_data, args, tol = 1, func = min, is_indicate_hit = False ):
         """
@@ -70,8 +100,8 @@ class DistFromTip2Target( Objective ):
         return output
 
 
-class TipVelocity( Objective ):
+class TipVelocity( ObjectiveFunction ):
     """
         Get the Euclidean norm of the tip velocity
     """
-    def __init__( self, mj_model, mj_data, args, tol = 1, func = min, is_indicate_hit = False ):
+    def __init__( self, mj_model, mj_data, args ):

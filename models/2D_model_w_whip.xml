@@ -163,7 +163,7 @@
             <!-- === [ N, L, M, k, b, rho ] = [25,1.800000,0.300000,0.242000,0.092000,1.000000] -->
          </body>
       </body>
-      <geom name="target" type="sphere" pos=" 2.3950  0.0000  0.0000" material="LimbColor" mass="0" size="0.03" />
+      <geom name="geom_target" type="sphere" pos=" 2.3950  0.0000  0.0000" material="LimbColor" mass="0" size="0.03" />
    </worldbody>
   <actuator>
 		  <motor joint='joint_shoulder' name='motor_joint_shoulder' forcelimited='false'/>
