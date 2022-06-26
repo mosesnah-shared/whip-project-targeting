@@ -111,7 +111,7 @@ class Controller:
         # Get the mass of the whip, we simply add the mass with body name containing "whip"
         whip_node_names = [ "_".join( name.split( "_" )[ 1 : ] ) for name in m.body_names if "whip" in name ]
         self.M[ "whip" ] = sum( [ get_model_prop( m, "body", name, "mass" ) for name in whip_node_names ] )
-
+        
         for name in [ "upper_arm", "fore_arm", "whip" ]:
             # Get the 3 x 4 Jacobian array, transpose it via .T method, and multiply the mass 
             tau_G += np.dot( d.get_site_jacp( "_".join( [ "site", name, "COM" ] ) ).reshape( 3, -1 )[ :, 0 : self.n_act ].T, - self.M[ name ] * self.g  )
@@ -164,7 +164,8 @@ class JointImpedanceController( Controller ):
         self.n_ctrl_pars    = [ self.n_act ** 2, self.n_act ** 2, self.n_act, self.n_act, 1 ]    
 
     def set_traj( self, mov_pars: dict, basis_func: str = "min_jerk_traj" ):
-        
+
+
         self.q0i = mov_pars[ "q0i" ]
         self.q0f = mov_pars[ "q0f" ]
         self.D   = mov_pars[  "D"  ]
@@ -210,6 +211,7 @@ class JointImpedanceController( Controller ):
         else:
             self.q0  = self.q0f
             self.dq0 = np.zeros( self.n_act )
+
 
         tau_imp = np.dot( self.K, self.q0 - q ) + np.dot( self.B, self.dq0 - dq )
 
