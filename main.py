@@ -63,9 +63,10 @@ def main( ):
     # If we use a 2D whip model
     if    "2D" and "whip" in args.model_name:
 
+        # Define the controller 
         ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
         ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
-        objective = None
+        
     
 
     # If we use a 3D whip model
@@ -104,6 +105,9 @@ def main( ):
     # If successful, close all the simulation. 
     my_sim.close( )
 
+
+def run_optimization( ctrl  ):
+    pass 
 
 if __name__ == "__main__":
 
