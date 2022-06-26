@@ -3,7 +3,7 @@ import math
 import numpy as np
 
 # Define functions to be imported when used "import *"
-__all__  = [ "str2float", "get_model_par", "get_length", "make_whip_downwards", "quaternion2euler" ] 
+__all__  = [ "str2float", "get_model_prop", "get_data_prop", "get_length", "make_whip_downwards", "quaternion2euler" ] 
 
 
 def quaternion2euler( quat: np.ndarray ):                                         
@@ -51,14 +51,14 @@ def str2float( string2parse : str ):
 
     return [ float( i ) for i in re.findall( r"[-+]?\d*\.\d+|[-+]?\d+", string2parse ) ]
 
-def get_model_par( mj_model, elem_name: str, name: str, prop_name:str ):
-    """
-        A method which simplifies the sentence for calling the values in interest
-        If mj_model is the mujoco py's model, we retrive the value of
 
+def get_model_prop( mj_model, elem_name: str, name: str, prop_name:str ):
+    """
+        A method which simplifies the sentence for calling the property in interest
+        If executes the following sentence.
             mj_model."elem_name" + "prop_name", 
 
-            [Example] mj_model.body_mass
+            [Example] mj_data.body_mass
 
             name is needed for finding that value. 
     """
@@ -69,8 +69,25 @@ def get_model_par( mj_model, elem_name: str, name: str, prop_name:str ):
     # Returning the value.
     return getattr( mj_model, "_".join( [ elem_name, prop_name ] ) )[  mth( "_".join( [ elem_name, name ]  ) )  ]
 
+def get_data_prop( mj_model, mj_data, elem_name: str, name: str, prop_name:str ):
+    """
+        A method which simplifies the sentence for calling the property in interest
+        If executes the following sentence.
+            mj_data."elem_name" + "prop_name", 
 
-def get_length( mj_model, elem1_type:str, elem1_name:str, elem2_type:str, elem2_name:str ):
+            [Example] mj_data.body_mass
+
+            name is needed for finding that value. 
+    """
+
+    # Saving the method (mth) that we will use. 
+    mth = getattr( mj_model, "_".join( [ elem_name, "name2id" ] ) )
+
+    # Returning the value.
+    return getattr( mj_data, "_".join( [ elem_name, prop_name ] ) )[  mth( "_".join( [ elem_name, name ]  ) )  ]
+
+
+def get_length( mj_model, mj_data, elem1_type:str, elem1_name:str, elem2_type:str, elem2_name:str ):
     """
         Get the Euclidean distance between two elements. 
 
@@ -82,17 +99,17 @@ def get_length( mj_model, elem1_type:str, elem1_name:str, elem2_type:str, elem2_
             [4] elem2_name: name of element 2
 
         This function will eventually derive the distance between 
-        {elem1_type}_{elem1_name} and {elem2_type}_{elem2_name}
+        {elem1_type}_{elem1_name} and {elem2_type}_{elem2_name}.
+
+        The crucial point is that we should use "xpos" rather than "pos", because the former one returns the Cartesian coord. 
 
         [Example]
-
-        length_elem2elem( mj_data, "site", "upper_arm_end", "site", "fore_arm_end" )
-
-        returns the distance between "site_upper_arm_end" and "site_fore_arm_end".
+            - length_elem2elem( mj_data, "site", "upper_arm_end", "site", "fore_arm_end" )
+              returns the distance between "site_upper_arm_end" and "site_fore_arm_end".
 
     """
 
-    return np.linalg.norm( get_model_par( mj_model, elem1_type, elem1_name, "pos" ) - get_model_par( mj_model, elem2_type, elem2_name, "pos" )  , ord = 2  )
+    return np.linalg.norm( get_data_prop( mj_model, mj_data, elem1_type, elem1_name, "xpos" ) - get_data_prop( mj_model, mj_data, elem2_type, elem2_name, "xpos" )  , ord = 2  )
 
 def make_whip_downwards( sim ):
     """

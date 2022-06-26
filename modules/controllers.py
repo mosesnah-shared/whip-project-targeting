@@ -39,6 +39,7 @@ class Controller:
 
         # Just for the sake of abbreviation
         m = self.mj_model
+        d = self.mj_data
 
         # ======== Extracting out the limb properties ========= #
 
@@ -48,8 +49,8 @@ class Controller:
         limb_names = [ "_".join( name.split( "_" )[ 1 : ] ) for name in m.body_names if "body" and "arm" in name ]
         
         # get_model_par calls self.mj_model.body_mass attribute and get the value of body_name's 
-        self.M  = { name: get_model_par( m, "body", name, "mass"    ) for name in limb_names }
-        self.I  = { name: get_model_par( m, "body", name, "inertia" ) for name in limb_names }
+        self.M  = { name: get_model_prop( m, "body", name, "mass"    ) for name in limb_names }
+        self.I  = { name: get_model_prop( m, "body", name, "inertia" ) for name in limb_names }
         
         # Get the length of the limbs and the center of mass (COM)
         # Getting the length between the geoms. Note that order does not matter
@@ -59,8 +60,8 @@ class Controller:
         # [3] L  is from 'site_XXX_start' to 'site_XXX_end' 
         # [4] Lc is from 'site_XXX_start' to 'site_XXX_COM' 
         #                                           from "site_limb_name_start"     to    "site_limb_name_end (COM)""
-        self.L  = { name: get_length( m, "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "end" ] ) ) for name in limb_names } 
-        self.Lc = { name: get_length( m, "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "COM" ] ) ) for name in limb_names }         
+        self.L  = { name: get_length( m, d, "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "end" ] ) ) for name in limb_names } 
+        self.Lc = { name: get_length( m, d, "site", "_".join( [ name, "start" ]  ), "site", "_".join( [ name, "COM" ] ) ) for name in limb_names }         
 
         # ====================================================== #
 
@@ -109,7 +110,7 @@ class Controller:
 
         # Get the mass of the whip, we simply add the mass with body name containing "whip"
         whip_node_names = [ "_".join( name.split( "_" )[ 1 : ] ) for name in m.body_names if "whip" in name ]
-        self.M[ "whip" ] = sum( [ get_model_par( m, "body", name, "mass" ) for name in whip_node_names ] )
+        self.M[ "whip" ] = sum( [ get_model_prop( m, "body", name, "mass" ) for name in whip_node_names ] )
 
         for name in [ "upper_arm", "fore_arm", "whip" ]:
             # Get the 3 x 4 Jacobian array, transpose it via .T method, and multiply the mass 

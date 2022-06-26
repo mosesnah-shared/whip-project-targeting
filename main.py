@@ -25,7 +25,7 @@ sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
 from controllers  import JointImpedanceController
-# from objectives   import DistFromTip2Target, TargetState
+from objectives   import DistFromTip2Target, ObjectiveFunction
 from constants    import Constants  as C
 from utils        import *
 
@@ -64,10 +64,9 @@ def main( ):
     if    "2D" and "whip" in args.model_name:
 
         # Define the controller 
-        ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
         ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
-        
-    
+        obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
 
     # If we use a 3D whip model
     elif  "3D" and "whip" in args.model_name:
@@ -86,8 +85,8 @@ def main( ):
         ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
         objective = None
 
-    my_sim.attach_ctrl( ctrl )
-    my_sim.attach_objective( objective  )
+    my_sim.set_ctrl( ctrl )
+    my_sim.set_objective( obj )
 
     # Set the initial conditions of the simulation 
     # In case if we have the whip model in the model, we need to calculate the numpy arrays for making the whip downward 
