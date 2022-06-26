@@ -25,7 +25,7 @@ sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
 from controllers  import JointImpedanceController
-from objectives   import DistFromTip2Target, ObjectiveFunction
+from objectives   import DistFromTip2Target
 from constants    import Constants  as C
 from utils        import *
 
@@ -60,8 +60,10 @@ def main( ):
     # Generate an instance of our Simulation
     my_sim = Simulation( args )
 
+    print( args.model_name )
+
     # If we use a 2D whip model
-    if    "2D" and "whip" in args.model_name:
+    if    "2D" in args.model_name and "whip" in args.model_name:
 
         # Define the controller 
         ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
@@ -69,11 +71,13 @@ def main( ):
         obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
 
     # If we use a 3D whip model
-    elif  "3D" and "whip" in args.model_name:
+    elif  "3D" in args.model_name and "whip" in args.model_name:
 
-        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, is_noise = False )
 
-        mov_pars  = np.array( [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833]  )
+        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4, .3, .4  ] ), "q0f" : np.array( [ 1.1, 0.3, .3, .4  ] ), "D" : 1. } )
+        # mov_pars  = np.array( [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833]  )
+        obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
         # objective = DistFromTip2Target( my_sim.mjModel, my_sim.mjData, args, tol = 6 ) if "_w_" in args.model_name else None
 
         # lb    = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )                     # Defining the bound. with np array.
@@ -82,16 +86,16 @@ def main( ):
 
     else:   
         ctrl  = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
-        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4 ] ), "q0f" : np.array( [ 1.1, 0.3 ] ), "D" : 1. } )
-        objective = None
+        ctrl.set_traj( mov_pars = { "q0i" : np.array( [ 0.3, 0.4, .3, .4  ] ), "q0f" : np.array( [ 1.1, 0.3, .3, .4  ] ), "D" : 1. } )
+        # obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
 
     my_sim.set_ctrl( ctrl )
-    my_sim.set_objective( obj )
+    # my_sim.set_objective( obj )
 
     # Set the initial conditions of the simulation 
     # In case if we have the whip model in the model, we need to calculate the numpy arrays for making the whip downward 
     
-    my_sim.initialize( qpos = np.array( [ 0.3, 0.4 ] ), qvel = np.zeros( my_sim.nq )  )
+    my_sim.initialize( qpos = np.array( [ 0.3, 0.4, .3, .4 ] ), qvel = np.zeros( my_sim.nq )  )
     
     if "whip" in args.model_name: make_whip_downwards( my_sim )
 
