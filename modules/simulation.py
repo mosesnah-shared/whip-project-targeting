@@ -24,9 +24,11 @@ class Simulation:
         self.is_record_vid  = args.record_vid
         self.is_vid_off     = args.vid_off
 
-        # Controller and the objective function 
-        self.ctrl      = None
-        self.objective = None
+
+        # Controller, objective function and the objective values' array
+        self.ctrl     = None
+        self.obj      = None
+        self.obj_arr  = None
 
         # Save the model name.
         self.model_name = args.model_name
@@ -68,7 +70,9 @@ class Simulation:
 
     def initialize( self, qpos: np.ndarray, qvel: np.ndarray ):
         """
-            Initialize the Simulation. Note that the controller and objective function is NOT erased. 
+            Initialize the Simulation. 
+            Note that the controller and objective function is NOT erased. 
+            Meaning, initialize must be called "AFTER" self.set_ctrl and self.set_obj
         """
 
         # Current time (t) of the simulation 
@@ -76,9 +80,6 @@ class Simulation:
           
         # Number of steps of the simulation. 
         self.n_steps = 0  
-
-        # The value of the objective function
-        self.obj_val  = np.inf
 
         # Save initial q_pos and q_vel 
         self.init_qpos = qpos 
@@ -88,7 +89,7 @@ class Simulation:
         self.mj_data.qpos[ : ] = qpos[ : self.nq ] if len( qpos ) >= self.nq else np.concatenate( ( qpos, np.zeros( self.nq - len( qpos ) ) ) , axis = None )
         self.mj_data.qvel[ : ] = qvel[ : self.nq ] if len( qvel ) >= self.nq else np.concatenate( ( qvel, np.zeros( self.nq - len( qvel ) ) ) , axis = None )
 
-        # We shoulder forward the simulation to update the posture 
+        # Forward the simulation to update the posture 
         self.mj_sim.forward( )
 
 
@@ -100,6 +101,7 @@ class Simulation:
         self.initialize( qpos = self.init_qpos, qvel = self.init_qvel )
         if "whip" in self.args.model_name: make_whip_downwards( self )
 
+        self.obj_arr = np.zeros( round( self.T / self.dt )  )
         
     def close( self ):
         """ 
@@ -136,12 +138,15 @@ class Simulation:
         """
         self.ctrl = ctrl
 
-    def set_objective( self, objective ):
+    def set_obj( self, obj ):
         """ 
             Adding objective function refer to 'objectives.py for details' 
         """
-        self.objective = objective
+        self.obj = obj
         
+        # In case if the objective function is defined, set an array of objective value. 
+        # The size of the array must be N = self.T / self.dt, the total number of time divided with the tiem step. 
+        self.obj_arr = np.zeros( round( self.T / self.dt )  )
 
     def step( self ):
         """
@@ -198,11 +203,13 @@ class Simulation:
             self.step( )
 
             # Set the objective function. This should be modified/ 
-            if self.objective is not None: self.obj_val = self.objective.output_calc( self.mj_model, self.mj_data, self.args )
+            if self.obj is not None: 
+                self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
+                self.obj_arr[ self.n_steps - 1 ] = self.obj_val
 
             # Print the basic data
             if self.n_steps % self.print_step == 0:
-                self.print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "obj" : self.obj_val }  )
+                if not self.args.run_opt : print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "obj" : self.obj_val }  )
 
             # Check if simulation is stable. 
             # We check the accelerations
@@ -210,17 +217,6 @@ class Simulation:
                 print( '[UNSTABLE SIMULATION], HALTED AT {0:f} for a {1:f}-second long simulation'.format( self.t, self.T )  )                                 
                 break
 
-    def print_vars( self, vars2print: dict ):
-        """
-            Print out all the details of the variables to the standard output + file to save. 
-        """
-
-        # Iterate Through the dictionary for printing out the values. 
-        for var_name, var_vals in vars2print.items( ):
-
-            # Check if var_vals is a list or numpy's ndarray else just change it as string 
-            var_vals = np.array2string( var_vals, separator =', ', floatmode = 'fixed' ) if isinstance( var_vals, ( list, np.ndarray ) ) else str( var_vals )
-            print( f'[{var_name}]: {var_vals}' )
 
     def is_sim_unstable( self ):
         """ 
