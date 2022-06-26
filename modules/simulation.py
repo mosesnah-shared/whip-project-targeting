@@ -130,13 +130,13 @@ class Simulation:
         self.mj_viewer.cam.elevation  = tmp[ 4 ]
         self.mj_viewer.cam.azimuth    = tmp[ 5 ]
 
-    def attach_ctrl( self, ctrl ):
+    def set_ctrl( self, ctrl ):
         """
             For detailed controller description, please check 'controllers.py' 
         """
         self.ctrl = ctrl
 
-    def attach_objective( self, objective ):
+    def set_objective( self, objective ):
         """ 
             Adding objective function refer to 'objectives.py for details' 
         """
@@ -198,11 +198,11 @@ class Simulation:
             self.step( )
 
             # Set the objective function. This should be modified/ 
-            if self.objective is not None: self.obj_val = min( self.obj_val, self.objective.output_calc( )  )
+            if self.objective is not None: self.obj_val = self.objective.output_calc( self.mj_model, self.mj_data, self.args )
 
             # Print the basic data
             if self.n_steps % self.print_step == 0:
-                self.print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ] }  )
+                self.print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "obj" : self.obj_val }  )
 
             # Check if simulation is stable. 
             # We check the accelerations
