@@ -10,7 +10,7 @@ import numpy               as np
 from typing import Union, List
 
 
-__all__ = [ "ReplayBuffer", "OUNoise", "DDPG", "TD3" ]
+__all__ = [ "ReplayBuffer", "OUNoise", "DDPG" ]
 
 # Check whether GPU computation (i.e., CUDA) is available.
 device = torch.device( "cuda" if torch.cuda.is_available( ) else "cpu" )
@@ -187,8 +187,6 @@ class OUNoise:
         # Adding ou noise onto the action and then clipping it.
         return np.clip( action + ou_noise, self.action_lb, self.action_ub )
 
-
-
 class DDPG:
 
     def __init__( self, n_state, n_action, n_hidden, act_funcs_actor, act_funcs_critic, gain = 1., gamma = 0.99, tau = 0.005, batch_size = 256 ):
@@ -235,7 +233,7 @@ class DDPG:
 
         return action
     
-    def update( self, replay_buffer, batch_size = 256 ):
+    def update( self, replay_buffer ):
         """
             Mini-batch update. 
         """
@@ -278,120 +276,6 @@ class DDPG:
        
         for target_param, param in zip( self.critic_target.parameters( ), self.critic.parameters( ) ):
             target_param.data.copy_( param.data * self.tau + target_param.data * ( 1.0 - self.tau ) )
-
-
-    def save( self, filename ):
-        
-        torch.save( self.critic.state_dict( )           , filename + "critic"              )
-        torch.save( self.critic_optimizer.state_dict( ) , filename + "critic_optimizer"    )
-        
-        torch.save( self.actor.state_dict( )            , filename + "actor"               )
-        torch.save( self.actor_optimizer.state_dict( )  , filename + "actor_optimizer"     )
-
-
-    def load( self, filename ):
-
-        # Load Critic
-        self.critic.load_state_dict(            torch.load( filename + "critic"           )  )
-        self.critic_optimizer.load_state_dict(  torch.load( filename + "critic_optimizer" )  )
-        self.critic_target = copy.deepcopy( self.critic )
-
-        # Load Actor
-        self.actor.load_state_dict(             torch.load( filename + "actor"            )  )
-        self.actor_optimizer.load_state_dict(   torch.load( filename + "actor_optimizer"  )  )
-        self.actor_target = copy.deepcopy( self.actor )
-
-class TD3:
-
-    def __init__( self, n_state, n_action, n_hidden, act_funcs_actor, act_funcs_critic, gain = 1., gamma = 0.99, tau = 0.005, batch_size = 256, update_freq = 2 ):
-
-        # Actor Network, its target (copy) Network, and the ADAM optimizer.
-        self.actor            = NeuralNetwork( n_input = n_state, n_output = n_action, n_hidden = n_hidden, gain = gain, act_funcs = act_funcs_actor ).to( device )
-        self.actor_target     = copy.deepcopy( self.actor )
-        self.actor_optimizer  = optim.Adam( self.actor.parameters( ), lr = 1e-4 )
-
-        self.critic1          = NeuralNetwork( n_state, n_action ).to( device )
-        self.critic2          = NeuralNetwork( n_state, n_action ).to( device )
-        self.critic_target1   = copy.deepcopy( self.critic1 )
-        self.critic_target2   = copy.deepcopy( self.critic2 )
-        self.critic_optimizer = torch.optim.Adam( self.critic.parameters( ), lr = 1e-3 )
-
-        # The number of batch_size for the update 
-        self.n_batch = batch_size
-
-        # The output gain 
-        self.gain = gain
-
-        # The discount factor
-        self.gamma = gamma
-
-        # The gain for "soft" update, usually smaller than 1
-        self.tau   = tau 
-
-
-        # Update frequency of the policy, not the "Delayed"
-        self.update_freq  = update_freq
-        
-        self.total_it = 0 
-
-    def get_action( self, state ):
-
-        # Conduct the a = mu(s), where mu is a "deterministic function"
-        # Unsqueeze makes an 1 x n_s array of state. 
-        state  = torch.from_numpy( state ).float( ).unsqueeze( 0 ).to( device )
-
-        # Returns an 1 x n_a array of state
-        # forward method can be omitted
-        action = self.actor( state )
-
-        # Change action from Torch to Numpy.
-        # Since n_a is 1 for this case, action is simply an 1x1 array.
-        # Hence, flattening the data. 
-        action = action.cpu( ).data.numpy( ).flatten( )
-
-        return action
-    
-    def update( self, replay_buffer, batch_size: int = 256 ):
-
-        self.total_it += 1
-        state, action, reward, next_state, is_done = replay_buffer.sample( batch_size )
-
-        with torch.no_grad( ):
-            noise       = ( torch.randn_like( action ) * self.policy_noise  ).clamp( -self.noise_clip, self.noise_clip )
-            next_action = ( self.actor_target( next_state ) + noise ).clamp( -self.max_action, self.max_action )
-
-            target_Q1, target_Q2 = self.critic_target( next_state, next_action )
-            target_Q = torch.min( target_Q1, target_Q2 )
-            target_Q = reward + (  ( 1. - is_done ) * self.gamma * target_Q )#.detach( )
-
-		# Get current Q estimates
-        current_Q1, current_Q2 = self.critic( state, action )
-
-		# Compute critic loss
-        critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
-
-		# Optimize the critic
-        self.critic_optimizer.zero_grad()
-        critic_loss.backward()
-        self.critic_optimizer.step()
-
-		# Delayed policy updates
-        if self.total_it % self.policy_freq == 0:
-
-			# Compute actor losse
-            actor_loss = -self.critic.Q1( state, self.actor( state ) ).mean()
-			
-			# Optimize the actor 
-            self.actor_optimizer.zero_grad()
-            actor_loss.backward()
-            self.actor_optimizer.step()
-
-			# Update the frozen target models
-            for target_param, param in zip( self.critic_target.parameters( ), self.critic.parameters( ) ):
-                target_param.data.copy_( self.tau * param.data + ( 1 - self.tau ) * target_param.data )
-                
-            for target_param, param in zip( self.actor_target.parameters( ) ,  self.actor.parameters( ) ):
-                target_param.data.copy_( self.tau * param.data + ( 1 - self.tau ) * target_param.data )
 
 
     def save( self, filename ):
