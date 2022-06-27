@@ -1,3 +1,7 @@
+"""
+    A temporary script to debug the machine learnin gmodules 
+"""
+
 import sys
 import gym
 import time
@@ -7,19 +11,20 @@ import matplotlib.pyplot as plt
 
 from MLmodule import *
 
+# Define instances of the environment, DDPG agent and the OU noise.
+env   = gym.make( "Pendulum-v1" ) 
 
-if __name__ == "__main__":
+# Flags for turning on or off the render.
+is_save_video = False
+is_save_model = False
+is_load_model = True
+is_plot       = True
 
-    agent = DDPG( 3, 1, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = 2 )    
-
-    # Define instances of the environment, DDPG agent and the OU noise.
-    env   = gym.make( "Pendulum-v1" ) 
-
+if is_load_model: 
+    
     # Set the random seeds
     env.seed(              round( time.time( ) ) )
     env.action_space.seed( round( time.time( ) ) )
-    torch.manual_seed(     round( time.time( ) ) )
-    np.random.seed(        round( time.time( ) ) )
 
     # Get the dimension of states and actions, and also the 
     # [WARNING] This is for environments where we assume the mean of action is 0. 
@@ -27,20 +32,55 @@ if __name__ == "__main__":
     n_action   = env.action_space.shape[ 0 ]
     max_action = float( env.action_space.high  )
 
+    agent      = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = float( env.action_space.high ) )        
+    agent.load( "./MLmodels/" )
+
+    # Run trial
+    state = env.reset()   
+
+    frames = []
+    # The maximum trial is 200 for the pendulum 
+    for _ in range( 200 ):
+
+        if is_save_video: frames.append( env.render( mode = "rgb_array")  ) 
+        env.render( )
+
+        # Get the choice of action and the pi( a_t | s_t ) for the gradient calculation
+        action = agent.get_action( state )
+        new_state, _, done, _ = env.step( action )
+
+        # If the trail encounters the terminal state
+        if done: 
+            break
+        state = new_state
+
+    
+    env.close( )
+
+else: # Train the model    
+    
+    # Set the random seeds
+    seed = round( time.time( ) )
+    env.action_space.seed( seed )
+    torch.manual_seed(     seed )
+    np.random.seed(        seed )
+
+    # Get the dimension of states and actions, and also the 
+    # [WARNING] This is for environments where we assume the mean of action is 0. 
+    n_state    = env.observation_space.shape[ 0 ] 
+    n_action   = env.action_space.shape[ 0 ]
+
+    # Defining the controller
+    # This case, it is a 3 x 256 x 256 x 1 neural network. 
+    agent = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = float( env.action_space.high ) , batch_size = 256 )        
+
     # Define the agent, noise and replay buffers
     OUnoise       = OUNoise( n_action, env.action_space.low, env.action_space.high ) 
     replay_buffer = ReplayBuffer( n_state, n_action )
 
-    # The number of "batch" that will be sampled from the replay buffer will be "batch_size" 
-    n_batch_size  = 256
-
     # Saving these values to plot the performance at the end.
     frames        = [ ]
     whole_rewards = [ ]
-
-    # Flags for turning on or off the render.
-    is_save_video = False
-    is_save_model = True
 
     # For the pendulum model the best reward is 0, hence saving a -infinity value. 
     best_model_val = -np.inf
@@ -49,10 +89,10 @@ if __name__ == "__main__":
     avg_rewards   = [ ]
 
 
-    for episode in range( 500 ):
+    for episode in range( 200 ):
 
         # Initialize the gym environment and OU noise 
-        state = env.reset()        
+        state = env.reset( seed = round( time.time( ) ) )        
         OUnoise.reset( )
 
         # Initialize the episode's reward
@@ -77,7 +117,7 @@ if __name__ == "__main__":
             replay_buffer.add( state, action, reward, new_state, done )
             
             # Once the agent memory is full, then update the policy via replay buffer.
-            if replay_buffer.current_size > n_batch_size: agent.update( replay_buffer, batch_size = n_batch_size )        
+            if replay_buffer.current_size > agent.n_batch: agent.update( replay_buffer )        
             
             # Update the state and reward value 
             state = new_state
@@ -101,7 +141,6 @@ if __name__ == "__main__":
     whole_rewards.append(  rewards  )
 
     env.close( )
-
 
     plt.plot( rewards     )
     plt.plot( avg_rewards )
