@@ -6,3 +6,6 @@ opencv-python
 argparse
 datetime
 moviepy
+torch
+gym
+pygame 

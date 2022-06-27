@@ -112,7 +112,7 @@ def run_nlopt( mj_sim, alg_type = nlopt.GN_DIRECT_L, max_trial: int = 600 ):
 
         return min( obj_arr )
 
-    opt = nlopt.opt( alg_type, n_opt ) 
+    opt = nlopt.opt( alg_type, n_opt )  
 
     opt.set_lower_bounds( lb )
     opt.set_upper_bounds( ub )
