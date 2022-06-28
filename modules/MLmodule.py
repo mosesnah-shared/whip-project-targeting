@@ -15,7 +15,7 @@ device = torch.device( "cuda" if torch.cuda.is_available( ) else "cpu" )
 
 
 class NeuralNetwork( nn.Module ):
-    def __init__( self, n_input: int, n_output: int, n_hidden: Union[ int, List[ int] ], act_funcs: List[ str ], gain: float = 1.0 ):
+    def __init__( self, n_input: int, n_output: int, n_hidden: Union[ int, List[ int] ], act_funcs: List[ str ], gain ):
         """
             Define a Neural network which maps from n_input to n_output.  
         """
@@ -68,7 +68,8 @@ class NeuralNetwork( nn.Module ):
             # getattr does torch.{func}(  )
             x = getattr( torch, func )( self.layers[ idx ]( x ) ) if func is not None else self.layers[ idx ]( x ) 
 
-        return x * self.gain
+
+        return x * torch.FloatTensor( self.gain )
 
 class ReplayBuffer:
 
@@ -197,7 +198,7 @@ class DDPG:
         # Learning The Q(s,a) scalar function
         self.critic            = NeuralNetwork( n_input = n_state + n_action, n_output = 1, n_hidden = n_hidden, gain = 1, act_funcs = act_funcs_critic  ).to( device )
         self.critic_target     = copy.deepcopy( self.critic )
-        self.critic_optimizer  = optim.Adam( self.critic.parameters( ), lr = 1e-3 )
+        self.critic_optimizer  = optim.Adam( self.critic.parameters( ), lr = 1e-4 )
 
         # The discount factor gamma and the soft-update gain tau
         self.gamma = gamma
