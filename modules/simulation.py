@@ -215,7 +215,7 @@ class Simulation:
             # We check the accelerations
             if  self.is_sim_unstable( ):     
                 print( '[UNSTABLE SIMULATION], HALTED AT {0:f} for a {1:f}-second long simulation'.format( self.t, self.T )  )                                 
-                break
+                return "unstable"
 
 
     def is_sim_unstable( self ):
