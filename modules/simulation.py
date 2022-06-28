@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import numpy           as np
 import mujoco_py       as mjPy
@@ -8,6 +9,9 @@ import moviepy.editor  as mpy
 from utils     import *
 from datetime  import datetime
 from constants import Constants as C
+
+epsilon = sys.float_info.epsilon
+
 
 class Simulation:
     """
@@ -127,10 +131,10 @@ class Simulation:
         # There should be six variables
         assert len( tmp ) == 6
 
-        self.mj_viewer.cam.lookat     = tmp[ 0 : 3 ]
-        self.mj_viewer.cam.distance   = tmp[ 3 ]
-        self.mj_viewer.cam.elevation  = tmp[ 4 ]
-        self.mj_viewer.cam.azimuth    = tmp[ 5 ]
+        self.mj_viewer.cam.lookat[ 0 : 3 ] = tmp[ 0 : 3 ]
+        self.mj_viewer.cam.distance        = tmp[ 3 ]
+        self.mj_viewer.cam.elevation       = tmp[ 4 ]
+        self.mj_viewer.cam.azimuth         = tmp[ 5 ]
 
     def set_ctrl( self, ctrl ):
         """
@@ -165,6 +169,8 @@ class Simulation:
             Running the simulation 
         """
 
+        if self.args.cam_pos is not None: self.set_camera_pos( ) 
+
         # The main loop of the simulation 
         while self.t <= self.T:
 
@@ -189,7 +195,9 @@ class Simulation:
                     self.mj_viewer.is_reset = False
                 
                 # If SPACE BUTTON is pressed
-                if self.mj_viewer.is_paused:  continue
+                if self.mj_viewer.is_paused:    continue
+
+            
 
             # [Calculate Input]
             # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
