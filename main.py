@@ -210,10 +210,6 @@ def run_MLopt( mj_sim, type:str ):
         agent = TD3( n_state, n_action, n_hidden = [256, 256], act_funcs_actor = [ "relu", "relu", "tanh" ], act_funcs_critic = [ "relu", "relu", None ], max_action = max_action, batch_size = 64, update_freq = 2 )
         replay_buffer = ReplayBuffer( n_state, n_action )
 
-        
-
-
-
 
 if __name__ == "__main__":
 
@@ -257,8 +253,9 @@ if __name__ == "__main__":
         # For a 2DOF model
         if   my_sim.ctrl.n_act == 2:
             
-            mov_pars  = {  "q0i": np.array( [ .3, .4 ] ),   "q0f": np.array( [ .8, .5 ] ),          "D": 1.  } 
-            init_cond = { "qpos": np.array( [ .3, .4 ] ),  "qvel": np.zeros( my_sim.ctrl.n_act ) }
+            mov_arrs  = np.array( [ -1.40668, 0.14868, 1.46737, 0.12282, 0.81866 ] )
+            mov_pars  = {  "q0i": mov_arrs[ :2 ] ,   "q0f": mov_arrs[ 2:4 ] ,  "D": mov_arrs[ -1 ]  } 
+            init_cond = { "qpos": mov_arrs[ :2 ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
 
         # For a 4DOF model
         elif my_sim.ctrl.n_act == 4:
@@ -268,4 +265,5 @@ if __name__ == "__main__":
         obj_arr = run_single_trial( my_sim,  mov_pars = mov_pars, init_cond = init_cond )
         print( f"The minimum value of this trial is { min(obj_arr):.5f}" )
 
-        
+        my_sim.close( )
+

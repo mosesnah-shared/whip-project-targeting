@@ -137,7 +137,8 @@ class DistFromTip2Target( ObjectiveFunction ):
             output = 0.0  
 
             # Set the color to Green light!
-            if self.is_indicate_hit: mj_model.geom_rgba[ self.idx_target  ] = [ 0, 1, 0, 1 ]
+            # if self.is_indicate_hit: mj_model.geom_rgba[ self.idx_target  ] = [ 0, 1, 0, 1 ]
+            mj_model.geom_rgba[ self.idx_target  ] = [ 0, 1, 0, 1 ]
 
         return output
 

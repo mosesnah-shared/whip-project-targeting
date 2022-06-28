@@ -1,0 +1,149 @@
+<mujoco model="1_2D_model_w_N10">
+  <compiler inertiafromgeom="auto" angle="radian" />
+   <option timestep="0.0001" iterations="50" integrator="Euler" collision="all" />
+   <asset>
+     <texture type="skybox" builtin="flat" rgb1="1 1 1" rgb2="1 1 1" width="100" height="100" />
+      <material name="JointColor" rgba="1.0 1.0 0.0 1.0" />
+      <material name="LimbColor" rgba="0.7 0.7 0.7 1.0" />
+      <material name="pointMassColor" rgba="1.0 1.0 1.0 1.0" />
+      <material name="RefMassColor" rgba="0.2 0.9 0.1 1.0" />
+   </asset>
+   <worldbody>
+     <body name="camera" pos="0 0 0">
+        <camera name="myCamera" pos="0.7975 -3.19 -0.4785" euler="1.5707 0 0" />
+      </body>
+    <!-- =============  UPPER ARM START =============== -->
+		<body name='body_upper_arm' pos='0 0 0' euler='0 0 0'>
+      <site name='site_upper_arm_start' pos='0 0 0' /> 
+      <joint name='joint_shoulder' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0' />
+			<inertial pos='0 0 -0.129' mass='1.595' diaginertia='0.011917 0.011937 0.001325'/>
+			<geom name='geom_shoulder' type='sphere' pos='0 0 0' material='JointColor' size='0.0294' mass='0'/>
+			<geom type='cylinder' fromto='0 0 0 0 0 -0.294'     material='LimbColor'  size='0.0147' mass='0'/>
+      <site name='site_upper_arm_COM' pos='0 0 -0.129' /> 
+      <site name='site_upper_arm_end' pos='0 0 -0.294' /> 
+    	<!-- =============  UPPER ARM  END  =============== -->
+
+      <!-- ============ FORE ARM START =============== -->
+			<body name='body_fore_arm' pos='0 0 -0.294' euler='0 0 0'>
+        <site name='site_fore_arm_start' pos='0 0 0' /> 
+        <joint name='joint_elbow' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 -1 0'/>
+				<inertial pos='0 0 -0.112' mass='0.869' diaginertia='0.004765 0.004855 0.000472'/>
+				<geom name='geom_elbow'       type='sphere' pos='0 0 0'      material='JointColor' size='0.0294' mass='0'/>
+				<geom type='cylinder' fromto='0 0 0 0 0 -0.291'             material='LimbColor'  size='0.0147' mass='0'/>
+        <site name='site_fore_arm_COM' pos='0 0 -0.112' />
+				<geom name='geom_EE' type='sphere' pos='0 0 -0.291' material='JointColor' size='0.0294' mass='0'/>
+        <site name='site_whip_COM' pos='0 0 -0.291' />
+        <site name='site_fore_arm_end' pos='0 0 -0.291' />
+          <body name="body_whip_node1" euler="0 0 0" pos="0 0 -0.291">
+              <joint name="joint_whip_node1_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
+               <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+               <geom name="geom_whip_node1" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+               <body name="body_whip_node2" euler="0 0 0" pos="0 0 -0.1000">
+                 <joint name="joint_whip_node2_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                  <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                  <geom name="geom_whip_node2" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                  <body name="body_whip_node3" euler="0 0 0" pos="0 0 -0.1000">
+                    <joint name="joint_whip_node3_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                     <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                     <geom name="geom_whip_node3" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                     <body name="body_whip_node4" euler="0 0 0" pos="0 0 -0.1000">
+                       <joint name="joint_whip_node4_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                        <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                        <geom name="geom_whip_node4" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                        <body name="body_whip_node5" euler="0 0 0" pos="0 0 -0.1000">
+                          <joint name="joint_whip_node5_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                           <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                           <geom name="geom_whip_node5" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                           <body name="body_whip_node6" euler="0 0 0" pos="0 0 -0.1000">
+                             <joint name="joint_whip_node6_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                              <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                              <geom name="geom_whip_node6" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                              <body name="body_whip_node7" euler="0 0 0" pos="0 0 -0.1000">
+                                <joint name="joint_whip_node7_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                 <geom name="geom_whip_node7" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                 <body name="body_whip_node8" euler="0 0 0" pos="0 0 -0.1000">
+                                   <joint name="joint_whip_node8_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                    <geom name="geom_whip_node8" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                    <body name="body_whip_node9" euler="0 0 0" pos="0 0 -0.1000">
+                                      <joint name="joint_whip_node9_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                       <geom name="geom_whip_node9" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                       <body name="body_whip_node10" euler="0 0 0" pos="0 0 -0.1000">
+                                         <joint name="joint_whip_node10_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                          <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                          <geom name="geom_whip_node10" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                          <body name="body_whip_node11" euler="0 0 0" pos="0 0 -0.1000">
+                                            <joint name="joint_whip_node11_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                            <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                            <geom name="geom_whip_node11" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                            <body name="body_whip_node12" euler="0 0 0" pos="0 0 -0.1000">
+                                              <joint name="joint_whip_node12_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                              <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                              <geom name="geom_whip_node12" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                              <body name="body_whip_node13" euler="0 0 0" pos="0 0 -0.1000">
+                                                <joint name="joint_whip_node13_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                <geom name="geom_whip_node13" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                <body name="body_whip_node14" euler="0 0 0" pos="0 0 -0.1000">
+                                                  <joint name="joint_whip_node14_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                  <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                  <geom name="geom_whip_node14" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                  <body name="body_whip_node15" euler="0 0 0" pos="0 0 -0.1000">
+                                                    <joint name="joint_whip_node15_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                    <geom name="geom_whip_node15" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                    <site name='site_whip_tip' pos='0 0 -0.10' /> 
+                                                    <body name="body_whip_node16" euler="0 0 0" pos="0 0 -0.1000">
+                                                      <joint name="joint_whip_node16_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                      <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                      <geom name="geom_whip_node16" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                      <body name="body_whip_node17" euler="0 0 0" pos="0 0 -0.1000">
+                                                        <joint name="joint_whip_node17_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                        <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                        <geom name="geom_whip_node17" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                        <body name="body_whip_node18" euler="0 0 0" pos="0 0 -0.1000">
+                                                          <joint name="joint_whip_node18_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                          <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                          <geom name="geom_whip_node18" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                          <body name="body_whip_node19" euler="0 0 0" pos="0 0 -0.1000">
+                                                            <joint name="joint_whip_node19_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                            <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                            <geom name="geom_whip_node19" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                            <body name="body_whip_node20" euler="0 0 0" pos="0 0 -0.1000">
+                                                              <joint name="joint_whip_node20_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.05" damping="0.005" />
+                                                              <geom type="cylinder" fromto="0 0 0 0 0 -0.1000" size="0.0100000" mass="0" />
+                                                              <geom name="geom_whip_node20" type="sphere" material="pointMassColor" pos="0 0 -0.1000" size="0.0200000" mass="0.1000000" />
+                                                              <site name='site_whip_tip' pos='0 0 -0.10' /> 
+                                                            </body>
+                                                          </body>
+                                                        </body>
+                                                      </body>
+                                                    </body>
+                                                  </body>
+                                                </body>
+                                              </body>
+                                            </body>
+                                          </body>
+                                       </body>
+                                    </body>
+                                 </body>
+                              </body>
+                           </body>
+                        </body>
+                     </body>
+                  </body>
+               </body>
+            </body>
+            <!-- === [ N, L, M, k, b, rho ] = [10,1.000000,1.000000,0.050000,0.005000,1.000000] -->
+         </body>
+      </body>
+      <geom name="geom_target" type="sphere" pos=" 1.5950  0.0000  0.0000" material="LimbColor" mass="0" size="0.03" />
+   </worldbody>
+
+  <actuator>
+		  <motor joint='joint_shoulder' name='motor_joint_shoulder' forcelimited='false'/>
+		  <motor joint='joint_elbow'    name='motor_joint_elbow'    forcelimited='false'/>
+  </actuator>
+</mujoco>
