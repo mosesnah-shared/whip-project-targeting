@@ -253,7 +253,7 @@ if __name__ == "__main__":
         # For a 2DOF model
         if   my_sim.ctrl.n_act == 2:
             
-            mov_arrs  = np.array( [ -1.40668, 0.14868, 1.46737, 0.12282, 0.81866 ] )
+            mov_arrs  = np.array(  [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] )
             mov_pars  = {  "q0i": mov_arrs[ :2 ] ,   "q0f": mov_arrs[ 2:4 ] ,  "D": mov_arrs[ -1 ]  } 
             init_cond = { "qpos": mov_arrs[ :2 ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
 
