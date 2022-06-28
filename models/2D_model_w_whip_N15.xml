@@ -1,4 +1,4 @@
-<mujoco model="1_2D_model_w_N10">
+<mujoco model="1_2D_model_w_N15">
   <compiler inertiafromgeom="auto" angle="radian" />
    <option timestep="0.0001" iterations="50" integrator="Euler" collision="all" />
    <asset>
