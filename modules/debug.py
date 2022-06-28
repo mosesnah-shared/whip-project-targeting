@@ -32,7 +32,9 @@ if is_load_model:
     n_action   = env.action_space.shape[ 0 ]
     max_action = float( env.action_space.high  )
 
-    agent      = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = float( env.action_space.high ) )        
+
+    # agent = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = float( env.action_space.high ) )        
+    agent = TD3( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], max_action = float( env.action_space.high ) )        
     agent.load( "./MLmodels/" )
 
     # Run trial
@@ -71,8 +73,13 @@ else: # Train the model
     n_action   = env.action_space.shape[ 0 ]
 
     # Defining the controller
+    # ==== DDPG ==== #
     # This case, it is a 3 x 256 x 256 x 1 neural network. 
-    agent = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], gain = float( env.action_space.high ) , batch_size = 256 )        
+    # agent = DDPG( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ], max_action = float( env.action_space.high ) , batch_size = 256 )        
+
+    # ==== TD3 ==== #
+    agent = TD3( n_state, n_action, [ 256, 256 ], [ "relu", "relu", "tanh" ], [ "relu", "relu", None ] , max_action = float( env.action_space.high ) , batch_size = 256, update_freq = 2 )        
+
 
     # Define the agent, noise and replay buffers
     OUnoise       = OUNoise( n_action, env.action_space.low, env.action_space.high ) 

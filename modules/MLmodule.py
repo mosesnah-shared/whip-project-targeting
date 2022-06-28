@@ -6,11 +6,9 @@ import torch.nn.functional as F
 import torch.optim         as optim
 import numpy               as np
 
-
 from typing import Union, List
 
-
-__all__ = [ "ReplayBuffer", "OUNoise", "DDPG" ]
+__all__ = [ "ReplayBuffer", "OUNoise", "DDPG", "TD3" ]
 
 # Check whether GPU computation (i.e., CUDA) is available.
 device = torch.device( "cuda" if torch.cuda.is_available( ) else "cpu" )
@@ -131,7 +129,6 @@ class ReplayBuffer:
             torch.FloatTensor(     self.is_done[ idx ]  ).to( device )   
         )
 
-
     def reset( self ):
         """
             Reset all the replay buffers to zeros
@@ -189,10 +186,10 @@ class OUNoise:
 
 class DDPG:
 
-    def __init__( self, n_state, n_action, n_hidden, act_funcs_actor, act_funcs_critic, gain = 1., gamma = 0.99, tau = 0.005, batch_size = 256 ):
+    def __init__( self, n_state, n_action, n_hidden, act_funcs_actor, act_funcs_critic, max_action = 1., gamma = 0.99, tau = 0.005, batch_size = 256 ):
 
         # Actor Network, its target (copy) Network, and the ADAM optimizer.
-        self.actor             = NeuralNetwork( n_input = n_state, n_output = n_action, n_hidden = n_hidden, gain = gain, act_funcs = act_funcs_actor ).to( device )
+        self.actor             = NeuralNetwork( n_input = n_state, n_output = n_action, n_hidden = n_hidden, gain = max_action, act_funcs = act_funcs_actor ).to( device )
         self.actor_target      = copy.deepcopy( self.actor )
         self.actor_optimizer   = optim.Adam( self.actor.parameters( ), lr = 1e-4 )
 
@@ -207,7 +204,7 @@ class DDPG:
         self.tau   = tau
 
         # The gain that will be multipled to the output. 
-        self.gain = gain
+        self.max_action = max_action
 
         # The number of batch_size for the update 
         self.n_batch = batch_size
@@ -234,9 +231,7 @@ class DDPG:
         return action
     
     def update( self, replay_buffer ):
-        """
-            Mini-batch update. 
-        """
+
         # Randomly sample batch_size numbers of S A R S.
         states, actions, rewards, next_states, is_done = replay_buffer.sample( self.n_batch )
 
@@ -280,11 +275,11 @@ class DDPG:
 
     def save( self, filename ):
         
-        torch.save( self.critic.state_dict( )           , filename + "critic"              )
-        torch.save( self.critic_optimizer.state_dict( ) , filename + "critic_optimizer"    )
+        torch.save( self.critic.state_dict( )           , filename + "DDPG_critic"              )
+        torch.save( self.critic_optimizer.state_dict( ) , filename + "DDPG_critic_optimizer"    )
         
-        torch.save( self.actor.state_dict( )            , filename + "actor"               )
-        torch.save( self.actor_optimizer.state_dict( )  , filename + "actor_optimizer"     )
+        torch.save( self.actor.state_dict( )            , filename + "DDPG_actor"               )
+        torch.save( self.actor_optimizer.state_dict( )  , filename + "DDPG_actor_optimizer"     )
 
 
     def load( self, filename ):
@@ -299,3 +294,142 @@ class DDPG:
         self.actor_optimizer.load_state_dict(   torch.load( filename + "actor_optimizer"  )  )
         self.actor_target = copy.deepcopy( self.actor )
 
+
+class TD3:
+
+    def __init__( self, n_state, n_action, n_hidden, act_funcs_actor, act_funcs_critic, max_action = 1., gamma = 0.99, tau = 0.005, batch_size = 256, policy_noise = 0.2, noise_clip = 0.5, update_freq = 2 ):
+
+        # The Actor Network
+        self.actor            = NeuralNetwork( n_state, n_action, n_hidden, act_funcs = act_funcs_actor, gain = max_action ).to( device )
+        self.actor_target     = copy.deepcopy( self.actor )
+        self.actor_optimizer  = torch.optim.Adam( self.actor.parameters( ) , lr = 1e-4 )
+
+        # The First Critic Network Q1( s, a )
+        self.critic1           = NeuralNetwork( n_state + n_action, 1, n_hidden = n_hidden, act_funcs = act_funcs_critic ).to( device )
+        self.critic_target1    = copy.deepcopy( self.critic1 )
+        
+        # The Second Critic Network Q2( s, a )
+        self.critic2           = NeuralNetwork( n_state + n_action, 1, n_hidden = n_hidden, act_funcs = act_funcs_critic ).to( device )
+        self.critic_target2    = copy.deepcopy( self.critic2 )
+
+        # [REF] https://discuss.pytorch.org/t/giving-multiple-parameters-in-optimizer/869
+        critic_params = list( self.critic1.parameters( ) ) + list( self.critic2.parameters( ) )
+        self.critic_optimizer  = torch.optim.Adam( critic_params, lr = 1e-3 )
+
+        # 
+        self.max_action  = max_action
+        self.gamma       = gamma
+        self.tau         = tau 
+
+        # The number of samples (n_batch) that we will sample from the replaybuffer, and the update frequency for the update
+        self.n_batch     = batch_size 
+        self.update_freq = update_freq
+
+        # To conduct an update with an update_freqeuncy, we need to save the number of iterations
+        self.n_iter = 0 
+
+        self.policy_noise = policy_noise
+        self.noise_clip   = noise_clip
+
+
+
+    def get_action( self, state ):
+        
+        # Conduct the a = mu(s), where mu is a "deterministic function"
+        # Unsqueeze makes an 1 x n_s array of state. 
+        state  = torch.from_numpy( state ).float( ).unsqueeze( 0 ).to( device )
+
+        # Returns an 1 x n_a array of state
+        # forward method can be omitted
+        action = self.actor( state )
+
+        # Change action from Torch to Numpy.
+        # Since n_a is 1 for this case, action is simply an 1x1 array.
+        # Hence, flattening the data. 
+        action = action.cpu( ).data.numpy( ).flatten( )
+
+        return action
+
+    def update( self, replay_buffer ):
+
+        self.n_iter += 1
+        state, action, reward, next_state, is_done = replay_buffer.sample( self.n_batch )
+
+        with torch.no_grad( ):
+
+            # The gaussian noise with zero mean, variance 1 with the same size of action. 
+            noise       = ( torch.randn_like( action ) * self.policy_noise  ).clamp( -self.noise_clip, self.noise_clip )
+            
+            # Get the next action from the actor.
+            # Clamp the maximum action value 
+            next_action = ( self.actor_target( next_state ) + noise ).clamp( -self.max_action, self.max_action )
+
+            # Forward the critic target network for Q1, Q2, the "twins"
+            target_Q1 = self.critic_target1( torch.cat( [ next_state, next_action ], dim = 1 ) )
+            target_Q2 = self.critic_target2( torch.cat( [ next_state, next_action ], dim = 1 ) )
+
+            # Get the minimum value between two networks 
+            target_Q = torch.min( target_Q1, target_Q2 )
+
+            # Update the target_Q value using the Bellman's Optimalizty Equation
+            target_Q = reward + (  ( 1. - is_done ) * self.gamma * target_Q )#.detach( )            
+
+		# Get current Q estimates
+        current_Q1 = self.critic1( torch.cat( [ state, action ], dim = 1 ) )
+        current_Q2 = self.critic2( torch.cat( [ state, action ], dim = 1 ) )
+
+		# Compute critic loss
+        critic_loss = F.mse_loss( current_Q1, target_Q ) + F.mse_loss( current_Q2, target_Q )
+
+		# Optimize the critic
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        self.critic_optimizer.step()
+
+		# Delayed policy updates
+        if self.n_iter % self.update_freq == 0:
+
+			# Compute actor losse
+            actor_loss = -self.critic1( torch.cat( [ state, self.actor( state ) ], dim = 1  )).mean( )
+			
+			# Optimize the actor 
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
+
+			# Update the frozen target models
+            for target_param, param in zip( self.critic_target1.parameters( ), self.critic1.parameters( ) ):
+                target_param.data.copy_( self.tau * param.data + ( 1 - self.tau ) * target_param.data )
+                
+            for target_param, param in zip( self.critic_target2.parameters( ), self.critic2.parameters( ) ):
+                target_param.data.copy_( self.tau * param.data + ( 1 - self.tau ) * target_param.data )
+
+            for target_param, param in zip( self.actor_target.parameters( ) ,  self.actor.parameters( ) ):
+                target_param.data.copy_( self.tau * param.data + ( 1 - self.tau ) * target_param.data )
+
+    def save( self, filename ):
+
+        torch.save( self.critic1.state_dict( )           , filename + "TD3_critic1"             )
+        torch.save( self.critic2.state_dict( )           , filename + "TD3_critic2"             )
+        torch.save( self.critic_optimizer.state_dict( )  , filename + "TD3_critic_optimizer"    )
+
+        torch.save( self.actor.state_dict( )            , filename + "TD3_actor"               )
+        torch.save( self.actor_optimizer.state_dict( )  , filename + "TD3_actor_optimizer"     )
+
+
+    def load( self , filename):
+
+        # Load Critic1
+        self.critic1.load_state_dict( torch.load( filename + "TD3_critic1"           )  )
+        self.critic2.load_state_dict( torch.load( filename + "TD3_critic2"           )  )
+
+        self.critic_target1 = copy.deepcopy( self.critic1 )
+        self.critic_target2 = copy.deepcopy( self.critic2 )
+
+        self.critic_optimizer.load_state_dict(  torch.load( filename + "TD3_critic_optimizer" )  )
+    
+
+        # Load Actor
+        self.actor.load_state_dict(             torch.load( filename + "TD3_actor"            )  )
+        self.actor_optimizer.load_state_dict(   torch.load( filename + "TD3_actor_optimizer"  )  )
+        self.actor_target = copy.deepcopy( self.actor )        
