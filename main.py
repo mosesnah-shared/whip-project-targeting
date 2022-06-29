@@ -252,15 +252,17 @@ if __name__ == "__main__":
 
         # For a 2DOF model
         if   my_sim.ctrl.n_act == 2:
-            
             mov_arrs  = np.array(  [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] )
-            mov_pars  = {  "q0i": mov_arrs[ :2 ] ,   "q0f": mov_arrs[ 2:4 ] ,  "D": mov_arrs[ -1 ]  } 
-            init_cond = { "qpos": mov_arrs[ :2 ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
 
         # For a 4DOF model
         elif my_sim.ctrl.n_act == 4:
-            mov_pars  = {  "q0i": np.array( [ .3, .4, .4, .3 ] ),   "q0f": np.array( [ .6, .5, .7, .1 ] ),          "D": 1.  } 
-            init_cond = { "qpos": np.array( [ .3, .4, .4, .3 ] ),  "qvel": np.zeros( my_sim.ctrl.n_act )  }            
+            mov_arrs  = np.array(  [-0.94248,  1.0472,  0.29735, 1.0996,   1.7744, -1.03430, -0.38785, 0.94830, 0.52449] )
+
+        n = my_sim.ctrl.n_act   
+
+        mov_pars  = {  "q0i": mov_arrs[ :n ] ,   "q0f": mov_arrs[ n: 2*n ] ,  "D": mov_arrs[ -1 ]  } 
+        init_cond = { "qpos": mov_arrs[ :n ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
+
 
         obj_arr = run_single_trial( my_sim,  mov_pars = mov_pars, init_cond = init_cond )
         print( f"The minimum value of this trial is { min(obj_arr):.5f}" )

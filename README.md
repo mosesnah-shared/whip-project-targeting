@@ -2,8 +2,14 @@
 ---
 We show that designing a controller with [**Dynamic Primitives**](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3735361/) can dramatically simplify the control of complex objects. We show this by controlling a whip - an infinite dimensional object with significant dynamics. 
 
+## ** 2D Whip **
 <p align="center">
-<img src="./Assets/Videos/video1.gif" alt="drawing" width="700"/>
+<img src="./Assets/Videos/2D_whip.gif" alt="drawing" width="800"/>
+</p>
+
+## ** 3D Whip **
+<p align="center">
+<img src="./Assets/Videos/2D_whip.gif" alt="drawing" width="800"/>
 </p>
 
 
