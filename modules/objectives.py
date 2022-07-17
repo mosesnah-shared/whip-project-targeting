@@ -78,7 +78,7 @@ class ObjectiveFunction:
 
     def __rtruediv__( self, w: float ):
         """
-            Enables 2 / obje1
+            Enables 2 / obj1
         """                
 
         new_obj = ObjectiveFunction( self.mj_model, self.mj_data, self.args  )

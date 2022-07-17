@@ -217,7 +217,10 @@ class Simulation:
 
             # Print the basic data
             if self.n_steps % self.print_step == 0:
-                if not self.args.run_opt : print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "obj" : self.obj_val }  )
+                if not self.args.run_opt : print_vars( { "time": self.t,  "obj" : self.obj_val }  )
+
+                # The data arrays that we will save
+                if   self.args.save_data : print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "xpos" : self.mj_data.geom_xpos[ : ], "Jmat" : self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : 4  ], "obj" : self.obj_val }, save_dir = self.save_file  )
 
             # Check if simulation is stable. 
             # We check the accelerations
