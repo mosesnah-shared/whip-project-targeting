@@ -1,4 +1,5 @@
 import re
+import sys
 import math
 import numpy as np
 
@@ -137,7 +138,7 @@ def make_whip_downwards( sim ):
 
     sim.mj_sim.forward( )
 
-def print_vars( vars2print: dict  ):
+def print_vars( vars2print: dict , save_dir = sys.stdout ):
     """
         Print out all the details of the variables to the standard output + file to save. 
     """
@@ -146,5 +147,15 @@ def print_vars( vars2print: dict  ):
     for var_name, var_vals in vars2print.items( ):
 
         # Check if var_vals is a list or numpy's ndarray else just change it as string 
-        var_vals = np.array2string( var_vals, separator =', ', floatmode = 'fixed' ) if isinstance( var_vals, ( list, np.ndarray ) ) else str( var_vals )
-        print( f'[{var_name}]: {var_vals}' )
+        if   isinstance( var_vals, ( list, np.ndarray ) ):
+            
+            # First, change the list to numpy array to make the problem easier 
+            var_vals = np.array( var_vals ) if isinstance( var_vals, list ) else var_vals
+
+            # If the numpy array is
+            var_vals = np.array2string( var_vals.flatten( ), separator =', ', floatmode = 'fixed' )
+
+        else:
+            var_vals = str( var_vals )
+
+        print( f'[{var_name}]: {var_vals}', file = save_dir )
