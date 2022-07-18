@@ -116,6 +116,12 @@ class Simulation:
             clip = mpy.ImageSequenceClip( self.frames, fps = self.fps )
             clip.write_videofile( self.tmp_dir + "video.mp4", fps = self.fps, logger = None )
 
+        # If video recorded/save data is true, then copy the model, main file and the arguments passed
+        if self.is_record_vid or self.is_save_data:
+            shutil.copyfile( C.MODEL_DIR + self.model_name + ".xml", self.tmp_dir + "model.xml" )
+            shutil.copyfile( "./main.py", self.tmp_dir + "main.py" )
+
+
         # Move the tmp folder to results if not empty, else just remove the tmp file. 
         shutil.move( self.tmp_dir, C.SAVE_DIR  ) if len( os.listdir( self.tmp_dir ) ) != 0 else os.rmdir( self.tmp_dir )
         

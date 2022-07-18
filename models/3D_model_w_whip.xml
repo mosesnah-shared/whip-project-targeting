@@ -212,7 +212,8 @@
             
          </body>
       </body>
-      <geom name="geom_target" type="sphere" pos="1.1975 1.1975 1.69352" material="LimbColor" mass="0" size="0.03" />
+      
+      <geom name="geom_target" type="sphere" pos="2.395 0 0" material="LimbColor" mass="0" size="0.03" />
       
 
    </worldbody>
