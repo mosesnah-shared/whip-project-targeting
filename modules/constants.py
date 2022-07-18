@@ -38,6 +38,8 @@ class Constants:
                          [ -7.75, 3.70,  27.7, 0.00 ] ,
                          [  8.40, 0.00,  0.00, 23.2 ] ] )
 
+    # K_4DOF = 300 * np.eye( 4 )
+
     # The above value is the symmetric part of the following matrix
     # K_4DOF = np.array( [ [ 17.40, 4.70, -1.90, 8.40 ] ,
     #                      [  9.00, 33.0,  4.40, 0.00 ] ,
