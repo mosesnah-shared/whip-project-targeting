@@ -219,8 +219,13 @@ class Simulation:
             if self.n_steps % self.print_step == 0:
                 if not self.args.run_opt : print_vars( { "time": self.t,  "obj" : self.obj_val }  )
 
-                # The data arrays that we will save
-                if   self.args.save_data : print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "xpos" : self.mj_data.geom_xpos[ : ], "xvel" : self.mj_data.geom_xvelp[ : ], "Jmat" : self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : 4  ], "obj" : self.obj_val }, save_dir = self.save_file  )
+                if   self.args.save_data : 
+
+                    # The data arrays that we will save
+                    xpos_arr = [ self.mj_data.get_geom_xpos(  geom_name ) for geom_name in self.mj_model.geom_names ]
+                    xvel_arr = [ self.mj_data.get_geom_xvelp( geom_name ) for geom_name in self.mj_model.geom_names ]
+                    
+                    print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "xpos" : xpos_arr, "xvel" : xvel_arr, "Jmat" : self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : 4  ], "obj" : self.obj_val }, save_dir = self.save_file  )
 
             # Check if simulation is stable. 
             # We check the accelerations
