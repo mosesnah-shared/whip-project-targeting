@@ -212,6 +212,74 @@ class JointImpedanceController( Controller ):
             self.q0  = self.q0f
             self.dq0 = np.zeros( self.n_act )
 
+        tau_imp = np.dot( self.K, self.q0 - q ) + np.dot( self.B, self.dq0 - dq )
+
+        tau_G = self.get_tau_G( )                     if is_gravity_comp else np.zeros( self.n_act ) 
+        tau_n = np.random.normal( size = self.n_act ) if is_noise        else np.zeros( self.n_act ) 
+
+        self.tau  = tau_imp + tau_G + tau_n
+
+        # The  (1) object         (2) index array          (3) It's value. 
+        return self.mj_data.ctrl, np.arange( self.n_act ), self.tau
+
+    def save_data( self ):
+        NotImplementedError( )
+
+    def reset( self ):
+        """
+            Initialize all variables  
+        """
+        self.traj_pos = None
+        self.traj_vel = None 
+
+        self.q0i, self.q0f, self.D = None, None, None
+
+class CartesianImpedanceController( Controller ):
+
+    def __init__( self, mj_model, mj_data, mj_args, t_start: float = 0 ):
+
+        super( ).__init__( mj_model, mj_data, mj_args, t_start )
+
+        # Getting the number of actuators 
+        self.n_act = len( self.mj_model.actuator_names )
+
+        # Define the controller parameters that we can change via "set_ctr_par" method
+        self.ctrl_par_names = [ "Kx", "Bx", "x0i", "x0f", "D" ]       
+
+        # Define the parameters that we will use for printing. This will be useful for "printing out the variables' detail" 
+        self.print_par_naems = [ "K", "B", "q0" ]
+
+    def set_traj( self, mov_pars: dict, basis_func: str = "min_jerk_traj" ):
+        self.x0i = mov_pars[ "q0i" ]
+        self.x0f = mov_pars[ "q0f" ]
+        self.D   = mov_pars[  "D"  ]
+
+
+        if   basis_func == "min_jerk_traj":
+            self.traj_pos = lambda t :      self.x0i + ( self.x0f - self.x0i ) * (  10 * ( t / self.D ) ** 3 - 15 * ( t / self.D ) ** 4 +  6 * ( t / self.D ) ** 5 )
+            self.traj_vel = lambda t :  1.0 / self.D * ( self.x0i - self.x0i ) * (  30 * ( t / self.D ) ** 2 - 60 * ( t / self.D ) ** 3 + 30 * ( t / self.D ) ** 4 )
+
+        elif basis_func == "b_spline":
+            pass
+
+    def input_calc( self, t:float ):
+        # The following two trajectories  should not be "None"
+        assert self.traj_pos and self.traj_vel
+
+        # Get the current angular position and velocity of the robot 
+        q  = self.mj_data.qpos[ 0 : self.n_act ]       
+        dq = self.mj_data.qvel[ 0 : self.n_act ]
+ 
+        if    t < self.t_start:
+            self.q0  = self.q0i 
+            self.dq0 = np.zeros( self.n_act )
+
+        elif  self.t_start < t <= self.t_start + self.D:
+            self.q0  = self.traj_pos( t - self.t_start )
+            self.dq0 = self.traj_vel( t - self.t_start )
+        else:
+            self.q0  = self.q0f
+            self.dq0 = np.zeros( self.n_act )
 
         tau_imp = np.dot( self.K, self.q0 - q ) + np.dot( self.B, self.dq0 - dq )
 
@@ -224,11 +292,4 @@ class JointImpedanceController( Controller ):
         return self.mj_data.ctrl, np.arange( self.n_act ), self.tau
 
     def reset( self ):
-        """
-            Initialize all variables  
-        """
-        self.traj_pos = None
-        self.traj_vel = None 
-
-        self.q0i, self.q0f, self.D = None, None, None
-
+        NotImplementedError( )

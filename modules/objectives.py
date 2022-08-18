@@ -89,7 +89,7 @@ class ObjectiveFunction:
 
 class DistFromTip2Target( ObjectiveFunction ):
 
-    def __init__( self, mj_model, mj_data, args, tol = 1, is_indicate_hit = False ):
+    def __init__( self, mj_model, mj_data, args, tol = 5, is_indicate_hit = False ):
         """
             Arguments
             ---------

@@ -256,7 +256,7 @@ if __name__ == "__main__":
 
         # For a 4DOF model
         elif my_sim.ctrl.n_act == 4:
-            mov_arrs  = np.array(  [-1.51650,      0,        0, 0.15708, 1.7279,       0,        0, 0.15708, 0.82778] )
+            mov_arrs  = np.array(  [-0.944, 1.047, 0.026, 1.363, 1.729, -1.049, 0.013, 1.424, 0.583] )
 
         n = my_sim.ctrl.n_act   
 
