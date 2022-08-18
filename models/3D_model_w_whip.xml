@@ -1,6 +1,6 @@
 <mujoco model="1_3D_model_w_N25">
   <compiler inertiafromgeom="auto" angle="radian" />
-   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="all">
+   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="predefined">
      <flag energy="enable" />
    </option>
    <asset>
@@ -213,7 +213,8 @@
          </body>
       </body>
       
-      <geom name="geom_target" type="sphere" pos="2.395 0 0" material="LimbColor" mass="0" size="0.03" />
+      <geom name="geom_target" type="sphere" pos="0.9975 0.9975 1.410" rgba="0 0.4470 0.7410 1" mass="0" size="0.03" />
+
       
 
    </worldbody>
@@ -222,6 +223,6 @@
       <motor joint="joint_shoulder_flex_ext" name="motor_shoulder_flex_ext" forcelimited="false" />
       <motor joint="joint_shoulder_add_abd"  name="motor_shoulder_add_abd"  forcelimited="false" />
       <motor joint="joint_shoulder_med_lat"  name="motor_shoulder_med_lat"  forcelimited="false" />
-      <motor joint="joint_elbow" 				name="motor_elbow" 						forcelimited="false" />
+      <motor joint="joint_elbow" 				name="motor_elbow" 				 forcelimited="false" />
    </actuator>
 </mujoco>
