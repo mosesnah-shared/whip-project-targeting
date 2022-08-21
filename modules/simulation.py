@@ -28,7 +28,6 @@ class Simulation:
         self.is_record_vid  = args.record_vid
         self.is_vid_off     = args.vid_off
 
-
         # Controller, objective function and the objective values' array
         self.ctrl     = None
         self.obj      = None
@@ -66,8 +65,6 @@ class Simulation:
         # Generate tmp directory before moving to results folder 
         self.tmp_dir  = C.TMP_DIR + datetime.now( ).strftime( "%Y%m%d_%H%M%S/" )
         os.mkdir( self.tmp_dir )  
-
-        if   self.is_save_data: self.save_file = open( self.tmp_dir + "sim_data.txt", "a+" )
         
         # This variable is for saving the video of the simulation
         self.frames = [ ]
@@ -96,6 +93,15 @@ class Simulation:
         # Forward the simulation to update the posture 
         self.mj_sim.forward( )
 
+    def save( self ):
+        """
+            Save the crucial information of the simulation as an array
+        """
+        dir_name = self.tmp_dir 
+        self.ctrl.save_data( dir_name )
+
+        # Saving other simulation details too
+        # [2022.08.20] [Moses C. Nah] FILL-IN 
 
     def reset( self ):
         """
@@ -222,16 +228,8 @@ class Simulation:
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val
 
             # Print the basic data
-            if self.n_steps % self.print_step == 0:
+            if self.n_steps % self.print_step == 0 and self.obj is not None :
                 if not self.args.run_opt : print_vars( { "time": self.t,  "obj" : self.obj_val }  )
-
-                if   self.args.save_data : 
-
-                    # The data arrays that we will save
-                    xpos_arr = [ self.mj_data.get_geom_xpos(  geom_name ) for geom_name in self.mj_model.geom_names ]
-                    xvel_arr = [ self.mj_data.get_geom_xvelp( geom_name ) for geom_name in self.mj_model.geom_names ]
-                    
-                    print_vars( { "time": self.t, "qpos" : self.mj_data.qpos[ : ], "xpos" : xpos_arr, "xvel" : xvel_arr, "Jmat" : self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : 4  ], "obj" : self.obj_val }, save_dir = self.save_file  )
 
             # Check if simulation is stable. 
             # We check the accelerations

@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     # Instance for the controller of the simulation
     if   args.ctrl_name == "joint_imp_ctrl": 
-        ctrl = JointImpedanceController( my_sim.mj_model, my_sim.mj_data, args, t_start = args.start_time )
+        ctrl = JointImpedanceController( my_sim, args, t_start = args.start_time )
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
@@ -227,7 +227,8 @@ if __name__ == "__main__":
         raise ValueError( f"[ERROR] Wrong controller name" )
 
     # Instance for the objective of the simulation 
-    obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
+    # obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
+    obj = None
 
     # Setup the controller and objective of the simulation
     my_sim.set_ctrl( ctrl )
@@ -260,12 +261,13 @@ if __name__ == "__main__":
 
         n = my_sim.ctrl.n_act   
 
-        mov_pars  = {  "q0i": mov_arrs[ :n ] ,   "q0f": mov_arrs[ n: 2*n ] ,  "D": mov_arrs[ -1 ]  } 
+        mov_pars  = {  "q0i": mov_arrs[ :n ] ,   "q0f": mov_arrs[ n: 2*n ] ,  "D": mov_arrs[ -1 ], "ti": args.start_time  } 
         init_cond = { "qpos": mov_arrs[ :n ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
 
-
-        obj_arr = run_single_trial( my_sim,  mov_pars = mov_pars, init_cond = init_cond )
+        obj_arr = run_single_trial( my_sim, mov_pars = mov_pars, init_cond = init_cond )
         print( f"The minimum value of this trial is { min(obj_arr):.5f}" )
+
+        if args.save_data : my_sim.save( )
 
         my_sim.close( )
 
