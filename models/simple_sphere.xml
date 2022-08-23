@@ -1,0 +1,37 @@
+models/simple_sphere.xml
+<mujoco model="SimpleSphere">
+  <!-- Setting 'inertiafromgeom' as 'auto' forces the MuJoCo compiler to infer the inertial attributes based on defined geom + mass value, and will only use the inertia values if it is specifically defined.
+       By setting 'inertiafromgeom' as 'auto', the xml compiler will use the explicitly defined inertial parameters for the upperArm and foreArm body,
+       and will infer the inertial parameters from geometry for the whip model -->
+  <compiler inertiafromgeom = "auto" angle = "radian"/>
+   <!-- (semi-) implicit Euler method was used for the integrator with time step of 0.1ms -->
+	<option timestep='0.0001' iterations='50' integrator='Euler' collision='all' gravity="0 0 0"/>
+  <asset>
+    <!-- Texture of the surrounding sky box
+         setting everything as white-ish color for better visualization -->
+     <texture type="skybox"
+              builtin="flat"
+              rgb1="1 1 1"
+              rgb2="1 1 1"
+              width="100"
+              height="100"/>
+  </asset>
+  <!-- <size njmax="8000" nconmax="4000"/> -->
+  <!-- =============== MAIN BODY STARTS ============= -->
+  <worldbody>
+    
+    <body name='sphere' pos='0 0 0' euler='0 0 0'>
+      <joint name='joint_x' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='1 0 0' />
+      <joint name='joint_y' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 1 0' />
+      <joint name='joint_z' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 0 1' />
+	    <inertial pos='0 0 0' mass='1' diaginertia='1 1 1'/>
+      <geom name='geom_sphere' type='sphere' pos='0 0 0' rgba = "1.0 1.0 0.0 1.0" size='0.4' mass='0'/>
+    </body>
+  </worldbody>
+  <!-- Independently controlled torque actuators were mounted co-axially with the shoulder and elbow joints. -->
+  <actuator>
+		  <motor joint='joint_x' name='motor_joint_x' forcelimited='false'/>
+		  <motor joint='joint_y' name='motor_joint_y' forcelimited='false'/>
+          <motor joint='joint_z' name='motor_joint_z' forcelimited='false'/>
+  </actuator>
+</mujoco>

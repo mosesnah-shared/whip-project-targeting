@@ -34,37 +34,17 @@ from utils        import *
 # Setting the numpy print options, useful for printing out data with consistent pattern.
 np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
                                                                                 
-# Argument Parsers
-parser = argparse.ArgumentParser( description = 'Parsing the arguments for running the simulation' )
-parser.add_argument( '--version'     , action = 'version'     , version = C.VERSION )
-
-parser.add_argument( '--start_time'  , action = 'store'       , type = float ,  default = 0.0,                   help = 'Start time of the controller'                                                      )
-parser.add_argument( '--run_time'    , action = 'store'       , type = float ,  default = 4.0,                   help = 'Total run time of the simulation'                                                  )
-parser.add_argument( '--model_name'  , action = 'store'       , type = str   ,  default = '2D_model' ,           help = 'Model name for the simulation'                                                     )
-parser.add_argument( '--ctrl_name'   , action = 'store'       , type = str   ,  default = 'joint_imp_ctrl',      help = 'Model name for the simulation'                                                     )
-parser.add_argument( '--cam_pos'     , action = 'store'       , type = str   ,                                   help = 'Get the whole list of the camera position'                                         )
-parser.add_argument( '--mov_pars'    , action = 'store'       , type = str   ,                                   help = 'Get the whole list of the movement parameters'                                     )
-parser.add_argument( '--target_type' , action = 'store'       , type = int   ,                                   help = 'Save data log of the simulation, with the specified frequency'                     )
-parser.add_argument( '--opt_type'    , action = 'store'       , type = str   ,  default = "nlopt" ,              help = '[Options] "nlopt", "ML_DDPG", "ML_TD3" '                                           )
-parser.add_argument( '--print_mode'  , action = 'store'       , type = str   ,  default = 'normal',              help = 'Print mode, choose between [short] [normal] [verbose]'                             )
-parser.add_argument( '--print_freq'  , action = 'store'       , type = int   ,  default = 60      ,              help = 'Specifying the frequency of printing the date.'                                    )
-parser.add_argument( '--vid_speed'   , action = 'store'       , type = float ,  default = 1.      ,              help = 'The speed of the video. It is the gain of the original speed of the video '        )
-
-parser.add_argument( '--record_vid'  , action = 'store_true'  ,                                                  help = 'Record video of the simulation,  with the specified speed'     )
-parser.add_argument( '--save_data'   , action = 'store_true'  ,                                                  help = 'Save the details of the simulation'                            )
-parser.add_argument( '--vid_off'     , action = 'store_true'  ,                                                  help = 'Turn off the video'                                            )
-parser.add_argument( '--run_opt'     , action = 'store_true'  ,                                                  help = 'Run optimization of the simulation'                            )
-
-# For jupyter compatibility.
-# [REF] https://stackoverflow.com/questions/48796169/how-to-fix-ipykernel-launcher-py-error-unrecognized-arguments-in-jupyter
+# Generate the parser, which is defined in utils.py
+parser = my_parser( )
 args, unknown = parser.parse_known_args( )
 
-def run_single_trial( mj_sim, mov_pars: dict, init_cond: dict ):
+def run_single_trial( mj_sim, mov_pars: np.ndarray, init_cond: dict ):
     """
         A function for running a single trial of simulation and return an array of the objective value of the simulation. 
     """
+    n = mj_sim.ctrl.n_act
 
-    mj_sim.ctrl.set_traj( mov_pars = mov_pars )    
+    mj_sim.ctrl.set_mov_pars( q0i = mov_pars[ :n ], q0f = mov_pars[ n:2*n], D = mov_pars[ -1 ], ti = mj_sim.args.start_time  )    
     mj_sim.initialize( qpos = init_cond[ "qpos" ], qvel = init_cond[ "qvel" ] )
 
     # Set the initial configuration of the whip downward    
@@ -216,9 +196,15 @@ if __name__ == "__main__":
     # Generate an instance of our Simulation
     my_sim = Simulation( args )
 
-    # Instance for the controller of the simulation
+    # Defining up the controller and objective
     if   args.ctrl_name == "joint_imp_ctrl": 
-        ctrl = JointImpedanceController( my_sim, args, t_start = args.start_time )
+
+        # Define the controller 
+        ctrl = JointImpedanceController( my_sim, args )
+
+        # Define the objective function
+        # obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
+        obj = None
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
@@ -226,16 +212,13 @@ if __name__ == "__main__":
     else:
         raise ValueError( f"[ERROR] Wrong controller name" )
 
-    # Instance for the objective of the simulation 
-    # obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
-    obj = None
-
     # Setup the controller and objective of the simulation
     my_sim.set_ctrl( ctrl )
     my_sim.set_obj( obj )
 
-    # Run Optimization
-    if args.run_opt:
+
+    # If you want to Run Optimization
+    if args.is_run_opt:
         if   args.opt_type == "nlopt":
             run_nlopt( my_sim, max_trial = 3 )    
 
@@ -251,23 +234,20 @@ if __name__ == "__main__":
     # If you want to run a single trial
     else:
 
-        # For a 2DOF model
-        if   my_sim.ctrl.n_act == 2:
+        if   ctrl.n_act == 2:
+            ctrl.set_impedance( Kq = C.K_2DOF, Bq =  0.1 * C.K_2DOF )
             mov_arrs  = np.array(  [ -1.3327 , 0.17022, 1.5708 , 0.13575, 0.8011  ] )
-
-        # For a 4DOF model
-        elif my_sim.ctrl.n_act == 4:
+                
+        elif ctrl.n_act == 4:
+            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )                   
             mov_arrs  = np.array(  [-0.944, 1.047, 0.026, 1.363, 1.729, -1.049, 0.013, 1.424, 0.583] )
 
-        n = my_sim.ctrl.n_act   
+        init_cond = { "qpos": mov_arrs[ : ctrl.n_act ] ,  "qvel": np.zeros( ctrl.n_act ) }
 
-        mov_pars  = {  "q0i": mov_arrs[ :n ] ,   "q0f": mov_arrs[ n: 2*n ] ,  "D": mov_arrs[ -1 ], "ti": args.start_time  } 
-        init_cond = { "qpos": mov_arrs[ :n ] ,  "qvel": np.zeros( my_sim.ctrl.n_act ) }
-
-        obj_arr = run_single_trial( my_sim, mov_pars = mov_pars, init_cond = init_cond )
+        obj_arr = run_single_trial( my_sim, mov_pars = mov_arrs, init_cond = init_cond )
         print( f"The minimum value of this trial is { min(obj_arr):.5f}" )
 
-        if args.save_data : my_sim.save( )
+        if args.save_data : ctrl.export_data( )
 
         my_sim.close( )
 
