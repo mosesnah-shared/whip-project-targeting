@@ -5,10 +5,10 @@ import numpy           as np
 import mujoco_py       as mjPy
 import moviepy.editor  as mpy
 
-
 from utils     import *
 from datetime  import datetime
 from constants import Constants as C
+
 
 epsilon = sys.float_info.epsilon
 
@@ -18,39 +18,34 @@ class Simulation:
         Running a single Whip Simulation
     """
 
-    def __init__( self, args  ):
+    def __init__( self, args ):
 
         # The whole argument passed to the main python file. 
         self.args = args
-
-        # Check if we save data, record video, or video turn off the render.  
-        self.is_save_data   = args.save_data
-        self.is_record_vid  = args.record_vid
-        self.is_vid_off     = args.vid_off
 
         # Controller, objective function and the objective values' array
         self.ctrl     = None
         self.obj      = None
         self.obj_arr  = None
 
-        # Save the model name.
+        # Save the model name
         self.model_name = args.model_name
 
         # Construct the basic mujoco attributes
         self.mj_model  = mjPy.load_model_from_path( C.MODEL_DIR + self.model_name + ".xml" ) 
         self.mj_sim    = mjPy.MjSim( self.mj_model )    
         self.mj_data   = self.mj_sim.data                                              
-        self.mj_viewer = mjPy.MjViewerBasic( self.mj_sim ) if not self.is_vid_off else None  
-
-        # Save the number of generalized coordinate of the system 
-        self.nq = len( self.mj_data.qpos ) 
+        self.mj_viewer = mjPy.MjViewerBasic( self.mj_sim ) if not self.args.is_vid_off else None  
         
         # We set the normal frames-per-second as 60. 
         self.fps = 60                   
 
-        # Time-step (dt), start time of the controller (ts) and total runtime (T) of the simulation
-        self.dt  = self.mj_model.opt.timestep   
-        self.ts  = self.args.start_time                                              
+        # The controller lists 
+        self.ctrls = [ ] 
+
+        # The current time, time-step (dt), start time of the controller (ts) and total runtime (T) of the simulation
+        self.t   = 0
+        self.dt  = self.mj_model.opt.timestep                               
         self.T   = self.args.run_time                     
 
         # If it is 60 frames per second, then for vid_speed = 2, we save 30 frames per second, hence 
@@ -60,7 +55,10 @@ class Simulation:
         self.vid_step   = round( ( 1. / self.dt ) / ( self.fps / self.args.vid_speed )  )
 
         # Step for printing the data. 
-        self.print_step = round( ( 1. / self.dt ) / self.args.print_freq  )                
+        self.print_step = round( ( 1. / self.dt ) / self.args.print_freq  )  
+
+        # Step for Saving the data. 
+        self.save_step  = round( ( 1. / self.dt ) / self.args.save_freq  )                        
 
         # Generate tmp directory before moving to results folder 
         self.tmp_dir  = C.TMP_DIR + datetime.now( ).strftime( "%Y%m%d_%H%M%S/" )
@@ -69,7 +67,7 @@ class Simulation:
         # This variable is for saving the video of the simulation
         self.frames = [ ]
 
-    def initialize( self, qpos: np.ndarray, qvel: np.ndarray ):
+    def init( self ):
         """
             Initialize the Simulation. 
             Note that the controller and objective function is NOT erased. 
@@ -82,13 +80,26 @@ class Simulation:
         # Number of steps of the simulation. 
         self.n_steps = 0  
 
-        # Save initial q_pos and q_vel 
-        self.init_qpos = qpos 
-        self.init_qvel = qvel 
+        # If the objective function exists, then init the array
+        if self.obj is not None: 
+            self.obj_arr = np.zeros( round( self.T / self.dt )  )
+
+    def set_init_posture( self, qpos: np.ndarray, qvel: np.ndarray ):
+        """
+            Initialize the Simulation. 
+            Note that the controller and objective function is NOT erased. 
+            Meaning, initialize must be called "AFTER" self.set_ctrl and self.set_obj
+        """
+
+        # Get the number of generalized coordinates
+        nq = len( self.mj_data.qpos[ : ] )
 
         # If the array is shorter than the actual self.nq in the model, just fill it with zero 
-        self.mj_data.qpos[ : ] = qpos[ : self.nq ] if len( qpos ) >= self.nq else np.concatenate( ( qpos, np.zeros( self.nq - len( qpos ) ) ) , axis = None )
-        self.mj_data.qvel[ : ] = qvel[ : self.nq ] if len( qvel ) >= self.nq else np.concatenate( ( qvel, np.zeros( self.nq - len( qvel ) ) ) , axis = None )
+        self.mj_data.qpos[ : ] = qpos[ : nq ] if len( qpos ) >= nq else np.concatenate( ( qpos, np.zeros( nq - len( qpos ) ) ) , axis = None )
+        self.mj_data.qvel[ : ] = qvel[ : nq ] if len( qvel ) >= nq else np.concatenate( ( qvel, np.zeros( nq - len( qvel ) ) ) , axis = None )
+
+        if "whip" in self.args.model_name: 
+            make_whip_downwards( self )
 
         # Forward the simulation to update the posture 
         self.mj_sim.forward( )
@@ -103,30 +114,31 @@ class Simulation:
         # Saving other simulation details too
         # [2022.08.20] [Moses C. Nah] FILL-IN 
 
+    def forward( self ):
+        """
+            Forward the simulation, A simple wrapper to call the simulation
+        """
+        self.mj_sim.forward( )
+
     def reset( self ):
         """
             Reset the simulation. 
         """
         self.mj_sim.reset( )
-        self.initialize( qpos = self.init_qpos, qvel = self.init_qvel )
-        if "whip" in self.args.model_name: make_whip_downwards( self )
-
-        self.obj_arr = np.zeros( round( self.T / self.dt )  )
+        self.init( )
         
     def close( self ):
         """ 
             Wrapping up the simulation
         """
         # If video should be recorded, write the video file. 
-        if self.is_record_vid and self.frames is not None:
+        if self.args.is_record_vid and self.frames is not None:
             clip = mpy.ImageSequenceClip( self.frames, fps = self.fps )
             clip.write_videofile( self.tmp_dir + "video.mp4", fps = self.fps, logger = None )
 
         # If video recorded/save data is true, then copy the model, main file and the arguments passed
-        if self.is_record_vid or self.is_save_data:
+        if self.args.is_record_vid or self.args.is_save_data:
             shutil.copyfile( C.MODEL_DIR + self.model_name + ".xml", self.tmp_dir + "model.xml" )
-            shutil.copyfile( "./main.py", self.tmp_dir + "main.py" )
-
 
         # Move the tmp folder to results if not empty, else just remove the tmp file. 
         shutil.move( self.tmp_dir, C.SAVE_DIR  ) if len( os.listdir( self.tmp_dir ) ) != 0 else os.rmdir( self.tmp_dir )
@@ -148,11 +160,11 @@ class Simulation:
         self.mj_viewer.cam.elevation       = tmp[ 4 ]
         self.mj_viewer.cam.azimuth         = tmp[ 5 ]
 
-    def set_ctrl( self, ctrl ):
+    def add_ctrl( self, ctrl ):
         """
             For detailed controller description, please check 'controllers.py' 
         """
-        self.ctrl = ctrl
+        self.ctrls.append( ctrl )
 
     def set_obj( self, obj ):
         """ 
@@ -191,7 +203,7 @@ class Simulation:
 
                 self.mj_viewer.render( )
 
-                if self.is_record_vid: 
+                if self.args.is_record_vid: 
                     # Read the raw rgb image
                     rgb_img = self.mj_viewer.read_pixels( self.mj_viewer.width, self.mj_viewer.height, depth = False )
 
@@ -225,11 +237,13 @@ class Simulation:
             # Set the objective function. This should be modified/ 
             if self.obj is not None: 
                 self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
-                self.obj_arr[ self.n_steps - 1 ] = self.obj_val
+                self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
 
             # Print the basic data
             if self.n_steps % self.print_step == 0 and self.obj is not None :
                 if not self.args.run_opt : print_vars( { "time": self.t,  "obj" : self.obj_val }  )
+
+            # Saving the details of
 
             # Check if simulation is stable. 
             # We check the accelerations
