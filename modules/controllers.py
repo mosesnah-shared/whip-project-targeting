@@ -396,3 +396,100 @@ class SphereControllerAdvanced( Controller ):
 
     def reset( self ):
         NotImplementedError( )
+
+
+
+class Excitator( Controller ):
+    """
+        Description:
+        ----------
+            Controller class for an Exciting a Whip
+
+    """
+    def __init__( self, mj_sim, args, name:str ):
+        super( ).__init__( mj_sim, args, name )
+
+        self.names_ctrl_pars = ( "A", "w", "ti" )
+
+        # The name of variables that will be saved 
+        self.names_data = ( "t", "x", "dx", "q", "dq", "pos" )
+
+        # Generate an empty lists names of parameters
+        self.init( )        
+
+    def set_mov_pars( self, A: float, w: float, ti:float ):
+
+        assert A > 0 and w > 0 and ti >= 0
+
+        self.A = A
+        self.w = w
+        self.ti = ti 
+
+    def input_calc( self, t ):
+
+        self.A, self.w = 0.1, 0.3                                                   # Setting the amplitude and width of the function profile
+
+        if t <= self.ti:
+            pos = 0
+
+        elif t >= self.ti and t <= self.ti + self.w:
+            pos = self.A * np.sin( np.pi / self.w * t )
+
+        else:
+            pos = 0
+
+        self.x  = [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] 
+        self.dx = [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] 
+
+        self.q  = np.copy( self.mj_data.qpos[ : ] )
+        self.dq  = np.copy( self.mj_data.qvel[ : ] )
+
+        self.pos = pos
+        
+
+        return np.array( [ 0 ] ), pos
+
+
+
+class Excitator_MJT( Controller ):
+    """
+        Description:
+        ----------
+            Controller class for an Exciting a Whip
+
+    """
+    def __init__( self, mj_sim, args, name:str ):
+        super( ).__init__( mj_sim, args, name )
+
+        self.names_ctrl_pars = ( "dpos", "D", "ti" )
+
+        # The name of variables that will be saved 
+        self.names_data = ( "t", "x", "dx", "q", "dq", "pos" )
+
+        # Generate an empty lists names of parameters
+        self.init( )        
+
+    def set_mov_pars( self, dpos: float, D:float, ti:float ):
+
+        assert dpos >= 0 and D >= 0 and ti >= 0 
+
+        self.dpos = dpos
+        self.D    = D
+        self.ti   = ti
+
+    def input_calc( self, t ):
+
+        self.t  = t
+
+        self.x  = [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] 
+        self.dx = [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] 
+
+        self.q  = np.copy( self.mj_data.qpos[ : ] )
+        self.dq  = np.copy( self.mj_data.qvel[ : ] )
+
+        self.pos, _ = min_jerk_traj( t, self.ti, self.ti + self.D, 0, self.dpos, self.D )       
+
+        return np.array( [ 0 ] ), self.pos
+
+if __name__ == "__main__":
+    pass
