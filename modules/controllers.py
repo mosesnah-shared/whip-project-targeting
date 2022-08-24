@@ -1,6 +1,6 @@
 import numpy    as np
 import scipy.io
-from   modules.utils     import quat2rot, quat2angx, rot2quat, get_model_prop, get_length, min_jerk_traj
+from   modules.utils     import quat2rot, quat2angx, rot2quat, get_model_prop, get_length, min_jerk_traj, skew_sym
 from   modules.MLmodule  import *
 
 
@@ -333,7 +333,66 @@ class SphereController( Controller ):
         return np.arange( self.n_act ), self.tau
 
     def reset( self ):
+        NotImplementedError( )
+
+class SphereControllerAdvanced( Controller ):
+
+    def __init__( self, mj_sim, args, name ): 
+                
+        super( ).__init__( mj_sim, args, name )
+
+        self.names_ctrl_pars = ( "K", "B" )
+
+        # The name of variables that will be saved 
+        self.names_data = ( "t", "q", "dq", "tau" )
+
+        # Generate an empty lists names of parameters
+        self.init( )        
+
+    def set_desired_orientation( self, R_des ):
         """
-            Initialize all variables  
+            The desired orientation in R matrix form 
         """
+        # Assert that o_des is a rotation matrix
+
+        self.R_des = R_des
+
+    def input_calc( self, t ):
+        """
+            Setting the desired orientation of the robot 
+        """
+
+        self.t = t
+
+        self.K = 10 * np.eye( 3 )
+        self.B = 0.3 * self.K
+
+        # Get the current angular position and velocity of the robot 
+        self.q  = np.copy( self.mj_data.qpos[ : ] )
+        self.dq = np.copy( self.mj_data.qvel[ : ] )
+
+        Jc = self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 )
+
+        # The w is simply Jc dq
+        w = Jc @ self.dq
+
+        # Get the Rotation matrix difference 
+        R_cur  = quat2rot( self.mj_data.get_body_xquat( "sphere" ) )
+        R_diff = R_cur.T @ self.R_des
+
+        Q_diff = rot2quat( R_diff )
+        eta = Q_diff[ 0 ]
+        eps_r = Q_diff[ 1: ]
+
+        E = eta * np.eye( 3 ) - skew_sym( eps_r )
+
+        m = 2 * E.T @ self.K @ eps_r 
+        m = self.R_des @ m - self.B @ w
+
+        self.tau = Jc.T @ m
+
+        # The  (1) index array          (2) It's value. 
+        return np.arange( self.n_act ), self.tau
+
+    def reset( self ):
         NotImplementedError( )

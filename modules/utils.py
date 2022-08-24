@@ -12,6 +12,21 @@ from   modules.constants import Constants as C
 # Define functions to be imported when used "import *"
 # __all__  = [ "my_parser", "min_jerk_traj", "str2float", "get_model_prop", "get_data_prop", "get_length", "make_whip_downwards", "quaternion2euler", "print_vars" ] 
 
+def skew_sym( w ):
+    assert len( w ) == 3
+
+    wtilde = np.zeros( ( 3, 3 ) )
+
+    wtilde[ 0, 1 ] = -w[ 2 ]
+    wtilde[ 0, 2 ] =  w[ 1 ]
+    wtilde[ 2, 1 ] = -w[ 0 ]
+
+    wtilde[ 1, 0 ] =  w[ 2 ]
+    wtilde[ 2, 0 ] = -w[ 1 ]
+    wtilde[ 1, 2 ] =  w[ 0 ]
+
+    return wtilde
+
 def quat2angx( q ):
 
     theta = 2 * np.arccos( q[ 0 ] )
