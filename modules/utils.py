@@ -1,13 +1,91 @@
 import re
 import sys
 import math
-import argparse
+
 import numpy as np
+
+from scipy.spatial.transform import Rotation as R
+
 
 from   modules.constants import Constants as C
 
 # Define functions to be imported when used "import *"
 # __all__  = [ "my_parser", "min_jerk_traj", "str2float", "get_model_prop", "get_data_prop", "get_length", "make_whip_downwards", "quaternion2euler", "print_vars" ] 
+
+def quat2angx( q ):
+
+    theta = 2 * np.arccos( q[ 0 ] )
+
+    axis = q[ 1: ]
+    axis = axis/ np.sqrt( np.sum( axis**2 ) )
+
+    return theta, axis
+
+
+def rot2quat( R: np.ndarray ):
+    # [REF] https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+    # [REF] From Johannes
+
+    assert len( R ) == 3 and len( R[ 0 ] ) == 3
+
+    q = np.zeros( 4 )
+
+    R00 = np.trace( R )
+    tmp = np.array( [ R00, R[ 0,0 ], R[ 1,1 ], R[ 2,2 ] ] )
+    k = np.argmax( tmp )
+
+    q[ k ] = 0.5 * np.sqrt( 1 + 2 * tmp[ k ] - R00 )
+
+    if k == 0:
+        q[ 1 ] = 0.25/q[ k ] * ( R[ 2, 1 ] - R[ 1, 2 ] )
+        q[ 2 ] = 0.25/q[ k ] * ( R[ 0, 2 ] - R[ 2, 0 ] )
+        q[ 3 ] = 0.25/q[ k ] * ( R[ 1, 0 ] - R[ 0, 1 ] )
+
+    elif k == 1:
+        q[ 0 ] = 0.25/q[ k ] * ( R[ 2, 1 ] - R[ 1, 2 ] )
+        q[ 2 ] = 0.25/q[ k ] * ( R[ 1, 0 ] + R[ 0, 1 ] )
+        q[ 3 ] = 0.25/q[ k ] * ( R[ 0, 2 ] + R[ 2, 0 ] )
+
+    elif k == 2:
+        q[ 0 ] = 0.25/q[ k ] * ( R[ 0, 2 ] - R[ 2, 0 ] )
+        q[ 2 ] = 0.25/q[ k ] * ( R[ 1, 0 ] + R[ 0, 1 ] )
+        q[ 3 ] = 0.25/q[ k ] * ( R[ 2, 1 ] + R[ 1, 2 ] )
+
+    elif k == 3:
+        q[ 0 ] = 0.25/q[ k ] * ( R[ 1, 0 ] - R[ 0, 1 ] )
+        q[ 1 ] = 0.25/q[ k ] * ( R[ 0, 2 ] + R[ 2, 0 ] )
+        q[ 2 ] = 0.25/q[ k ] * ( R[ 2, 1 ] + R[ 1, 2 ] )
+
+    if q[ 0 ] < 0 : q = -q
+
+    return q
+
+
+
+
+def quat2rot( quat: np.ndarray ):
+
+    # [REF] https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
+
+    assert len( quat ) == 4
+
+    q0, q1, q2 ,q3  = quat[:]    
+
+    R = np.zeros( ( 3, 3 ) )
+
+    R[ 0, 0 ] = q0 ** 2 + q1 ** 2 - q2 ** 2 - q3 ** 2
+    R[ 0, 1 ] = 2 * q1 * q2 - 2 * q0 * q3
+    R[ 0, 2 ] = 2 * q1 * q3 + 2 * q0 * q2
+
+    R[ 1, 0 ] = 2 * q1 * q2 + 2 * q0 * q3
+    R[ 1, 1 ] = q0 ** 2 - q1 ** 2 + q2 ** 2 - q3 ** 2
+    R[ 1, 2 ] = 2 * q2 * q3 - 2 * q0 * q1
+
+    R[ 2, 0 ] = 2 * q1 * q3 - 2 * q0 * q2
+    R[ 2, 1 ] = 2 * q2 * q3 + 2 * q0 * q1
+    R[ 2, 2 ] = q0 ** 2 - q1 ** 2 - q2 ** 2 + q3 ** 2
+
+    return R
 
 
 
@@ -44,8 +122,7 @@ def min_jerk_traj( t: float, ti: float, tf: float, pi: float, pf: float, D: floa
 
     return pos, vel
 
-
-def quaternion2euler( quat: np.ndarray ):                                         
+def quat2euler( quat: np.ndarray ):                                         
     """
         Description
         -----------
@@ -161,7 +238,7 @@ def make_whip_downwards( sim ):
     # site cannot be used since the "xquat" cannot be collected via "site". 
     assert "body_whip_node1" in sim.mj_model.body_names
 
-    _, pitch, roll = quaternion2euler( sim.mj_data.get_body_xquat(  "body_whip_node1" ) )
+    _, pitch, roll = quat2euler( sim.mj_data.get_body_xquat(  "body_whip_node1" ) )
 
     n_act = len( sim.mj_model.actuator_names )
 

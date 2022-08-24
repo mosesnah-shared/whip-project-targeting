@@ -43,6 +43,15 @@ class Simulation:
         # The controller lists 
         self.ctrls = [ ] 
 
+        # The basic info of the model
+        self.n_act = len( self.mj_model.actuator_names )
+
+        # The basic info of the model
+        self.nq = len( self.mj_model.joint_names )      
+
+        # The basic info of the model
+        self.n_geom = len( self.mj_model.geom_names )                
+
         # The current time, time-step (dt), start time of the controller (ts) and total runtime (T) of the simulation
         self.t   = 0
         self.dt  = self.mj_model.opt.timestep                               
@@ -67,7 +76,7 @@ class Simulation:
         # This variable is for saving the video of the simulation
         self.frames = [ ]
 
-    def init( self ):
+    def init( self, qpos: np.ndarray, qvel: np.ndarray ):
         """
             Initialize the Simulation. 
             Note that the controller and objective function is NOT erased. 
@@ -84,6 +93,8 @@ class Simulation:
         if self.obj is not None: 
             self.obj_arr = np.zeros( round( self.T / self.dt )  )
 
+        self.set_init_posture( qpos, qvel )
+
     def set_init_posture( self, qpos: np.ndarray, qvel: np.ndarray ):
         """
             Initialize the Simulation. 
@@ -92,27 +103,18 @@ class Simulation:
         """
 
         # Get the number of generalized coordinates
-        nq = len( self.mj_data.qpos[ : ] )
+        nq = self.nq
+
+        self.init_qpos = qpos
+        self.init_qvel = qvel
 
         # If the array is shorter than the actual self.nq in the model, just fill it with zero 
         self.mj_data.qpos[ : ] = qpos[ : nq ] if len( qpos ) >= nq else np.concatenate( ( qpos, np.zeros( nq - len( qpos ) ) ) , axis = None )
         self.mj_data.qvel[ : ] = qvel[ : nq ] if len( qvel ) >= nq else np.concatenate( ( qvel, np.zeros( nq - len( qvel ) ) ) , axis = None )
 
-        if "whip" in self.args.model_name: 
-            make_whip_downwards( self )
-
         # Forward the simulation to update the posture 
         self.mj_sim.forward( )
 
-    def save( self ):
-        """
-            Save the crucial information of the simulation as an array
-        """
-        dir_name = self.tmp_dir 
-        self.ctrl.save_data( dir_name )
-
-        # Saving other simulation details too
-        # [2022.08.20] [Moses C. Nah] FILL-IN 
 
     def forward( self ):
         """
@@ -126,11 +128,20 @@ class Simulation:
         """
         self.mj_sim.reset( )
         self.init( )
+        self.set_init_posture( qpos = self.init_qpos, qvel = self.init_qvel )
         
     def close( self ):
         """ 
             Wrapping up the simulation
         """
+        # If data should be saved, then iterating through the controller
+        if self.args.is_save_data:
+            for ctrl in self.ctrls:
+                ctrl.export_data( self.tmp_dir )
+
+        # Saving other simulation details too
+        # [2022.08.20] [Moses C. Nah] FILL-IN 
+
         # If video should be recorded, write the video file. 
         if self.args.is_record_vid and self.frames is not None:
             clip = mpy.ImageSequenceClip( self.frames, fps = self.fps )
@@ -159,34 +170,6 @@ class Simulation:
         self.mj_viewer.cam.distance        = tmp[ 3 ]
         self.mj_viewer.cam.elevation       = tmp[ 4 ]
         self.mj_viewer.cam.azimuth         = tmp[ 5 ]
-
-    def add_ctrl( self, ctrl ):
-        """
-            For detailed controller description, please check 'controllers.py' 
-        """
-        self.ctrls.append( ctrl )
-
-    def set_obj( self, obj ):
-        """ 
-            Adding objective function refer to 'objectives.py for details' 
-        """
-        self.obj = obj
-        
-        # In case if the objective function is defined, set an array of objective value. 
-        # The size of the array must be N = self.T / self.dt, the total number of time divided with the tiem step. 
-        self.obj_arr = np.zeros( round( self.T / self.dt )  )
-
-    def step( self ):
-        """
-            A wrapper function for our usage. 
-        """
-
-        # Update the step
-        self.mj_sim.step( )
-
-        # Update the number of steps and time
-        self.n_steps += 1
-        self.t = self.mj_data.time                               
 
     def run( self ):
         """ 
@@ -221,29 +204,36 @@ class Simulation:
                 # If SPACE BUTTON is pressed
                 if self.mj_viewer.is_paused:    continue
 
-            
-
             # [Calculate Input]
-            # input_ref: The data array that are aimed to be inputted (e.g., qpos, qvel, qctrl etc.)
-            # input_idx: The specific index of input_ref data array that should be inputted
-            # input:     The actual input value which is inputted to input_ref
-            if self.ctrl is not None: 
-                input_ref, input_idx, input = self.ctrl.input_calc( self.t )
-                input_ref[ input_idx ] = input
+            if self.ctrls is not None: 
+                # Generate an empty tau array 
+                tau = np.zeros( self.n_act )
+
+                for ctrl in self.ctrls:
+                    _, tau_tmp = ctrl.input_calc( self.t )
+                    tau += tau_tmp
+
+                    if self.args.is_save_data and self.n_steps % self.save_step == 0: 
+                        ctrl.save_data( )
+
+                self.mj_data.ctrl[ :self.n_act ] = tau
+
+
 
             # Run a single simulation 
             self.step( )
 
-            # Set the objective function. This should be modified/ 
+            # Set the objective function. This should be modified/
             if self.obj is not None: 
                 self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
 
-            # Print the basic data
-            if self.n_steps % self.print_step == 0 and self.obj is not None :
-                if not self.args.run_opt : print_vars( { "time": self.t,  "obj" : self.obj_val }  )
 
-            # Saving the details of
+            # Print the basic data
+            if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
+                print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
+                # 
+                print_vars( { "q" : self.mj_data.qpos[ : ] } )
 
             # Check if simulation is stable. 
             # We check the accelerations
@@ -258,3 +248,31 @@ class Simulation:
             If the acceleration exceeds some threshold value, then halting the simulation 
         """
         return True if max( abs( self.mj_data.qacc ) ) > 10 ** 6 else False
+
+    def add_ctrl( self, ctrl ):
+        """
+            For detailed controller description, please check 'controllers.py' 
+        """
+        self.ctrls.append( ctrl )
+
+    def set_obj( self, obj ):
+        """ 
+            Adding objective function refer to 'objectives.py for details' 
+        """
+        self.obj = obj
+        
+        # In case if the objective function is defined, set an array of objective value. 
+        # The size of the array must be N = self.T / self.dt, the total number of time divided with the tiem step. 
+        self.obj_arr = np.zeros( round( self.T / self.dt )  )
+
+    def step( self ):
+        """
+            A wrapper function for our usage. 
+        """
+
+        # Update the step
+        self.mj_sim.step( )
+
+        # Update the number of steps and time
+        self.n_steps += 1
+        self.t = self.mj_data.time                               

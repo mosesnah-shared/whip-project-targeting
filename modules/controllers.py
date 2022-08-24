@@ -1,8 +1,7 @@
 import numpy    as np
 import scipy.io
-from   modules.utils     import *
+from   modules.utils     import quat2rot, quat2angx, rot2quat, get_model_prop, get_length, min_jerk_traj
 from   modules.MLmodule  import *
-from   modules.constants import Constants as C
 
 
 class Controller:
@@ -12,12 +11,13 @@ class Controller:
             Parent class for the controllers
 
     """
-    def __init__( self, mj_sim, args ): 
+    def __init__( self, mj_sim, args, name ): 
 
         # Saving the reference of mujoco model and data for 
         self.mj_sim   = mj_sim
         self.mj_model = mj_sim.mj_model
         self.mj_data  = mj_sim.mj_data
+        self.name     = name
 
         # Saving the arguments passed via ArgumentParsers
         self.mj_args  = args        
@@ -37,68 +37,39 @@ class Controller:
         # Saving the name of the data as a string array for "save_data" method
         self.names_data = None
 
-        # Saving the size of the data that we will save for an array
-        # The input is either a scalar or a 2D, 3D tuple (e.g., (3,2) )
-        self.N_data = None        
-
-
-    def init_ctrl_pars( self ):
+    def init( self ):
         """
             Initialize an empty list of conroller parameters
         """
 
-        assert self.names_ctrl_pars is not None
-
-        [ setattr( self, n, [ ] ) for n in self.names_ctrl_pars  ]
-
-
-    def init_save_data( self ):
-        """
-            Initialize an multi-dimensional array for saving the data. 
-        """
-        # The number of samples required is simply as follows
-        Ns = int( self.mj_args.run_time * self.mj_args.print_freq ) + 1
-
-        # The number of names of data should match the length of N_data
-        assert len( self.names_data ) == len( self.N_data )
-
-        # The size of the array 
-        # Simply concatenate the tuple or scalar at N_data with Ns
-        N_data_size = [ ( Ns , ) + ( x if isinstance( x, tuple ) else ( x , ) ) for x in self.N_data ] 
-        [ setattr( self, name + "_arr", np.zeros( size ) ) for name, size in zip( self.names_data, N_data_size ) ]
-
-        # Set the pointer of the saved data
-        self.idx_data = 0
+        assert self.names_data      is not None
+        assert self.names_ctrl_pars is not None 
+        
+        # Generate an empty arrays with data and controller parameters 
+        [ setattr( self, name + "_arr", [ ] ) for name in self.names_data       ]
+        [ setattr( self,          name, [ ] ) for name in self.names_ctrl_pars  ]
 
     def save_data( self ):
         """
-            Update the saved data
+            Update the saved, which will be defined in method "input_calc"
         """
-
-        assert self.mj_args.is_save_data
-
+        
         for name in self.names_data:
-            tmp_attr = getattr( self, name + "_arr" )
-            tmp_attr[ self.idx_data, : ] = getattr( self, name )
-   
-        self.idx_data += 1
+            val = getattr( self, name )
+            getattr( self, name + "_arr" ).append( val )
+        
 
     def export_data( self, dir_name ):
         """
             Export the data as mat file
         """
-        file_name = dir_name + "/ctrl.mat"
+        file_name = dir_name + "/ctrl_" + self.name + ".mat"
         
-        # Packing up the arrays 
-        dict1 = { name + "_arr": getattr( self, name + "_arr" ) for name in self.names_data }
-
-        # Packing up the controller parameters 
-        dict2 = { name: getattr( self, name )          for name in self.names_ctrl_pars }
+        # Packing up the arrays as a dictionary
+        dict1 = { name + "_arr": getattr( self, name + "_arr" ) for name in self.names_data      }
+        dict2 = { name: getattr( self, name )                   for name in self.names_ctrl_pars }
         
-        # Merging the two dictionries 
-        dict1.update( dict2 )
-
-        scipy.io.savemat( file_name, dict1 )
+        scipy.io.savemat( file_name, { **dict1, **dict2 } )
 
     def input_calc( self, t ):
         """
@@ -115,9 +86,9 @@ class ImpedanceController( Controller ):
 
     """
 
-    def __init__( self, mj_sim, args ): 
+    def __init__( self, mj_sim, args, name ): 
 
-        super( ).__init__( mj_sim, args )
+        super( ).__init__( mj_sim, args, name )
 
         # There are crucial parameters which can be calculated from the given model. 
         # Hence, "parsing" the xml model file
@@ -195,25 +166,21 @@ class JointImpedanceController( ImpedanceController ):
 
     """
 
-    def __init__( self, mj_sim, mj_args ):
+    def __init__( self, mj_sim, mj_args, name ):
 
-        super( ).__init__( mj_sim, mj_args )
+        super( ).__init__( mj_sim, mj_args, name )
 
         # The name of the controller parameters 
         self.names_ctrl_pars = ( "Kq", "Bq", "q0i", "q0f", "D", "ti" )
 
-        # Generate an empty list with the corresponding controller parameters names
-        self.init_ctrl_pars( )
+        # The name of variables that will be saved 
+        self.names_data = ( "t", "tau", "q", "q0", "dq", "dq0", "Jp", "Jr"  )
+
+        # Generate an empty lists names of parameters
+        self.init( )
 
         # The number of submovements
         self.n_movs = 0 
-
-        # The name of variables that will be saved 
-        self.names_data = ( "t",      "tau",         "q",       "q0",     "dq",        "dq0",             "Jp",            "Jr"  )
-        self.N_data     = (   1, self.n_act,    self.nq, self.n_act,  self.nq,   self.n_act,  (3, self.n_act), (3, self.n_act)   )
-
-        # If save data is True, define the array for saving the data 
-        if self.mj_args.is_save_data: self.init_save_data( )
 
     def set_impedance( self, Kq: np.ndarray, Bq:np.ndarray ):
 
@@ -224,7 +191,7 @@ class JointImpedanceController( ImpedanceController ):
         self.Kq = Kq
         self.Bq = Bq 
 
-    def set_mov_pars( self, q0i : np.ndarray, q0f: np.ndarray, D:float, ti: float ):
+    def add_mov_pars( self, q0i : np.ndarray, q0f: np.ndarray, D:float, ti: float ):
 
         # Make sure the given input is (self.n_act x self.n_act )
         assert len( q0i ) == self.n_act and len( q0f ) == self.n_act
@@ -261,8 +228,8 @@ class JointImpedanceController( ImpedanceController ):
         self.t = t 
 
         # Get the current angular position and velocity of the robot arm only
-        self.q  = self.mj_data.qpos[ : self.n_act ]
-        self.dq = self.mj_data.qvel[ : self.n_act ]
+        self.q  = np.copy( self.mj_data.qpos[ : self.n_act ] )
+        self.dq = np.copy( self.mj_data.qvel[ : self.n_act ] )
  
         self.q0  = np.zeros( self.n_act )
         self.dq0 = np.zeros( self.n_act )
@@ -276,20 +243,16 @@ class JointImpedanceController( ImpedanceController ):
 
         tau_imp = self.Kq @ ( self.q0 - self.q ) + self.Bq @ ( self.dq0 - self.dq )
 
-        self.Jp = self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ]
-        self.Jr = self.mj_data.get_site_jacr( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ]
+        self.Jp = np.copy( self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
+        self.Jr = np.copy( self.mj_data.get_site_jacr( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
 
         tau_G = self.get_tau_G( )                     if is_gravity_comp else np.zeros( self.n_act ) 
         tau_n = np.random.normal( size = self.n_act ) if is_noise        else np.zeros( self.n_act ) 
 
         self.tau  = tau_imp + tau_G + tau_n
 
-        # Save the data if is_save_data Ture
-        if self.mj_args.is_save_data and self.mj_sim.n_steps % self.mj_sim.save_step == 0:  
-            self.save_data( )
-
-        # The  (1) object         (2) index array          (3) It's value. 
-        return self.mj_data.ctrl, np.arange( self.n_act ), self.tau
+        #     (1) index array       (3) The tau value
+        return  np.arange( self.n_act ), self.tau
 
                 
     def reset( self ):
@@ -297,9 +260,7 @@ class JointImpedanceController( ImpedanceController ):
             Initialize all ctrl variables  
         """
 
-        self.init_ctrl_pars( )
-        self.init_save_data( )
-
+        self.init( )
         self.n_mov = 0 
 
 class CartesianImpedanceController( ImpedanceController ):
@@ -314,42 +275,62 @@ class CartesianImpedanceController( ImpedanceController ):
         raise NotImplementedError( )
 
 
-class SphereController:
+class SphereController( Controller ):
 
-    def __init__( self, mj_sim, args ): 
-        # Saving the reference of mujoco model and data for 
-        self.mj_sim   = mj_sim.mj_sim
-        self.mj_model = mj_sim.mj_model
-        self.mj_data  = mj_sim.mj_data
-        # Saving the arguments passed via ArgumentParsers
-        self.mj_args  = args
+    def __init__( self, mj_sim, args, name ): 
+                
+        super( ).__init__( mj_sim, args, name )
 
-    def set_initial_orientation( self, q_init: np.ndarray ):
-        """
-            Set random initial orientation.
-        """
-        assert len( q_init ) == 3
-        self.mj_data.qpos[ : ] = q_init[ : ]
-        self.mj_sim.mj_sim.forward( )
+        self.names_ctrl_pars = ( "k", "b" )
 
-    def set_desired_orientation( self, o_des ):
+        # The name of variables that will be saved 
+        self.names_data = ( "t", "q", "dq", "tau" )
+
+        # Generate an empty lists names of parameters
+        self.init( )        
+
+    def set_desired_orientation( self, R_des ):
         """
             The desired orientation in R matrix form 
         """
-        # Assert 
-        self.o_des = o_des
+        # Assert that o_des is a rotation matrix
 
-    def input_calc( self ):
+        self.R_des = R_des
+
+    def input_calc( self, t ):
         """
             Setting the desired orientation of the robot 
         """
+
+        self.t = t
+
+        k = 10
+        b = 2
+
         # Get the current angular position and velocity of the robot 
-        q  = self.mj_data.qpos[ : ]       
-        dq = self.mj_data.qvel[ : ]
-        # 
- 
-        # The  (1) object         (2) index array          (3) It's value. 
-        return self.mj_data.ctrl, np.arange( self.n_act ), np.zeros( 3 )
+        self.q  = np.copy( self.mj_data.qpos[ : ] )
+        self.dq = np.copy( self.mj_data.qvel[ : ] )
+
+        Jc = self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 )
+
+        # The w is simply Jc dq
+        w = Jc @ self.dq
+
+        # Get the Rotation matrix difference 
+        R_cur  = quat2rot( self.mj_data.get_body_xquat( "sphere" ) )
+        R_diff = R_cur.T @ self.R_des
+
+        # Get the axis of rotation
+        theta, axis = quat2angx( rot2quat( R_diff ) )
+
+        axis_world = R_cur @ axis 
+
+        m = axis_world * k * theta - b * w
+
+        self.tau = Jc.T @ m
+
+        # The  (1) index array          (2) It's value. 
+        return np.arange( self.n_act ), self.tau
 
     def reset( self ):
         """
