@@ -8,7 +8,7 @@ import numpy      as np
 sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation   import Simulation
-from controllers  import SphereController
+from controllers  import SphereController, SphereControllerAdvanced
 from constants    import my_parser
 from constants    import Constants  as C
 from utils        import *
@@ -28,10 +28,14 @@ if __name__ == "__main__":
     # Generate an instance of our Simulation
     my_sim = Simulation( args )
 
-    ctrl = SphereController( my_sim, args, "example_sphere" )
+    # For simple sphere controller
+    # ctrl = SphereController( my_sim, args, "example_sphere" )
+
+    # For advanced sphere controller    
+    ctrl = SphereControllerAdvanced( my_sim, args, "advaned_sphere" )
 
     # Define the parameters of the sphere controller.
-    my_sim.init( qpos = [ .0, .3, 0 ], qvel = np.zeros( 3 ))
+    my_sim.init( qpos = [ .5, .7, 1. ], qvel = np.zeros( 3 ))
 
     ctrl.set_desired_orientation( np.eye( 3 ) )
     my_sim.add_ctrl( ctrl )
