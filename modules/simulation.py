@@ -232,14 +232,7 @@ class Simulation:
             # Print the basic data
             if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
                 print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
-
-            tmp = np.zeros( 6 )
-            tmp[ 0 : 3 ] = self.mj_viewer.cam.lookat[ 0 : 3 ] 
-            tmp[ 3 ] = self.mj_viewer.cam.distance        
-            tmp[ 4 ] = self.mj_viewer.cam.elevation       
-            tmp[ 5 ] = self.mj_viewer.cam.azimuth         
-            
-            print( tmp )
+                print_vars( { "q": self.mj_data.qpos[ : ] } )
 
 
             # Check if simulation is stable. 

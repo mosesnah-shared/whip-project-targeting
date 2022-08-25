@@ -23,8 +23,8 @@
       <joint name='joint_x' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='1 0 0' />
       <joint name='joint_y' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 1 0' />
       <joint name='joint_z' ref='0' type='hinge' stiffness='0' pos='0 0 0' axis='0 0 1' />
-	    <inertial pos='0 0 0' mass='1' diaginertia='1 1 1'/>
-      <geom name='geom_sphere' type='sphere' pos='0 0 0' rgba = "1.0 1.0 0.0 1.0" size='0.4' mass='0'/>
+	    <!-- <inertial pos='0 0 0' mass='1' diaginertia='1 1 1'/> -->
+      <geom name='geom_sphere' type='sphere' pos='0 0 0' rgba = "1.0 1.0 0.0 1.0" size='0.4' mass='1'/>
     </body>
   </worldbody>
 
