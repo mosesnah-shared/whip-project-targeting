@@ -30,8 +30,8 @@ if __name__ == "__main__":
     # ctrl = SphereController( my_sim, args, "example_sphere" )
 
     # For advanced sphere controller    
-    # ctrl = Excitator( my_sim, args, "excite_sine" )
-    ctrl = Excitator_MJT( my_sim, args, "excite_MJT" )
+    ctrl = Excitator( my_sim, args, "excite_sine" )
+    # ctrl = Excitator_MJT( my_sim, args, "excite_MJT" )
 
     # Define the parameters of the sphere controller.
     my_sim.init( qpos = [ 0. ], qvel = [ 0. ])

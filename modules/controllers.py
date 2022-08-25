@@ -281,10 +281,10 @@ class SphereController( Controller ):
                 
         super( ).__init__( mj_sim, args, name )
 
-        self.names_ctrl_pars = ( "k", "b" )
+        self.names_ctrl_pars = ( "k", "b", "R_des" )
 
         # The name of variables that will be saved 
-        self.names_data = ( "t", "q", "dq", "tau" )
+        self.names_data = ( "t", "q", "dq", "tau", "R", "theta" )
 
         # Generate an empty lists names of parameters
         self.init( )        
@@ -318,10 +318,13 @@ class SphereController( Controller ):
 
         # Get the Rotation matrix difference 
         R_cur  = quat2rot( self.mj_data.get_body_xquat( "sphere" ) )
+        self.R = R_cur
         R_diff = R_cur.T @ self.R_des
 
         # Get the axis of rotation
         theta, axis = quat2angx( rot2quat( R_diff ) )
+
+        self.theta = theta
 
         axis_world = R_cur @ axis 
 
