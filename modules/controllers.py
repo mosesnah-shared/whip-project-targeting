@@ -93,7 +93,6 @@ class ImpedanceController( Controller ):
         # There are crucial parameters which can be calculated from the given model. 
         # Hence, "parsing" the xml model file
         # The model name should be within the following list 
-        assert args.model_name in [ "2D_model", "2D_model_w_whip", "3D_model", "3D_model_w_whip" ]
 
         # Parsing the model to get the mass, inertia, length and the COM position.
         self.parse_model( )
@@ -261,7 +260,7 @@ class JointImpedanceController( ImpedanceController ):
         """
 
         self.init( )
-        self.n_mov = 0 
+        self.n_movs = 0 
 
 class CartesianImpedanceController( ImpedanceController ):
 

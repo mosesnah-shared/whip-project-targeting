@@ -91,7 +91,7 @@ class Simulation:
 
         # If the objective function exists, then init the array
         if self.obj is not None: 
-            self.obj_arr = np.zeros( round( self.T / self.dt )  )
+            self.obj_arr = np.zeros( round( self.T / self.dt ) + 1 )
 
         self.set_init_posture( qpos, qvel )
 
@@ -127,8 +127,18 @@ class Simulation:
             Reset the simulation. 
         """
         self.mj_sim.reset( )
+
+        if self.ctrls is not None:
+            for ctrl in self.ctrls: ctrl.reset( )
+
+    def rewind( self ):
+        """
+            rewind a single simulation. 
+            This is for a SINGLE simulation
+        """
+        self.mj_sim.reset( )
         self.init( )
-        self.set_init_posture( qpos = self.init_qpos, qvel = self.init_qvel )
+        self.set_init_posture( qpos = self.init_qpos, qvel = self.init_qvel )        
         
     def close( self ):
         """ 
@@ -179,7 +189,7 @@ class Simulation:
         if self.args.cam_pos is not None: self.set_camera_pos( ) 
 
         # The main loop of the simulation 
-        while self.t <= self.T:
+        while self.t <= self.T + 1e-7:
 
             # Render the simulation if mj_viewer exists        
             if self.mj_viewer is not None and self.n_steps % self.vid_step == 0:
@@ -198,7 +208,7 @@ class Simulation:
 
                 # If reset button (BACKSPACE) is pressed
                 if self.mj_viewer.is_reset:
-                    self.reset( )
+                    self.rewind( )
                     self.mj_viewer.is_reset = False
                 
                 # If SPACE BUTTON is pressed
@@ -218,8 +228,6 @@ class Simulation:
 
                 self.mj_data.ctrl[ :self.n_act ] = tau
 
-
-
             # Run a single simulation 
             self.step( )
 
@@ -228,19 +236,16 @@ class Simulation:
                 self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
 
-
             # Print the basic data
             if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
                 print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
-                print_vars( {  "q": self.mj_data.qpos[ : ] } )
+                print_vars( {    "q": self.mj_data.qpos[ : ] } )
     
-
             # Check if simulation is stable. 
             # We check the accelerations
             if  self.is_sim_unstable( ):     
                 print( '[UNSTABLE SIMULATION], HALTED AT {0:f} for a {1:f}-second long simulation'.format( self.t, self.T )  )                                 
                 return "unstable"
-
 
     def is_sim_unstable( self ):
         """ 
