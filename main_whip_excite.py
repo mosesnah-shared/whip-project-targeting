@@ -36,9 +36,8 @@ if __name__ == "__main__":
     # Define the parameters of the sphere controller.
     my_sim.init( qpos = [ 0. ], qvel = [ 0. ])
 
-    # ctrl.set_mov_pars( A = 0.1, w = 0.3, ti = args.start_time )
-
-    ctrl.set_mov_pars( dpos = 0.1, D = 0.1, ti = args.start_time )
+    # ctrl.set_mov_pars( A = 0.025, w = 0.3, ti = args.start_time )
+    ctrl.set_mov_pars( dpos = 0.1, D = 0.6, ti = args.start_time )
     my_sim.add_ctrl( ctrl )
 
     my_sim.run( )

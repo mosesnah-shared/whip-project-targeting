@@ -14,7 +14,6 @@
 
 import os
 import sys
-import argparse
 
 import nlopt
 import numpy             as np
@@ -27,6 +26,7 @@ sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 from simulation   import Simulation
 from controllers  import JointImpedanceController
 from objectives   import DistFromTip2Target
+from constants    import my_parser
 from constants    import Constants  as C
 from MLmodule     import *
 from utils        import *
