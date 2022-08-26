@@ -29,10 +29,21 @@ def skew_sym( w ):
 
 def quat2angx( q ):
 
+    assert q[ 0 ] <= 1
+
     theta = 2 * np.arccos( q[ 0 ] )
 
     axis = q[ 1: ]
-    axis = axis/ np.sqrt( np.sum( axis**2 ) )
+
+    # If the axis values are super small, then 
+    tmp = np.sum( axis**2 )
+
+    if tmp != 0:
+        axis = axis/ np.sqrt( tmp )
+
+    else:
+        axis = np.array( [ 1., 0., 0. ] )
+        theta = 0 
 
     return theta, axis
 

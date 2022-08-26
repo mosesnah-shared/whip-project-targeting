@@ -304,8 +304,8 @@ class SphereController( Controller ):
 
         self.t = t
 
-        k = 10
-        b = 2
+        k = 2.0
+        b = 0.5
 
         # Get the current angular position and velocity of the robot 
         self.q  = np.copy( self.mj_data.qpos[ : ] )
@@ -328,9 +328,12 @@ class SphereController( Controller ):
 
         axis_world = R_cur @ axis 
 
+
         m = axis_world * k * theta - b * w
 
         self.tau = Jc.T @ m
+
+        # print( m )
 
         # The  (1) index array          (2) It's value. 
         return np.arange( self.n_act ), self.tau
@@ -420,7 +423,7 @@ class Excitator( Controller ):
         # Generate an empty lists names of parameters
         self.init( )        
 
-    def set_mov_pars( self, A: float, w: float, ti:float ):
+    def set_mov_pars( self, A:float, w:float, ti:float ):
 
         assert A > 0 and w > 0 and ti >= 0
 
@@ -430,22 +433,22 @@ class Excitator( Controller ):
 
     def input_calc( self, t ):
 
-        self.A, self.w = 0.1, 0.3                                                   # Setting the amplitude and width of the function profile
+        self.t = t
 
         if t <= self.ti:
             pos = 0
 
-        elif t >= self.ti and t <= self.ti + self.w:
-            pos = self.A * np.sin( np.pi / self.w * t )
-
+        elif t >= self.ti and t <= self.ti + 2 * self.w:
+            pos = self.A * ( 1 - np.cos( np.pi / self.w * ( t - self.ti ) ) )
+            
         else:
             pos = 0
 
-        self.x  = [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] 
-        self.dx = [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] 
-
+        self.x  = np.copy( [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] )
+        self.dx = np.copy( [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] )
+        
         self.q  = np.copy( self.mj_data.qpos[ : ] )
-        self.dq  = np.copy( self.mj_data.qvel[ : ] )
+        self.dq = np.copy( self.mj_data.qvel[ : ] )
 
         self.pos = pos
         
@@ -484,8 +487,8 @@ class Excitator_MJT( Controller ):
 
         self.t  = t
 
-        self.x  = [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] 
-        self.dx = [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] 
+        self.x  = np.copy( [ self.mj_data.get_geom_xpos(  name ) for name in self.mj_model.geom_names ] )
+        self.dx = np.copy( [ self.mj_data.get_geom_xvelp( name ) for name in self.mj_model.geom_names ] )
 
         self.q  = np.copy( self.mj_data.qpos[ : ] )
         self.dq  = np.copy( self.mj_data.qvel[ : ] )
