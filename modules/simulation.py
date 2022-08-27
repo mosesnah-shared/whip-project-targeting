@@ -91,7 +91,7 @@ class Simulation:
 
         # If the objective function exists, then init the array
         if self.obj is not None: 
-            self.obj_arr = np.zeros( round( self.T / self.dt ) + 1 )
+            self.obj_arr = np.zeros( 2 ** 20 )
 
         self.set_init_posture( qpos, qvel )
 

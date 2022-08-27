@@ -39,7 +39,6 @@ args, unknown = parser.parse_known_args( )
 
 args.model_name = "3D_model_w_whip_T" + str( args.target_idx )
 
-
 # Generate an instance of our Simulation
 my_sim = Simulation( args )
 
@@ -47,7 +46,8 @@ my_sim = Simulation( args )
 my_ctrl = JointImpedanceController( my_sim, args, name = "joint_imp_1" )
 
 # Define the objective function
-obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
+tol = 5 if args.target_idx in [ 1, 2, 3 ] else 1 
+obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args, tol  )
 # obj = None
 
 # Setup the controller and objective of the simulation
@@ -56,10 +56,8 @@ my_sim.set_obj( obj )
 
 # iteration, optimal value and input parameters
 iter_arr = []
-opt_val_arr =  []
+opt_val_arr = []
 input_par_arr = []
-
-
 
 if __name__ == "__main__":
 
@@ -92,6 +90,8 @@ if __name__ == "__main__":
         # Reset the simulation 
         my_sim.reset( )
 
+        my_sim.T = pars[ -1 ] * 2
+
         my_ctrl.add_mov_pars( q0i = pars[ :n ], q0f = pars[ n: 2*n ], D = pars[ -1 ], ti = args.start_time  )    
         my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.05 * C.K_dict[ n ] )
         my_sim.init( qpos = pars[ :n ], qvel = np.zeros( n ) )
@@ -102,7 +102,7 @@ if __name__ == "__main__":
         # Run the simulation
         my_sim.run( )
 
-        print_vars( { "Iteration": opt.get_numevals( ) + 1, "mov_pars": pars[ : ], "opt_vals" : min( my_sim.obj_arr ) } )
+        print_vars( { "Iteration": opt.get_numevals( ) + 1, "mov_pars": pars[ : ], "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
 
         iter_arr.append( opt.get_numevals( ) + 1 )
         input_par_arr.append( np.copy( pars[ : ] ) )
