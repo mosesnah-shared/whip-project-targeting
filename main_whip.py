@@ -56,15 +56,15 @@ if __name__ == "__main__":
 
         elif ctrl.n_act == 4:
             ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )                   
-            mov_arrs  = np.array(  [-0.944, 1.047, 0.026, 1.363, 1.729, -1.049, 0.013, 1.424, 0.583] )
+            mov_arrs  = np.array(  [-0.94248, 0.     , 0.     , 1.41372, 1.72788, 0.     , 0.     , 1.41372, 1.31667] )
 
             n = my_sim.n_act
             ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )                
             # ctrl.add_mov_pars( q0i = np.zeros( n ) , q0f = np.array( [ -1.45, 0.3, 0.2, 0.4 ]), D = mov_arrs[ -1 ], ti = args.start_time + 0.4  )                
 
         # Define the objective function
-        # obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args )
-        obj = None
+        obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args, tol = 5 )
+        # obj = None
 
     elif args.ctrl_name == "task_imp_ctrl":
         pass
