@@ -283,7 +283,7 @@ class SphereController( Controller ):
         self.names_ctrl_pars = ( "k", "b", "R_des" )
 
         # The name of variables that will be saved 
-        self.names_data = ( "t", "q", "dq", "tau", "R", "theta" )
+        self.names_data = ( "t", "q", "dq", "tau", "R", "theta", "Jr", "quat_cur", "R_cur"  )
 
         # Generate an empty lists names of parameters
         self.init( )        
@@ -303,42 +303,41 @@ class SphereController( Controller ):
 
         self.t = t
 
-        k = 2.0
-        b = 0.5
+        self.k = 3.0
+        self.b = 0.2
 
         # Get the current angular position and velocity of the robot 
         self.q  = np.copy( self.mj_data.qpos[ : ] )
         self.dq = np.copy( self.mj_data.qvel[ : ] )
 
-        Jc = self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 )
+        self.Jr = np.copy( self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 ) )
 
-        # The w is simply Jc dq
-        w = Jc @ self.dq
+        # The w is simply Jr dq
+        w = self.Jr @ self.dq
 
         # Get the Rotation matrix difference 
-        R_cur  = quat2rot( self.mj_data.get_body_xquat( "sphere" ) )
-        self.R = R_cur
-        R_diff = R_cur.T @ self.R_des
+        self.quat_cur = np.copy( self.mj_data.get_body_xquat( "sphere" ) )
+        self.R_cur  = quat2rot( self.quat_cur )
+        self.R = self.R_cur
+        R_diff = self.R_cur.T @ self.R_des
 
         # Get the axis of rotation
         theta, axis = quat2angx( rot2quat( R_diff ) )
 
         self.theta = theta
 
-        axis_world = R_cur @ axis 
+        axis_world = self.R_cur @ axis 
+        m = axis_world * self.k * theta - self.b * w
+        self.tau = self.Jr.T @ m
 
-
-        m = axis_world * k * theta - b * w
-
-        self.tau = Jc.T @ m
-
-        # print( m )
 
         # The  (1) index array          (2) It's value. 
         return np.arange( self.n_act ), self.tau
 
     def reset( self ):
         NotImplementedError( )
+
+
 
 class SphereControllerAdvanced( Controller ):
 
@@ -372,6 +371,8 @@ class SphereControllerAdvanced( Controller ):
         self.K = 10 * np.eye( 3 )
         self.B = 0.3 * self.K
 
+        # self.K[ 0,0 ] = 0 
+
         # Get the current angular position and velocity of the robot 
         self.q  = np.copy( self.mj_data.qpos[ : ] )
         self.dq = np.copy( self.mj_data.qvel[ : ] )
@@ -386,13 +387,19 @@ class SphereControllerAdvanced( Controller ):
         R_diff = R_cur.T @ self.R_des
 
         Q_diff = rot2quat( R_diff )
+
+        # With respect to the current frame
         eta = Q_diff[ 0 ]
         eps_r = Q_diff[ 1: ]
 
+        print( t, self.q )
+
         E = eta * np.eye( 3 ) - skew_sym( eps_r )
 
-        m = 2 * E.T @ self.K @ eps_r 
-        m = self.R_des @ m - self.B @ w
+        Kprime = 2 * E.T @ self.K
+        m_cur = Kprime @ eps_r
+
+        m = R_cur @ m_cur - self.B @ w
 
         self.tau = Jc.T @ m
 

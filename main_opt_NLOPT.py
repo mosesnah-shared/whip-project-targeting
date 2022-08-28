@@ -90,7 +90,6 @@ if __name__ == "__main__":
         # Reset the simulation 
         my_sim.reset( )
 
-        my_sim.T = pars[ -1 ] * 2
 
         my_ctrl.add_mov_pars( q0i = pars[ :n ], q0f = pars[ n: 2*n ], D = pars[ -1 ], ti = args.start_time  )    
         my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.05 * C.K_dict[ n ] )

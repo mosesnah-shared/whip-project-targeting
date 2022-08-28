@@ -29,19 +29,20 @@ if __name__ == "__main__":
     my_sim = Simulation( args )
 
     # For simple sphere controller
-    ctrl = SphereController( my_sim, args, "example_sphere" )
+    # ctrl = SphereController( my_sim, args, "example_sphere" )
 
     # For advanced sphere controller    
-    # ctrl = SphereControllerAdvanced( my_sim, args, "advaned_sphere" )
+    ctrl = SphereControllerAdvanced( my_sim, args, "advanced_sphere" )
 
     # Define the parameters of the sphere controller.
-    # my_sim.init( qpos = [ .5, .7, 1. ], qvel = np.zeros( 3 ))
-    my_sim.init( qpos = [ .5, .0, .0 ], qvel = np.zeros( 3 ))
+    my_sim.init( qpos = [ .5, .7, .3 ], qvel = np.zeros( 3 ))
+    # my_sim.init( qpos = [ .5, .0, .0 ], qvel = np.zeros( 3 ))
 
-    Rdes = np.eye( 3 )
-    # Rdes =  np.array( [ [ 0.9127, -0.2823, -0.2955 ],
-    #                     [ 0.3821,  0.8459,  0.3720 ],
-    #                     [ 0.1450, -0.4525,  0.8799 ] ] )
+    # Rdes = np.eye( 3 )
+    Rdes =  np.array( [ [ 0.5403 ,-0.8415, 0.0 ],
+                        [ 0.8415, 0.5403 ,  0.0 ],
+                        [ 0.0, 0.0,  1.0000 ] ] )
+
 
     ctrl.set_desired_orientation( Rdes )
     my_sim.add_ctrl( ctrl )
