@@ -11,7 +11,7 @@ from simulation   import Simulation
 from controllers  import SphereController, SphereControllerAdvanced
 from constants    import my_parser
 from constants    import Constants  as C
-from utils        import *
+from utils        import rotx, roty, rotz
 
 # Setting the numpy print options, useful for printing out data with consistent pattern.
 np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
@@ -35,13 +35,12 @@ if __name__ == "__main__":
     ctrl = SphereControllerAdvanced( my_sim, args, "advanced_sphere" )
 
     # Define the parameters of the sphere controller.
-    my_sim.init( qpos = [ .5, .7, .3 ], qvel = np.zeros( 3 ))
+    my_sim.init( qpos = [ -.5, .7, 1.3 ], qvel = np.zeros( 3 ))
     # my_sim.init( qpos = [ .5, .0, .0 ], qvel = np.zeros( 3 ))
 
     # Rdes = np.eye( 3 )
-    Rdes =  np.array( [ [ 0.5403 ,-0.8415, 0.0 ],
-                        [ 0.8415, 0.5403 ,  0.0 ],
-                        [ 0.0, 0.0,  1.0000 ] ] )
+
+    Rdes = rotx( 1. ) @ roty( 0.4 ) @ rotz( -1. )
 
 
     ctrl.set_desired_orientation( Rdes )
