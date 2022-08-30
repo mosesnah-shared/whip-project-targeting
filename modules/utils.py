@@ -48,6 +48,29 @@ def quat2angx( q ):
     return theta, axis
 
 
+def rotx( q ):
+    Rx = np.array( [ [ 1,            0,            0 ], 
+                     [ 0,  np.cos( q ), -np.sin( q ) ],
+                     [ 0,  np.sin( q ),  np.cos( q ) ]  ] )
+
+    return Rx
+
+def roty( q ):
+    Ry = np.array( [ [  np.cos( q ),  0,  np.sin( q ) ], 
+                     [            0,  1,            0 ],
+                     [ -np.sin( q ),  0,  np.cos( q ) ]  ] )
+
+    return Ry
+
+def rotz( q ):
+    Rz = np.array( [ [ np.cos( q ), -np.sin( q ), 0 ], 
+                     [ np.sin( q ),  np.cos( q ), 0 ],
+                     [           0,            0, 1 ]  ] )
+
+    return Rz
+
+
+
 def rot2quat( R: np.ndarray ):
     # [REF] https://danceswithcode.net/engineeringnotes/quaternions/quaternions.html
     # [REF] From Johannes

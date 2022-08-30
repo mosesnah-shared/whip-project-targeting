@@ -42,6 +42,7 @@ if __name__ == "__main__":
     # The model is generated since the model name is passed via arguments
     my_sim = Simulation( args )
 
+
     # Defining up the controller and objective
     if   args.ctrl_name == "joint_imp_ctrl": 
 
@@ -59,14 +60,25 @@ if __name__ == "__main__":
         elif ctrl.n_act == 4:
             ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )              
 
-            if args.target_idx == 4:     
-                mov_arrs  = np.array(  [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
+            if args.target_idx == 1:     
+                mov_arrs  = np.array(  [-1.3540, 0.0020,  -0.2817, 1.4156, 1.7279, -0.0817, -0.0163, 1.3788, 0.9500] )
+    
+            elif args.target_idx == 2:
+                mov_arrs  = np.array(  [-0.9425, 0.0980,  -1.0492, 1.3641, 1.7279, -1.0492, -0.0184, 0.4712, 0.9500] )
 
+            elif args.target_idx == 3:
+                mov_arrs  = np.array(  [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833] )
+
+            elif args.target_idx == 4:     
+                mov_arrs  = np.array(  [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
+    
             elif args.target_idx == 5:
                 mov_arrs  = np.array(  [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
 
             elif args.target_idx == 6:
-                mov_arrs  = np.array(  [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )                
+                mov_arrs  = np.array(  [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )
+            else:
+                raise NotImplementedError( )                
 
             n = my_sim.n_act
             ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )                
@@ -95,25 +107,38 @@ if __name__ == "__main__":
 
     L_arrs = { "init":[] , "final":[] , "D":[] }
     my_mov_arrs = { "init":[] , "final":[] , "D":[] }
-    tmp_str =  [ "init", "final", "D" ]
+    # tmp_str =  [ "init", "final", "D" ]
+    tmp_str =  [ "D" ]
+
+    iter = 0 
 
     for name in tmp_str:
-        for i in range( 200 ):
-
+        for noise in np.arange( -0.2, +0.2,  0.002 ):
+  
             # Reset the simulation 
             my_sim.reset( )
 
             ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )         
-            if args.target_idx == 1:
-                mov_arrs  = np.array(  [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
-
+            
+            if args.target_idx == 1:     
+                mov_arrs  = np.array(  [-1.3540, 0.0020,  -0.2817, 1.4156, 1.7279, -0.0817, -0.0163, 1.3788, 0.9500] )
+    
             elif args.target_idx == 2:
-                mov_arrs  = np.array(  [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
+                mov_arrs  = np.array(  [-0.9425, 0.0980,  -1.0492, 1.3641, 1.7279, -1.0492, -0.0184, 0.4712, 0.9500] )
 
             elif args.target_idx == 3:
+                mov_arrs  = np.array(  [-0.9442, 1.0472,   0.0259, 1.3633, 1.7292, -1.0486,  0.0129, 1.4241, 0.5833] )
+
+            elif args.target_idx == 4:
+                mov_arrs  = np.array(  [-1.50098, 0.     ,-0.2715 , 1.41372, 1.72788, 0.     , 0.     , 0.36652, 0.95   ] )
+
+            elif args.target_idx == 5:
+                mov_arrs  = np.array(  [-1.0821 , 1.0472 , 1.0472 , 0.7854 , 1.72788,-1.0472 , 1.39626, 0.12217, 0.95   ] )
+
+            elif args.target_idx == 6:
                 mov_arrs  = np.array(  [-0.94248, 1.0472 , 0.34907, 1.09956, 1.72788,-1.0472 ,-0.23271, 1.06465, 0.58333] )
             else:
-                    raise NotImplementedError( )
+                raise NotImplementedError( )
 
             # For target 4, 5, 6, the optimal movement parameters are as follows:
 
@@ -122,7 +147,8 @@ if __name__ == "__main__":
             # Add noise
             noise1 = np.random.uniform( -.1, .1, 4 ) if name == "init"  else np.zeros( 4 )
             noise2 = np.random.uniform( -.1, .1, 4 ) if name == "final" else np.zeros( 4 )
-            noise3 = np.random.uniform( -.1, .1, 1 ) if name == "D"     else np.zeros( 1 )
+            # noise3 = np.random.uniform( -.1, .1, 1 ) if name == "D"     else np.zeros( 1 )
+            noise3 = np.array( [ noise ] )
 
             mov_arrs_w_noise = mov_arrs + np.concatenate( ( noise1, noise2, noise3 ) )
 
@@ -137,7 +163,8 @@ if __name__ == "__main__":
             # Run the simulation
             my_sim.run( )
             
-            print_vars( { "Iteration": i + 1, "vals": mov_arrs_w_noise[ : ], "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
+            print_vars( { "Iteration": iter + 1, "vals": mov_arrs_w_noise[ : ], "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
+            iter += +1
 
             my_mov_arrs[ name ].append( mov_arrs_w_noise )
             L_arrs[ name ].append( min( my_sim.obj_arr[ : my_sim.n_steps ] ) )

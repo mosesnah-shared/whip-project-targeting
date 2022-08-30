@@ -345,10 +345,10 @@ class SphereControllerAdvanced( Controller ):
                 
         super( ).__init__( mj_sim, args, name )
 
-        self.names_ctrl_pars = ( "K", "B" )
+        self.names_ctrl_pars = ( "K", "B" , "R_des" )
 
         # The name of variables that will be saved 
-        self.names_data = ( "t", "q", "dq", "tau" )
+        self.names_data = ( "t", "q", "dq", "tau", "R_cur" )
 
         # Generate an empty lists names of parameters
         self.init( )        
@@ -361,7 +361,7 @@ class SphereControllerAdvanced( Controller ):
 
         self.R_des = R_des
 
-    def input_calc( self, t ):
+    def input_calc( self, t ):  
         """
             Setting the desired orientation of the robot 
         """
@@ -369,22 +369,20 @@ class SphereControllerAdvanced( Controller ):
         self.t = t
 
         self.K = 10 * np.eye( 3 )
-        self.B = 0.3 * self.K
-
-        # self.K[ 0,0 ] = 0 
+        self.B = 0.1 * self.K
 
         # Get the current angular position and velocity of the robot 
         self.q  = np.copy( self.mj_data.qpos[ : ] )
         self.dq = np.copy( self.mj_data.qvel[ : ] )
 
-        Jc = self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 )
+        self.Jr = self.mj_data.get_body_jacr( "sphere" ).reshape( 3, -1 )
 
         # The w is simply Jc dq
-        w = Jc @ self.dq
+        w = self.Jr @ self.dq
 
         # Get the Rotation matrix difference 
-        R_cur  = quat2rot( self.mj_data.get_body_xquat( "sphere" ) )
-        R_diff = R_cur.T @ self.R_des
+        self.R_cur  = np.copy( quat2rot( self.mj_data.get_body_xquat( "sphere" ) ) )
+        R_diff = self.R_des.T @ self.R_cur 
 
         Q_diff = rot2quat( R_diff )
 
@@ -392,16 +390,14 @@ class SphereControllerAdvanced( Controller ):
         eta = Q_diff[ 0 ]
         eps_r = Q_diff[ 1: ]
 
-        print( t, self.q )
-
         E = eta * np.eye( 3 ) - skew_sym( eps_r )
 
         Kprime = 2 * E.T @ self.K
         m_cur = Kprime @ eps_r
 
-        m = R_cur @ m_cur - self.B @ w
+        m = - self.R_cur @ m_cur - self.B @ w
 
-        self.tau = Jc.T @ m
+        self.tau = self.Jr.T @ m
 
         # The  (1) index array          (2) It's value. 
         return np.arange( self.n_act ), self.tau

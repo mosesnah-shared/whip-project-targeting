@@ -237,9 +237,9 @@ class Simulation:
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
 
             # Print the basic data
-            # if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
-                # print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
-                # print_vars( {    "q": self.mj_data.qpos[ : ] } )
+            if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
+                print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
+                print_vars( {    "q": self.mj_data.qpos[ : ] } )
     
             # Check if simulation is stable. 
             # We check the accelerations
