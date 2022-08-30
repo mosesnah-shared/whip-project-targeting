@@ -38,6 +38,24 @@ args, unknown = parser.parse_known_args( )
 
 if __name__ == "__main__":
 
+    if args.target_idx == 1:     
+        args.model_name = "3D_model_w_whip_T1"
+
+    elif args.target_idx == 2:
+        args.model_name = "3D_model_w_whip_T2"
+
+    elif args.target_idx == 3:
+        args.model_name = "3D_model_w_whip_T3"
+
+    elif args.target_idx == 4:     
+        args.model_name = "3D_model_w_whip_T4"
+
+    elif args.target_idx == 5:
+        args.model_name = "3D_model_w_whip_T5"
+
+    elif args.target_idx == 6:
+        args.model_name = "3D_model_w_whip_T6"
+
     # Generate an instance of our Simulation
     # The model is generated since the model name is passed via arguments
     my_sim = Simulation( args )
