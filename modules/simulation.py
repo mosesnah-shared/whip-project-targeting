@@ -254,6 +254,12 @@ class Simulation:
         """
         return True if max( abs( self.mj_data.qacc ) ) > 10 ** 6 else False
 
+    def get_state( self ):
+        """
+            Return the current qpos and qvel array
+        """
+        return np.concatenate( ( self.mj_data.qpos[ : ], self.mj_data.qvel[ : ] ) )
+
     def add_ctrl( self, ctrl ):
         """
             For detailed controller description, please check 'controllers.py' 
@@ -274,10 +280,18 @@ class Simulation:
         """
             A wrapper function for our usage. 
         """
+        # Setting the torque input directy from the action
+        # self.mj_data.ctrl[ :self.n_act ] = action        
 
         # Update the step
         self.mj_sim.step( )
 
         # Update the number of steps and time
         self.n_steps += 1
-        self.t = self.mj_data.time                               
+        self.t = self.mj_data.time      
+
+        # # This is needed for ML methods
+        # if self.obj is not None: 
+        #     self.obj_val = -self.obj.output_calc( self.mj_model, self.mj_data, self.args )
+
+        # return self.get_state( ), self.obj_val
