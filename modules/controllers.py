@@ -1,8 +1,6 @@
 import numpy    as np
 import scipy.io
 from   modules.utils     import quat2rot, quat2angx, rot2quat, get_model_prop, get_length, min_jerk_traj, skew_sym
-from   modules.MLmodule  import *
-
 
 class Controller:
     """
