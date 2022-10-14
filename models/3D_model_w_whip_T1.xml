@@ -1,6 +1,6 @@
 <mujoco model="1_3D_model_w_N25">
   <compiler inertiafromgeom="auto" angle="radian" />
-   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81" collision="predefined">
+   <option timestep="0.0001" iterations="50" solver="PGS" integrator="Euler" gravity="0 0 -9.81">
      <flag energy="enable" />
    </option>
    <asset>

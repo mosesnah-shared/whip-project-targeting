@@ -37,7 +37,7 @@ np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )
 parser = my_parser( )
 args, unknown = parser.parse_known_args( )
 
-args.model_name = "3D_model_w_whip_T" + str( args.target_idx )
+# args.model_name = "3D_model_w_whip_T" + str( args.target_idx )
 
 # Generate an instance of our Simulation
 my_sim = Simulation( args )
@@ -62,8 +62,8 @@ input_par_arr = []
 if __name__ == "__main__":
 
     if   my_ctrl.n_act == 2:
-        lb = np.array( [ -0.5 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )     
-        ub = np.array( [  1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )     
+        lb = np.array( [ -0.5 * np.pi,           0.0, -0.5 * np.pi,         0.0, 0.4 ] )     
+        ub = np.array( [ -0.1 * np.pi,   0.9 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )     
         nl_init = ( lb + ub ) * 0.5 
         n_opt = 5        
 
@@ -90,7 +90,6 @@ if __name__ == "__main__":
         # Reset the simulation 
         my_sim.reset( )
 
-
         my_ctrl.add_mov_pars( q0i = pars[ :n ], q0f = pars[ n: 2*n ], D = pars[ -1 ], ti = args.start_time  )    
         my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.05 * C.K_dict[ n ] )
         my_sim.init( qpos = pars[ :n ], qvel = np.zeros( n ) )
@@ -105,16 +104,16 @@ if __name__ == "__main__":
 
         iter_arr.append( opt.get_numevals( ) + 1 )
         input_par_arr.append( np.copy( pars[ : ] ) )
-        opt_val_arr.append(  min( my_sim.obj_arr ) )
+        opt_val_arr.append( min( my_sim.obj_arr[ : my_sim.n_steps ] ) )
 
-        return min( my_sim.obj_arr )
+        return min( my_sim.obj_arr[ : my_sim.n_steps ] )
 
     opt.set_lower_bounds( lb )
     opt.set_upper_bounds( ub )
     opt.set_maxeval( 600 )
 
     opt.set_min_objective( nlopt_objective )
-    opt.set_stopval( -1e-8 ) 
+    opt.set_stopval( 1e-5 ) 
 
     xopt = opt.optimize( nl_init )
 
