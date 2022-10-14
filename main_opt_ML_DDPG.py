@@ -14,22 +14,21 @@
 
 import os
 import sys
-
-import nlopt
+import scipy.io
 import numpy             as np
-import matplotlib.pyplot as plt
 
 # To Add Local Files, adding the directory via sys module
 # __file__ saves the current directory of this file. 
 sys.path.append( os.path.join( os.path.dirname(__file__), "modules" ) )
 
 from simulation     import Simulation
-from controllers    import JointImpedanceController
-from objectives     import DistFromTip2Target
+from objectives     import DistFromTip2TargetMLApproach
 from constants      import my_parser
 from constants      import Constants  as C
 from MLmodules      import ReplayBuffer, OUNoise, DDPG
 from utils          import *
+
+is_save_model = True
 
 # Setting the numpy print options, useful for printing out data with consistent pattern.
 np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )       
@@ -42,7 +41,7 @@ if __name__ == "__main__":
 
     # Generate an instance of our Simulation
     # The model is generated since the model name is passed via arguments
-    args.model_name = "2D_model_w_whip"
+    args.model_name = "2D_model_w_whip_N10"
     my_sim = Simulation( args )
 
     # Define the DDPG controller 
@@ -62,31 +61,34 @@ if __name__ == "__main__":
     rewards       = [ ]
     avg_rewards   = [ ]
 
-    init_pos = np.array(  [ -1.3327,  0.17022 ] )
-    init_cond = { "qpos": init_pos[ : ] ,  "qvel": np.zeros( 2 ) }
-    my_sim.init( qpos = init_cond[ "qpos" ], qvel = init_cond[ "qvel" ] )    
-
-
     # Set the initial configuration of the whip downward    
     if "whip" in args.model_name: make_whip_downwards( my_sim )
     my_sim.forward( )
 
-    obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args, tol = 5 )
+    obj = DistFromTip2TargetMLApproach( my_sim.mj_model, my_sim.mj_data, args, tol = 5 )
     my_sim.set_obj( obj )
 
 
-    for episode in range( 500 ):
+    for episode in range( 1500 ):
 
         # Initialize the gym environment and OU noise 
         my_sim.reset()
         OUnoise.reset( )
+
+        # Initialize the posture 
+        # Choosing an arbitrary initial position
+        tmp1 = np.random.uniform( -0.5*np.pi, -0.1*np.pi )
+        tmp2 = np.random.uniform(  0.0*np.pi,  0.9*np.pi )
+        init_pos = np.array( [ tmp1, tmp2 ] )
+        init_cond = { "qpos": init_pos[ : ] ,  "qvel": np.zeros( 2 ) }
+        my_sim.init( qpos = init_cond[ "qpos" ], qvel = init_cond[ "qvel" ] )    
 
         # Initialize the episode's reward
         episode_reward = 0
         
         # For pendulum v1 gym, a single simulation is maximum 200-steps long. 
         # [REF] https://github.com/openai/gym/blob/master/gym/envs/classic_control/pendulum.py
-        for step in range( 2000 ):
+        for step in range( 2100 ):
 
             state = my_sim.get_state(  )
 
@@ -97,7 +99,7 @@ if __name__ == "__main__":
             action = OUnoise.add_noise2action( action, step )
 
             # Run a single step of simulation
-            new_state, reward = my_sim.step( action )  
+            new_state, reward = my_sim.stepML( action )  
 
             # Add this to our replay buffer, note that push simply generates the tuple and add 
             replay_buffer.add( state, action, reward, new_state, False )
@@ -112,6 +114,8 @@ if __name__ == "__main__":
         if best_model_val <= episode_reward:
             best_model_val = episode_reward 
 
+            # If this policy has a good result, save it 
+            if is_save_model: agent.save( "./DDPG_best_model" ) 
             
         # Once a single simulation is done, append the values that will be plotted later
         rewards.append( episode_reward )
@@ -119,3 +123,5 @@ if __name__ == "__main__":
 
         sys.stdout.write("episode: {}, reward: {}, average_reward: {} \n".format( episode, np.round( episode_reward, decimals = 2 ), avg_rewards[ -1 ] ) ) 
 
+
+    scipy.io.savemat( 'DDPG_result', { "avg_rewards": avg_rewards, "rewards": rewards } )

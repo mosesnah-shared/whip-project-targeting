@@ -63,6 +63,8 @@ class Simulation:
         #           Hence, we save/render the video every round( 1000 / 30 ) time steps. 
         self.vid_step   = round( ( 1. / self.dt ) / ( self.fps / self.args.vid_speed )  )
 
+        
+
         # Step for printing the data. 
         self.print_step = round( ( 1. / self.dt ) / self.args.print_freq  )  
 
@@ -236,10 +238,14 @@ class Simulation:
                 self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
 
+
+            # Print the camera positions
+            # print( self.mj_viewer.cam.lookat[ 0 ], self.mj_viewer.cam.lookat[ 1 ], self.mj_viewer.cam.lookat[ 2 ],  self.mj_viewer.cam.distance , self.mj_viewer.cam.elevation, self.mj_viewer.cam.azimuth  )
+            print( self.vid_step )
             # Print the basic data
-            if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
-                print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
-                print_vars( {    "q": self.mj_data.qpos[ : ] } )
+            # if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
+            #     print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
+            #     print_vars( {    "q": self.mj_data.qpos[ : ] } )
     
             # Check if simulation is stable. 
             # We check the accelerations
@@ -295,3 +301,23 @@ class Simulation:
         #     self.obj_val = -self.obj.output_calc( self.mj_model, self.mj_data, self.args )
 
         # return self.get_state( ), self.obj_val
+
+    def stepML( self, action ):
+        """
+            A wrapper function for ML usage. 
+        """
+        # Setting the torque input directy from the action
+        self.mj_data.ctrl[ :self.n_act ] = action        
+
+        # Update the step
+        self.mj_sim.step( )
+
+        # Update the number of steps and time
+        self.n_steps += 1
+        self.t = self.mj_data.time      
+
+        # # This is needed for ML methods
+        if self.obj is not None: 
+            self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
+
+        return self.get_state( ), self.obj_val        

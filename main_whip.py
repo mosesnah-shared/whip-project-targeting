@@ -50,13 +50,22 @@ if __name__ == "__main__":
             ctrl.set_impedance( Kq = C.K_2DOF, Bq = 0.10 * C.K_2DOF )
             n = my_sim.n_act
 
-            mov_arrs  = np.array(  [ -1.3327,  0.17022, 1.5708 , 0.13575, 0.8011  ] )
+            # mov_arrs  = np.array(  [-1.3614,  0.7854,  1.0472,  0.4712,  0.5833] )       # for N10
+            # mov_arrs  = np.array(  [ -1.3614,  0.4712,  1.0472,  0.4712,  0.5833] )     # for N15
+            mov_arrs  = np.array(  [ -1.5320, 0.4593, 1.0486, 0.9931, 0.6100  ] )     # for N20
+            # mov_arrs  = np.array(  [ -1.3614, 0.4712 ,  1.0472,  0.7854, 0.58338 ] )     # for N25
+
             ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )    
-            ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = np.array( [ -1.45, 0.3 ]), D = mov_arrs[ -1 ], ti = args.start_time + 0.4  )                
+            # ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = np.array( [ -1.45, 0.3 ]), D = mov_arrs[ -1 ], ti = args.start_time + 0.4  )                
 
         elif ctrl.n_act == 4:
-            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )                   
-            mov_arrs  = np.array(  [-0.94248, 0.     , 0.     , 1.41372, 1.72788, 0.     , 0.     , 1.41372, 1.31667] )
+            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )       
+
+            
+            # mov_arrs = np.array( [-1.5475,      0, -0.3491, 1.4137, 1.7279,       0,       0, 0.3665, 0.9500] )  # Target 1
+            # mov_arrs = np.array( [-1.0821, 1.0472,  1.0472, 0.8203, 1.7279, -1.0472,  1.3963, 0.1571, 0.9500] )  # Target 2
+            mov_arrs = np.array( [-0.9425, 1.0601,  0.3491, 0.9948, 1.7395, -0.9696, -0.2715, 0.9483, 0.5245] )  # Target 3
+
 
             n = my_sim.n_act
             ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )                
@@ -87,7 +96,7 @@ if __name__ == "__main__":
     # Run the simulation
     my_sim.run( )
 
-    print( f"The minimum value of this trial is { min( my_sim.obj_arr ):.5f}" )
+    print( f"The minimum value of this trial is { min( my_sim.obj_arr[ : my_sim.n_steps ] ):.5f}" )
 
     if args.is_save_data: 
         ctrl.export_data( my_sim.tmp_dir )
