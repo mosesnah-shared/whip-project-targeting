@@ -13,7 +13,6 @@ def my_parser( ):
     parser.add_argument( '--cam_pos'     , action = 'store'       , type = str   ,                                   help = 'Get the whole list of the camera position'                                         )
     parser.add_argument( '--mov_pars'    , action = 'store'       , type = str   ,                                   help = 'Get the whole list of the movement parameters'                                     )
     parser.add_argument( '--target_type' , action = 'store'       , type = int   ,                                   help = 'Save data log of the simulation, with the specified frequency'                     )
-    parser.add_argument( '--opt_type'    , action = 'store'       , type = str   ,  default = "nlopt" ,              help = '[Options] "nlopt", "ML_DDPG", "ML_TD3" '                                           )
     parser.add_argument( '--print_mode'  , action = 'store'       , type = str   ,  default = 'normal',              help = 'Print mode, choose between [short] [normal] [verbose]'                             )
 
     parser.add_argument( '--target_idx'  , action = 'store'       , type = int   ,  default = 1,                     help = 'Index of Target 1~6'                                                               )
@@ -26,6 +25,8 @@ def my_parser( ):
     parser.add_argument( '--save_data'   , action = 'store_true'  , dest = "is_save_data"   ,                        help = 'Save the details of the simulation'                            )
     parser.add_argument( '--vid_off'     , action = 'store_true'  , dest = "is_vid_off"     ,                        help = 'Turn off the video'                                            )
     parser.add_argument( '--run_opt'     , action = 'store_true'  , dest = "is_run_opt"     ,                        help = 'Run optimization of the simulation'                            )
+
+    parser.add_argument( '--opt_type'    , action = 'store'       , type = int, dest = "opt_type"     ,              help = 'Type of Optimization'                                          )
 
     return parser
 

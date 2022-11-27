@@ -240,8 +240,8 @@ class Simulation:
 
 
             # Print the camera positions
-            # print( self.mj_viewer.cam.lookat[ 0 ], self.mj_viewer.cam.lookat[ 1 ], self.mj_viewer.cam.lookat[ 2 ],  self.mj_viewer.cam.distance , self.mj_viewer.cam.elevation, self.mj_viewer.cam.azimuth  )
-            print( self.vid_step )
+            print( self.mj_viewer.cam.lookat[ 0 ], self.mj_viewer.cam.lookat[ 1 ], self.mj_viewer.cam.lookat[ 2 ],  self.mj_viewer.cam.distance , self.mj_viewer.cam.elevation, self.mj_viewer.cam.azimuth  )
+            # print( self.vid_step )
             # Print the basic data
             # if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:
             #     print_vars( { "time": self.t }  ) #,  "obj" : self.obj_val
