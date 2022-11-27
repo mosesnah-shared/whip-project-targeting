@@ -47,28 +47,53 @@ if __name__ == "__main__":
         ctrl = JointImpedanceController( my_sim, args, name = "joint_imp_1" )
 
         if   ctrl.n_act == 2:
-            ctrl.set_impedance( Kq = C.K_2DOF, Bq = 0.10 * C.K_2DOF )
+            ctrl.set_impedance( Kq = C.K_2DOF, Bq = 0.05 * C.K_2DOF )
             n = my_sim.n_act
+
 
             # mov_arrs  = np.array(  [-1.3614,  0.7854,  1.0472,  0.4712,  0.5833] )       # for N10
             # mov_arrs  = np.array(  [ -1.3614,  0.4712,  1.0472,  0.4712,  0.5833] )     # for N15
-            mov_arrs  = np.array(  [ -1.5320, 0.4593, 1.0486, 0.9931, 0.6100  ] )     # for N20
+            # mov_arrs  = np.array(  [ -1.5320, 0.4593, 1.0486, 0.9931, 0.6100  ] )     # for N20
             # mov_arrs  = np.array(  [ -1.3614, 0.4712 ,  1.0472,  0.7854, 0.58338 ] )     # for N25
 
-            ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )    
-            # ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = np.array( [ -1.45, 0.3 ]), D = mov_arrs[ -1 ], ti = args.start_time + 0.4  )                
+            mov_arrs = np.array( [0.7854, 0.4712, -1.3614, 0.1571,  1.0472, 0.4712, 0.5833, 1.4389, 0.3333 ] )
+
+            init  = mov_arrs[     : n   ]
+            mid   = mov_arrs[  n  : 2*n ]
+            final = mov_arrs[ 2*n : 3*n ]
+            D1 = mov_arrs[ -3 ]
+            D2 = mov_arrs[ -2 ]
+            toff = mov_arrs[ -1 ] * D1
+
+            ctrl.add_mov_pars( q0i = init, q0f = mid, D = D1, ti = args.start_time  )    
+            ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = final - mid, D = D2, ti = args.start_time + D1 + toff)    
+            
 
         elif ctrl.n_act == 4:
-            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )       
-
+            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.30 * C.K_4DOF )       
             
-            # mov_arrs = np.array( [-1.5475,      0, -0.3491, 1.4137, 1.7279,       0,       0, 0.3665, 0.9500] )  # Target 1
-            # mov_arrs = np.array( [-1.0821, 1.0472,  1.0472, 0.8203, 1.7279, -1.0472,  1.3963, 0.1571, 0.9500] )  # Target 2
-            mov_arrs = np.array( [-0.9425, 1.0601,  0.3491, 0.9948, 1.7395, -0.9696, -0.2715, 0.9483, 0.5245] )  # Target 3
+            n = my_sim.n_act
 
+            # For Bq 0.2, 0.7057,  0.0000,  1.2549,  0.4712, -1.2461,  0.0043, -1.3532,  0.8358,  1.8960, -0.5258,  0.3491,  0.9431,  0.9304,  0.4626, -0.0214
+            # For Bq 0.1, 0.7854, 0, 0.8378, 0.4712, -1.2566, 0, -0.8378, 0.1571, 2.4086, -1.0472, -0.3491, 0.4712, 0.9500, 0.5833, 0            
+
+
+    
+            mov_arrs = np.array( [ 0.7057,  0.0000,  1.2549,  0.4712, -1.2461,  0.0043, -1.3532,  0.8358,  1.8960, -0.5258,  0.3491,  0.9431,  0.9304,  0.4626, -0.0214] )
+
+            init  = mov_arrs[     : n   ]
+            mid   = mov_arrs[  n  : 2*n ]
+            final = mov_arrs[ 2*n : 3*n ]
+            D1 = mov_arrs[ -3 ]
+            D2 = mov_arrs[ -2 ]
+            toff = mov_arrs[ -1 ] * D1
+
+            ctrl.add_mov_pars( q0i = init, q0f = mid, D = D1, ti = args.start_time  )    
+            ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = final - mid, D = D2, ti = args.start_time + D1 + toff)    
+            
 
             n = my_sim.n_act
-            ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )                
+            # ctrl.add_mov_pars( q0i = mov_arrs[ :n ], q0f = mov_arrs[ n:2*n ], D = mov_arrs[ -1 ], ti = args.start_time  )                
             # ctrl.add_mov_pars( q0i = np.zeros( n ) , q0f = np.array( [ -1.45, 0.3, 0.2, 0.4 ]), D = mov_arrs[ -1 ], ti = args.start_time + 0.4  )                
 
         # Define the objective function
@@ -85,6 +110,7 @@ if __name__ == "__main__":
     my_sim.add_ctrl( ctrl )
     my_sim.set_obj( obj )
 
+    args.cam_pos = "2.4088397035938347 2.009765064162837 3.6319497605437387 0.041214400000000005 -53.40000000000003 -139.0000000000001"
 
     init_cond = { "qpos": mov_arrs[ :n ] ,  "qvel": np.zeros( n ) }
     my_sim.init( qpos = init_cond[ "qpos" ], qvel = init_cond[ "qvel" ] )

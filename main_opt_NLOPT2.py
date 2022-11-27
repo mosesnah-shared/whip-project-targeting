@@ -63,16 +63,16 @@ if __name__ == "__main__":
 
     if   my_ctrl.n_act == 2:
         #                           INIT                        MID                     FINAL                 D1      D2        alpha
-        lb = np.array( [  0.0 * np.pi,           0.0, -0.5 * np.pi,         0.0, -0.5 * np.pi,           0.0, 0.4,    0.4,    -0.5 ] )     
-        ub = np.array( [  0.5 * np.pi,   0.9 * np.pi, -0.1 * np.pi, 0.9 * np.pi,  0.5 * np.pi,   0.9 * np.pi, 1.5,    1.5,    +0.5 ] )     
+        lb = np.array( [  0.0 * np.pi,           0.0, -0.7 * np.pi,         0.0,  0.0 * np.pi,           0.0, 0.4,    0.4,    -0.8 ] )     
+        ub = np.array( [  0.5 * np.pi,   0.9 * np.pi, -0.1 * np.pi, 0.9 * np.pi,  0.7 * np.pi,   0.9 * np.pi, 1.5,    1.5,    +0.8 ] )     
         nl_init = ( lb + ub ) * 0.5 
         n_opt = 9        
 
     elif my_ctrl.n_act == 4:
-        lb  = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4, 0.4, -0.5 ] )               
-        ub  = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5, 0.4, +0.5 ] )              
+        lb  = np.array( [  0.0 * np.pi, -0.5 * np.pi, -0.4 * np.pi,         0.0, -0.6 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4, 0.4, -0.6 ] )               
+        ub  = np.array( [  0.5 * np.pi,  0.5 * np.pi,  0.4 * np.pi, 0.9 * np.pi, -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 0.9 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5, 1.5, +0.6 ] )              
         nl_init = ( lb + ub ) * 0.5         
-        n_opt = 9
+        n_opt = len( lb )
 
     else:
         raise NotImplementedError( )
@@ -107,8 +107,9 @@ if __name__ == "__main__":
         D2 = pars[ -2 ]
         toff = pars[ -1 ] * D1
 
+
         my_ctrl.add_mov_pars( q0i = init, q0f = mid, D = D1, ti = args.start_time  )  
-        my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.05 * C.K_dict[ n ] )    
+        my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.3 * C.K_dict[ n ] )    
         my_ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = final-mid, D = D2, ti = args.start_time + D1 + toff )    
         
         my_sim.init( qpos = pars[ :n ], qvel = np.zeros( n ) )
@@ -117,7 +118,7 @@ if __name__ == "__main__":
         make_whip_downwards( my_sim )
 
         # Run the simulation
-
+        my_sim.T = args.start_time + D1 + toff + D2 + 0.8
         my_sim.run( )
 
         print_vars( { "Iteration": opt.get_numevals( ) + 1, "mov_pars": pars[ : ], "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
@@ -130,7 +131,7 @@ if __name__ == "__main__":
 
     opt.set_lower_bounds( lb )
     opt.set_upper_bounds( ub )
-    opt.set_maxeval( 1000 )
+    opt.set_maxeval( 3000 )
 
     opt.set_min_objective( nlopt_objective )
     opt.set_stopval( 1e-5 ) 
