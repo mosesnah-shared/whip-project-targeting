@@ -213,7 +213,7 @@
          </body>
       </body>
       
-      <geom name="geom_target" type="sphere" pos="1.1925 1.1925 1.68644" rgba="0 0 0 1" mass="0" size="0.03" />
+      <geom name="geom_target" type="sphere" pos="1.1925 1.1925 1.68644" rgba="0.7608, 0.1176, 0.3373, 1" mass="0" size="0.03" />
 
 
    </worldbody>

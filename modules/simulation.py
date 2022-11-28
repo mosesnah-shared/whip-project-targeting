@@ -63,8 +63,6 @@ class Simulation:
         #           Hence, we save/render the video every round( 1000 / 30 ) time steps. 
         self.vid_step   = round( ( 1. / self.dt ) / ( self.fps / self.args.vid_speed )  )
 
-        
-
         # Step for printing the data. 
         self.print_step = round( ( 1. / self.dt ) / self.args.print_freq  )  
 
@@ -139,8 +137,8 @@ class Simulation:
             This is for a SINGLE simulation
         """
         self.mj_sim.reset( )
-        self.init( )
-        self.set_init_posture( qpos = self.init_qpos, qvel = self.init_qvel )        
+        self.init( qpos = self.init_qpos, qvel = self.init_qvel )        
+        make_whip_downwards( self )
         
     def close( self ):
         """ 
@@ -240,7 +238,7 @@ class Simulation:
 
 
             # Print the camera positions
-            print( self.mj_viewer.cam.lookat[ 0 ], self.mj_viewer.cam.lookat[ 1 ], self.mj_viewer.cam.lookat[ 2 ],  self.mj_viewer.cam.distance , self.mj_viewer.cam.elevation, self.mj_viewer.cam.azimuth  )
+            # print( self.mj_viewer.cam.lookat[ 0 ], self.mj_viewer.cam.lookat[ 1 ], self.mj_viewer.cam.lookat[ 2 ],  self.mj_viewer.cam.distance , self.mj_viewer.cam.elevation, self.mj_viewer.cam.azimuth  )
             # print( self.vid_step )
             # Print the basic data
             # if self.n_steps % self.print_step == 0 and not self.args.is_run_opt:

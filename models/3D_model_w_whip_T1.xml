@@ -62,127 +62,127 @@
               <joint name="joint_whip_node1_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
               <joint name="joint_whip_node1_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0" damping="0" />
                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-               <geom name="geom_whip_node1" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+               <geom name="geom_whip_node1" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                <body name="body_whip_node2" euler="0 0 0" pos="0 0 -0.0720">
                  <joint name="joint_whip_node2_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                  <joint name="joint_whip_node2_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                   <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                  <geom name="geom_whip_node2" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                  <geom name="geom_whip_node2" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                   <body name="body_whip_node3" euler="0 0 0" pos="0 0 -0.0720">
                     <joint name="joint_whip_node3_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                     <joint name="joint_whip_node3_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                      <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                     <geom name="geom_whip_node3" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                     <geom name="geom_whip_node3" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                      <body name="body_whip_node4" euler="0 0 0" pos="0 0 -0.0720">
                        <joint name="joint_whip_node4_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                        <joint name="joint_whip_node4_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                         <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                        <geom name="geom_whip_node4" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                        <geom name="geom_whip_node4" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                         <body name="body_whip_node5" euler="0 0 0" pos="0 0 -0.0720">
                           <joint name="joint_whip_node5_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                           <joint name="joint_whip_node5_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                            <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                           <geom name="geom_whip_node5" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                           <geom name="geom_whip_node5" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                            <body name="body_whip_node6" euler="0 0 0" pos="0 0 -0.0720">
                              <joint name="joint_whip_node6_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                              <joint name="joint_whip_node6_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                              <geom name="geom_whip_node6" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                              <geom name="geom_whip_node6" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                               <body name="body_whip_node7" euler="0 0 0" pos="0 0 -0.0720">
                                 <joint name="joint_whip_node7_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                              
                                 <joint name="joint_whip_node7_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                 <geom name="geom_whip_node7" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                 <geom name="geom_whip_node7" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                  <body name="body_whip_node8" euler="0 0 0" pos="0 0 -0.0720">
                                    <joint name="joint_whip_node8_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                               
                                    <joint name="joint_whip_node8_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                    <geom name="geom_whip_node8" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                    <geom name="geom_whip_node8" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                     <body name="body_whip_node9" euler="0 0 0" pos="0 0 -0.0720">
                                       <joint name="joint_whip_node9_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                               
                                       <joint name="joint_whip_node9_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                       <geom name="geom_whip_node9" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                       <geom name="geom_whip_node9" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                        <body name="body_whip_node10" euler="0 0 0" pos="0 0 -0.0720">
                                          <joint name="joint_whip_node10_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                      
                                          <joint name="joint_whip_node10_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                           <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                          <geom name="geom_whip_node10" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                          <geom name="geom_whip_node10" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                           <body name="body_whip_node11" euler="0 0 0" pos="0 0 -0.0720">
                                             <joint name="joint_whip_node11_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                      
                                             <joint name="joint_whip_node11_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                              <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                             <geom name="geom_whip_node11" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                             <geom name="geom_whip_node11" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                              <body name="body_whip_node12" euler="0 0 0" pos="0 0 -0.0720">
                                                <joint name="joint_whip_node12_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                   
                                                <joint name="joint_whip_node12_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                 <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                <geom name="geom_whip_node12" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                <geom name="geom_whip_node12" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                 <body name="body_whip_node13" euler="0 0 0" pos="0 0 -0.0720">
                                                   <joint name="joint_whip_node13_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                   
                                                   <joint name="joint_whip_node13_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                    <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                   <geom name="geom_whip_node13" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                   <geom name="geom_whip_node13" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                    <body name="body_whip_node14" euler="0 0 0" pos="0 0 -0.0720">
                                                      <joint name="joint_whip_node14_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                   
                                                      <joint name="joint_whip_node14_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                       <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                      <geom name="geom_whip_node14" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                      <geom name="geom_whip_node14" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                       <body name="body_whip_node15" euler="0 0 0" pos="0 0 -0.0720">
                                                         <joint name="joint_whip_node15_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                   
                                                         <joint name="joint_whip_node15_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                          <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                         <geom name="geom_whip_node15" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                         <geom name="geom_whip_node15" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                          <body name="body_whip_node16" euler="0 0 0" pos="0 0 -0.0720">
                                                            <joint name="joint_whip_node16_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                   
                                                            <joint name="joint_whip_node16_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                             <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                            <geom name="geom_whip_node16" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                            <geom name="geom_whip_node16" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                             <body name="body_whip_node17" euler="0 0 0" pos="0 0 -0.0720">
                                                               <joint name="joint_whip_node17_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                               
                                                               <joint name="joint_whip_node17_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                               <geom name="geom_whip_node17" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                               <geom name="geom_whip_node17" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                <body name="body_whip_node18" euler="0 0 0" pos="0 0 -0.0720">
                                                                  <joint name="joint_whip_node18_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                               
                                                                  <joint name="joint_whip_node18_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                   <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                  <geom name="geom_whip_node18" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                  <geom name="geom_whip_node18" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                   <body name="body_whip_node19" euler="0 0 0" pos="0 0 -0.0720">
                                                                     <joint name="joint_whip_node19_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                               
                                                                     <joint name="joint_whip_node19_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                      <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                     <geom name="geom_whip_node19" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                     <geom name="geom_whip_node19" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                      <body name="body_whip_node20" euler="0 0 0" pos="0 0 -0.0720">
                                                                        <joint name="joint_whip_node20_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                    
                                                                        <joint name="joint_whip_node20_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                         <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                        <geom name="geom_whip_node20" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                        <geom name="geom_whip_node20" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                         <body name="body_whip_node21" euler="0 0 0" pos="0 0 -0.0720">
                                                                           <joint name="joint_whip_node21_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                    
                                                                           <joint name="joint_whip_node21_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                            <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                           <geom name="geom_whip_node21" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                           <geom name="geom_whip_node21" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                            <body name="body_whip_node22" euler="0 0 0" pos="0 0 -0.0720">
                                                                              <joint name="joint_whip_node22_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                                                                                               
                                                                              <joint name="joint_whip_node22_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                               <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                              <geom name="geom_whip_node22" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                              <geom name="geom_whip_node22" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                               <body name="body_whip_node23" euler="0 0 0" pos="0 0 -0.0720">
                                                                                 <joint name="joint_whip_node23_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                                                                                               
                                                                                 <joint name="joint_whip_node23_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                  <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                                 <geom name="geom_whip_node23" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                                 <geom name="geom_whip_node23" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                                  <body name="body_whip_node24" euler="0 0 0" pos="0 0 -0.0720">
                                                                                    <joint name="joint_whip_node24_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
                                                                                    <joint name="joint_whip_node24_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                     <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                                    <geom name="geom_whip_node24" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                                    <geom name="geom_whip_node24" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                                     <body name="body_whip_node25" euler="0 0 0" pos="0 0 -0.0720">
                                                                                       <joint name="joint_whip_node25_X" type="hinge" axis="1  0 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
                                                                                       <joint name="joint_whip_node25_Y" type="hinge" axis="0 -1 0" pos="0 0 0" springref="0" stiffness="0.242" damping="0.092" />
                                                                                        <geom type="cylinder" fromto="0 0 0 0 0 -0.0720" size="0.0060000" mass="0" />
-                                                                                       <geom name="geom_whip_node25" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0120000" mass="0.0120000" />
+                                                                                       <geom name="geom_whip_node25" type="sphere" material="pointMassColor" pos="0 0 -0.0720" size="0.0200000" mass="0.0120000" />
                                                                                        <site name='site_whip_tip' pos='0 0 -0.0720' /> 
                                                                                     </body>
                                                                                  </body>
