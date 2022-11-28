@@ -86,7 +86,6 @@ class ObjectiveFunction:
 
         return new_obj    
 
-
 class DistFromTip2Target( ObjectiveFunction ):
 
     def __init__( self, mj_model, mj_data, args, tol = 6, is_indicate_hit = False ):
@@ -141,6 +140,11 @@ class DistFromTip2Target( ObjectiveFunction ):
             mj_model.geom_rgba[ self.idx_target  ] = [ 0, 1, 0, 1 ]
 
         return output
+
+
+
+
+
 
 class DistFromTip2TargetMLApproach( ObjectiveFunction ):
 

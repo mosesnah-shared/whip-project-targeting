@@ -37,8 +37,6 @@ np.set_printoptions( linewidth = np.nan, suppress = True, precision = 4 )
 parser = my_parser( )
 args, unknown = parser.parse_known_args( )
 
-# args.model_name = "3D_model_w_whip_T" + str( args.target_idx )
-
 # Generate an instance of our Simulation
 my_sim = Simulation( args )
 
@@ -46,9 +44,8 @@ my_sim = Simulation( args )
 my_ctrl = JointImpedanceController( my_sim, args, name = "joint_imp_1" )
 
 # Define the objective function
-tol = 5 if args.target_idx in [ 1, 2, 3 ] else 1 
+tol = 15
 obj = DistFromTip2Target( my_sim.mj_model, my_sim.mj_data, args, tol  )
-# obj = None
 
 # Setup the controller and objective of the simulation
 my_sim.add_ctrl( my_ctrl )
@@ -69,25 +66,21 @@ if __name__ == "__main__":
         n_opt = 9        
 
     elif my_ctrl.n_act == 4:
-        lb  = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4, 0.4, -0.5 ] )               
-        ub  = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5, 0.4, +0.5 ] )              
+        lb  = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )               
+        ub  = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] )              
         nl_init = ( lb + ub ) * 0.5         
         n_opt = 9
 
     else:
         raise NotImplementedError( )
 
-    if args.opt_type == 1:
-        opt_type = nlopt.GN_DIRECT_L
-
-    elif args.opt_type == 2:
-        opt_type = nlopt.GN_CRS2_LM
+    opt_type = nlopt.GN_DIRECT_L
+    # opt_type = nlopt.GN_CRS2_LM
 
     opt = nlopt.opt( opt_type, n_opt )  
     iter = 0 
 
     n = my_ctrl.n_act    
-
 
     def nlopt_objective( pars, grad ):                              
         """
@@ -100,16 +93,12 @@ if __name__ == "__main__":
         # Reset the simulation 
         my_sim.reset( )
 
-        init  = pars[     : n   ]
-        mid   = pars[  n  : 2*n ]
-        final = pars[ 2*n : 3*n ]
-        D1 = pars[ -3 ]
-        D2 = pars[ -2 ]
-        toff = pars[ -1 ] * D1
+        init  = pars[    :   n ]
+        final = pars[  n : 2*n ]
+        D = pars[ -1 ]
 
-        my_ctrl.add_mov_pars( q0i = init, q0f = mid, D = D1, ti = args.start_time  )  
+        my_ctrl.add_mov_pars( q0i = init, q0f = final, D = D, ti = args.start_time  )  
         my_ctrl.set_impedance( Kq = C.K_dict[ n ], Bq = 0.05 * C.K_dict[ n ] )    
-        my_ctrl.add_mov_pars( q0i = np.zeros( n ), q0f = final-mid, D = D2, ti = args.start_time + D1 + toff )    
         
         my_sim.init( qpos = pars[ :n ], qvel = np.zeros( n ) )
 
@@ -130,7 +119,7 @@ if __name__ == "__main__":
 
     opt.set_lower_bounds( lb )
     opt.set_upper_bounds( ub )
-    opt.set_maxeval( 1000 )
+    opt.set_maxeval( 600 )
 
     opt.set_min_objective( nlopt_objective )
     opt.set_stopval( 1e-5 ) 
@@ -145,4 +134,4 @@ if __name__ == "__main__":
     os.mkdir( dir_name )  
     file_name = dir_name + "/optimization.mat"
 
-    scipy.io.savemat( file_name, { "iter": iter_arr, "opt_val": opt_val_arr, "input_pars" :input_par_arr, "Kq": my_ctrl.Kq, "B`q": my_ctrl.Bq } )
+    scipy.io.savemat( file_name, { "iter": iter_arr, "opt_val": opt_val_arr, "input_pars" :input_par_arr, "Kq": my_ctrl.Kq, "Bq": my_ctrl.Bq } )

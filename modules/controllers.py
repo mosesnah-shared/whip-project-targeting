@@ -29,6 +29,11 @@ class Controller:
         # The list of controller parameters
         self.names_ctrl_pars = None
 
+        # List of geometry names
+        self.geom_names     = self.mj_model.geom_names
+        self.idx_geom_names = [ self.mj_model._geom_name2id[ name ] for name in self.geom_names  ]        
+        
+
         # Get the number of geom names of the simulation
         self.n_geoms = len( self.mj_model.geom_names )        
 
@@ -171,7 +176,7 @@ class JointImpedanceController( ImpedanceController ):
         self.names_ctrl_pars = ( "Kq", "Bq", "q0i", "q0f", "D", "ti" )
 
         # The name of variables that will be saved 
-        self.names_data = ( "t", "tau", "q", "q0", "dq", "dq0", "Jp", "Jr"  )
+        self.names_data = ( "t", "tau", "q", "q0", "dq", "dq0", "Jp", "Jr", 'xpos'  )
 
         # Generate an empty lists names of parameters
         self.init( )
@@ -242,6 +247,7 @@ class JointImpedanceController( ImpedanceController ):
 
         self.Jp = np.copy( self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
         self.Jr = np.copy( self.mj_data.get_site_jacr( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
+        self.xpos = np.copy( self.mj_data.geom_xpos[ self.idx_geom_names ] )
 
         tau_G = self.get_tau_G( )                     if is_gravity_comp else np.zeros( self.n_act ) 
         tau_n = np.random.normal( size = self.n_act ) if is_noise        else np.zeros( self.n_act ) 
