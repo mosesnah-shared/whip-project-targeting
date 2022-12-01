@@ -176,7 +176,7 @@ class JointImpedanceController( ImpedanceController ):
         self.names_ctrl_pars = ( "Kq", "Bq", "q0i", "q0f", "D", "ti" )
 
         # The name of variables that will be saved 
-        self.names_data = ( "t", "tau", "q", "q0", "dq", "dq0", "Jp", "Jr", 'xpos'  )
+        self.names_data = ( "t", "tau", "q", "q0", "dq", "dq0", "Jp", "Jr", 'xpos', 'xvel'  )
 
         # Generate an empty lists names of parameters
         self.init( )
@@ -243,11 +243,14 @@ class JointImpedanceController( ImpedanceController ):
                 self.q0[ j ]  += tmp_q0 
                 self.dq0[ j ] += tmp_dq0
 
+
         tau_imp = self.Kq @ ( self.q0 - self.q ) + self.Bq @ ( self.dq0 - self.dq )
+
 
         self.Jp = np.copy( self.mj_data.get_site_jacp( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
         self.Jr = np.copy( self.mj_data.get_site_jacr( "site_whip_COM" ).reshape( 3, -1 )[ :, 0 : self.n_act ] )
         self.xpos = np.copy( self.mj_data.geom_xpos[ self.idx_geom_names ] )
+        self.xvel = np.copy( self.mj_data.geom_xvelp[ self.idx_geom_names ] )
 
         tau_G = self.get_tau_G( )                     if is_gravity_comp else np.zeros( self.n_act ) 
         tau_n = np.random.normal( size = self.n_act ) if is_noise        else np.zeros( self.n_act ) 
