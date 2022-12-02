@@ -235,6 +235,8 @@ class Simulation:
             if self.obj is not None: 
                 self.obj_val = self.obj.output_calc( self.mj_model, self.mj_data, self.args )
                 self.obj_arr[ self.n_steps - 1 ] = self.obj_val 
+            
+            if self.obj_val == 0: return 
 
 
             # Print the camera positions
