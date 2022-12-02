@@ -61,12 +61,6 @@ if __name__ == "__main__":
     my_sim.add_ctrl( ctrl )
     my_sim.set_obj( obj )
 
-
-    L_arrs = { "init":[] , "final":[] , "D":[] }
-    my_mov_arrs = { "init":[] , "final":[] , "D":[] }
-    tmp_str =  [ "init", "final", "D" ]
-    # tmp_str =  [ "D" ]
-
     iter = 0 
 
     mov_arrs = np.array( [ [ -1.3614 ,    0.0, -0.3491, 1.4137, 1.7279,     0.0,     0.0, 1.4137, 0.9500 ], 
@@ -80,36 +74,29 @@ if __name__ == "__main__":
 
     n = my_sim.n_act
 
-    init  = mov_arr[   : n   ]
-    final = mov_arr[ n : 2*n ]
-    D     = mov_arr[ -1 ]
+    N = 100
+    my_mov_arrs = np.zeros( ( 2*n + 1, N, 2*n + 1 ) )
+    L_arrs = np.zeros( ( 2*n + 1, N ) )
+    
 
     lb  = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )               
     ub  = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] ) 
 
-    ub_init  = ub[ :n ]
-    ub_final = ub[ n:2*n ]
-    ub_D = ub[ -1 ]
+    for idx in range( 2*n + 1 ):
 
-    lb_init  = lb[ :n ]
-    lb_final = lb[ n:2*n ]
-    lb_D = lb[ -1 ]
-
-    for name in tmp_str:
-
-        for iter in range( 200 ):
+        for iter in range( N ):
             # Reset the simulation 
             my_sim.reset( )            
 
             ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )   
 
             # Add noise
-            noise1 = np.random.uniform( -0.05*( ub_init  - lb_init  ), 0.05*( ub_init  - lb_init ) , 4 ) if name == "init"  else np.zeros( 4 )
-            noise2 = np.random.uniform( -0.05*( ub_final - lb_final ), 0.05*( ub_final - lb_final ), 4 ) if name == "final" else np.zeros( 4 )
-            noise3 = np.random.uniform( -0.05*( ub_D - lb_D ),0.05*( ub_D - lb_D ), 1 )          if name == "D"     else np.zeros( 1 )
+            tmp = np.zeros( 2*n + 1 )
+            tmp[ idx ] = np.random.uniform( -0.02 * ( ub[ idx ] - lb[ idx ] ), 0.02 * ( ub[ idx ] - lb[ idx ] ), 1 )
+            mov_arr_w_noise = mov_arr + tmp
 
-            ctrl.add_mov_pars( q0i = mov_arr[ :n ] + noise1, q0f = mov_arr[ n:2*n ] + noise2, D = mov_arr[ -1 ] + noise3, ti = args.start_time  )                
-            my_sim.init( qpos = mov_arr[ :n ] + noise1, qvel = np.zeros( n ) )
+            ctrl.add_mov_pars( q0i = mov_arr_w_noise[ :n ], q0f = mov_arr_w_noise[ n:2*n ], D = mov_arr_w_noise[ -1 ], ti = args.start_time  )                
+            my_sim.init( qpos = mov_arr_w_noise[ :n ], qvel = np.zeros( n ) )
 
             # Set the initial configuration of the whip downward    
             make_whip_downwards( my_sim )
@@ -118,15 +105,13 @@ if __name__ == "__main__":
             # Run the simulation
             my_sim.run( )
             
-            print_vars( { "Iteration": iter + 1, "vals": mov_arr + np.concatenate( [ noise1, noise2, noise3 ] ), "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
-            iter += +1
+            print_vars( { "Iteration": iter + 1, "vals": mov_arr_w_noise, "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
 
-            my_mov_arrs[ name ].append( mov_arr + np.concatenate( [ noise1, noise2, noise3 ] ) )
-            L_arrs[ name ].append( min( my_sim.obj_arr[ : my_sim.n_steps ] ) )
+            my_mov_arrs[ idx, iter, : ] = np.copy( mov_arr_w_noise )
+            L_arrs[ idx, iter ] = ( min( my_sim.obj_arr[ : my_sim.n_steps ] ) )
 
     dir_name  = C.SAVE_DIR + datetime.now( ).strftime( "%Y%m%d_%H%M%S" )
     os.mkdir( dir_name )  
-    file_name = dir_name + "/" + str( args.target_idx ) + "sensitivity_analysis.mat"
+    file_name = dir_name + "/" + str( args.target_idx ) + "_" + str( idx ) + "sensitivity_analysis.mat" 
 
-    scipy.io.savemat( file_name, { "init_output": L_arrs[ "init" ], "final_output": L_arrs[ "final" ], "D_output":L_arrs[ "D" ], 
-                                   "init_input_pars": my_mov_arrs[ "init" ] , "final_input_pars": my_mov_arrs[ "final" ], "D_input_pars": my_mov_arrs[ "D" ] } )
+    scipy.io.savemat( file_name, { my_mov_arrs, L_arrs } )
