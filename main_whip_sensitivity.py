@@ -74,44 +74,56 @@ if __name__ == "__main__":
 
     n = my_sim.n_act
 
-    N = 100
-    my_mov_arrs = np.zeros( ( 2*n + 1, N, 2*n + 1 ) )
-    L_arrs = np.zeros( ( 2*n + 1, N ) )
+    N = 30
+    lim = np.zeros( ( 2*n + 1, 2 ) )
     
-
     lb  = np.array( [ -0.5 * np.pi, -0.5 * np.pi, -0.5 * np.pi,           0, 0.1 * np.pi,  -0.5 * np.pi, -0.5 * np.pi,         0.0, 0.4 ] )               
     ub  = np.array( [ -0.1 * np.pi,  0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.0 * np.pi,   0.5 * np.pi,  0.5 * np.pi, 0.9 * np.pi, 1.5 ] ) 
 
     for idx in range( 2*n + 1 ):
 
-        for iter in range( N ):
-            # Reset the simulation 
-            my_sim.reset( )            
+        for iidx in [ -1, 1 ]:
 
-            ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )   
+            tmp = 0 
+            iter = 0
 
-            # Add noise
-            tmp = np.zeros( 2*n + 1 )
-            tmp[ idx ] = np.random.uniform( -0.02 * ( ub[ idx ] - lb[ idx ] ), 0.02 * ( ub[ idx ] - lb[ idx ] ), 1 )
-            mov_arr_w_noise = mov_arr + tmp
+            while True:
 
-            ctrl.add_mov_pars( q0i = mov_arr_w_noise[ :n ], q0f = mov_arr_w_noise[ n:2*n ], D = mov_arr_w_noise[ -1 ], ti = args.start_time  )                
-            my_sim.init( qpos = mov_arr_w_noise[ :n ], qvel = np.zeros( n ) )
+                # Reset the simulation 
+                my_sim.reset( )            
 
-            # Set the initial configuration of the whip downward    
-            make_whip_downwards( my_sim )
-            my_sim.forward( )
+                ctrl.set_impedance( Kq = C.K_4DOF, Bq = 0.05 * C.K_4DOF )   
 
-            # Run the simulation
-            my_sim.run( )
+                # Add noise
+                ttmp = np.zeros( 2*n + 1 )
+                ttmp[ idx ] = tmp
+                mov_arr_w_noise = mov_arr + ttmp
+
+                ctrl.add_mov_pars( q0i = mov_arr_w_noise[ :n ], q0f = mov_arr_w_noise[ n:2*n ], D = mov_arr_w_noise[ -1 ], ti = args.start_time  )                
+                my_sim.init( qpos = mov_arr_w_noise[ :n ], qvel = np.zeros( n ) )
+
+                # Set the initial configuration of the whip downward    
+                make_whip_downwards( my_sim )
+                my_sim.forward( )
+
+                # Run the simulation
+                my_sim.run( )
             
-            print_vars( { "Iteration": iter + 1, "vals": mov_arr_w_noise, "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
+                print_vars( { "Iteration": iter + 1, "vals": mov_arr_w_noise, "opt_vals" : min( my_sim.obj_arr[ : my_sim.n_steps ] ) } )
+                iter += 1
 
-            my_mov_arrs[ idx, iter, : ] = np.copy( mov_arr_w_noise )
-            L_arrs[ idx, iter ] = ( min( my_sim.obj_arr[ : my_sim.n_steps ] ) )
+                if min( my_sim.obj_arr[ : my_sim.n_steps ] ) != 0:
+                    if iidx == -1:
+                        lim[ idx, 0 ] = tmp
+                    else:
+                        lim[ idx, 1 ] = tmp
+
+                    break
+
+                tmp += iidx * 0.001
 
     dir_name  = C.SAVE_DIR + datetime.now( ).strftime( "%Y%m%d_%H%M%S" )
     os.mkdir( dir_name )  
-    file_name = dir_name + "/" + str( args.target_idx ) + "_" + str( idx ) + "sensitivity_analysis.mat" 
+    file_name = dir_name + "/" + str( args.target_idx ) + "_sensitivity_analysis.mat" 
 
-    scipy.io.savemat( file_name, { my_mov_arrs, L_arrs } )
+    scipy.io.savemat( file_name, { "lim": lim } )
